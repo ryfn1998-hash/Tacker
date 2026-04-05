@@ -4,27 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tacker | FR Tech</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
     <style>
         :root { --p-green: #00ff41; --bg: #0d1117; --card: #161b22; --border: #30363d; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
-        
-        /* 登入牆 */
         #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10000; }
         .login-box { background: var(--card); padding: 32px; border-radius: 4px; border: 1px solid var(--border); width: 90%; max-width: 400px; text-align: center; }
         h2 { color: var(--p-green); margin: 0 0 24px 0; letter-spacing: 2px; font-weight: 800; }
-        input { width: 100%; padding: 12px; margin-bottom: 16px; background: #010409; border: 1px solid var(--border); color: white; border-radius: 4px; outline: none; font-size: 16px; }
-        .btn { width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; }
+        input { width: 100%; padding: 14px; margin-bottom: 16px; background: #010409; border: 1px solid var(--border); color: white; border-radius: 4px; outline: none; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; width: 100%; }
         .btn-main { background: var(--p-green); color: black; }
         .btn-discord { background: #5865F2; color: white; }
         .footer { margin-top: 20px; color: var(--p-green); cursor: pointer; text-decoration: underline; font-size: 14px; }
-
-        /* 主介面 */
         #main-app { display: none; height: 100vh; flex-direction: row; }
-        .sidebar { width: 72px; background: #010409; border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 15px; }
+        .sidebar { width: 72px; background: #010409; border-right: 1px solid var(--border); padding-top: 15px; display: flex; flex-direction: column; align-items: center; }
         .content { flex: 1; display: flex; flex-direction: column; }
-        .msg-area { flex: 1; padding: 20px; overflow-y: auto; color: #8b949e; }
     </style>
 </head>
 <body>
@@ -32,57 +27,63 @@
     <div id="login-screen">
         <div class="login-box">
             <h2 id="title">TACKER</h2>
-            <input type="email" id="email" placeholder="電子信箱">
+            <input type="email" id="email" placeholder="電子信箱" autocomplete="email">
             <input type="password" id="pw" placeholder="密碼">
-            <button class="btn btn-main" id="auth-btn" onclick="handleAuth()">登入</button>
+            <button class="btn btn-main" onclick="handleAuth()">登入</button>
             <button class="btn btn-discord" onclick="handleDiscord()">DISCORD 登入</button>
-            <div class="footer" id="mode-toggle" onclick="toggleMode()">還沒有帳號？點此註冊</div>
+            <div class="footer" onclick="toggleMode()" id="mode-text">還沒有帳號？點此註冊</div>
         </div>
     </div>
 
     <div id="main-app">
-        <div class="sidebar">
-            <div style="width:48px; height:48px; background:var(--p-green); border-radius:12px;"></div>
-        </div>
+        <div class="sidebar"><div style="width:48px;height:48px;background:var(--p-green);border-radius:12px;"></div></div>
         <div class="content">
             <div style="padding:15px; border-bottom:1px solid var(--border); font-weight:bold;"># 🧊 大廳聊天</div>
-            <div class="msg-area" id="msgs">系統：正在建立安全連線...</div>
-            <div style="padding:20px;"><input type="text" style="width:100%; background:#383a40; border:none; padding:12px; border-radius:8px; color:white;" placeholder="傳送訊息..."></div>
+            <div id="msgs" style="flex:1; padding:20px; color:#8b949e; overflow-y:auto;">連線中...</div>
+            <div style="padding:20px;"><input type="text" style="width:100%; background:#383a40; border:none; padding:12px; border-radius:8px; color:white;" placeholder="輸入訊息..."></div>
         </div>
     </div>
 
     <script>
         const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
         const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
-        const supabase = window.supabase.createClient(S_URL, S_KEY);
+        let supabaseClient;
+
+        // 初始化 Supabase
+        try {
+            supabaseClient = window.supabase.createClient(S_URL, S_KEY);
+            console.log("Supabase 初始化成功");
+        } catch (e) {
+            alert("SDK 載入失敗，請檢查網路或更換瀏覽器！");
+        }
 
         let isSignUp = false;
-
         function toggleMode() {
             isSignUp = !isSignUp;
             document.getElementById('title').innerText = isSignUp ? "註冊帳號" : "TACKER";
-            document.getElementById('auth-btn').innerText = isSignUp ? "立即註冊" : "登入";
-            document.getElementById('mode-toggle').innerText = isSignUp ? "已有帳號？返回登入" : "還沒有帳號？點此註冊";
+            document.getElementById('mode-text').innerText = isSignUp ? "已有帳號？返回登入" : "還沒有帳號？點此註冊";
         }
 
         async function handleAuth() {
+            if (!supabaseClient) return alert("系統尚未就緒");
             const email = document.getElementById('email').value;
             const password = document.getElementById('pw').value;
-            if(!email || !password) return alert("請填寫完整資訊");
+            if(!email || !password) return alert("請填寫帳密");
 
             const { error } = isSignUp 
-                ? await supabase.auth.signUp({ email, password })
-                : await supabase.auth.signInWithPassword({ email, password });
+                ? await supabaseClient.auth.signUp({ email, password })
+                : await supabaseClient.auth.signInWithPassword({ email, password });
             
-            if (error) alert("錯誤: " + error.message);
+            if (error) alert(error.message);
             else {
-                if(isSignUp) alert("註冊成功！請檢查信箱或嘗試登入");
+                if(isSignUp) alert("註冊成功！請至信箱認證或直接嘗試登入");
                 checkUser();
             }
         }
 
         async function handleDiscord() {
-            const { error } = await supabase.auth.signInWithOAuth({
+            if (!supabaseClient) return alert("系統尚未就緒");
+            const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'discord',
                 options: { redirectTo: window.location.origin + window.location.pathname }
             });
@@ -90,16 +91,19 @@
         }
 
         async function checkUser() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
-                document.getElementById('msgs').innerText = "連線成功！歡迎回來，" + session.user.email;
+                document.getElementById('msgs').innerText = "歡迎回來，" + session.user.email;
             }
         }
 
-        checkUser();
-        supabase.auth.onAuthStateChange((event, session) => {
+        // 頁面載入即檢查
+        window.onload = checkUser;
+
+        // 監聽狀態改變
+        supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) checkUser();
         });
     </script>
