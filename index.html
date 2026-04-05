@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tacker | FR Technology</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #313338;
+            --bg-sidebar: #1e1f22;
+            --text-main: #dbdee1;
+            --discord-blurple: #5865F2;
+        }
+        body { margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg-dark); color: var(--text-main); overflow: hidden; }
+        
+        /* 登入牆樣式 */
+        #login-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; background-image: url('https://discord.com/assets/847541504914fd33810e70a0ea73177e.png');
+            background-size: cover;
+        }
+        .login-box {
+            background: #313338; padding: 32px; border-radius: 8px; width: 400px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); text-align: center;
+        }
+        h2 { color: white; margin-bottom: 8px; }
+        .btn-discord {
+            background: var(--discord-blurple); color: white; border: none; padding: 12px 24px;
+            border-radius: 3px; font-weight: 600; cursor: pointer; width: 100%; font-size: 16px; margin-top: 20px;
+        }
+
+        /* 主介面樣式 */
+        #main-app { display: none; height: 100vh; grid-template-columns: 72px 240px 1fr; }
+        .guilds-bar { background: var(--bg-sidebar); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
+        .channels-bar { background: #2b2d31; padding: 12px; }
+        .chat-area { display: flex; flex-direction: column; background: var(--bg-dark); }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; }
+        .input-box { padding: 20px; background: var(--bg-dark); }
+        input { width: 100%; background: #383a40; border: none; padding: 12px; border-radius: 8px; color: white; outline: none; }
+        
+        .server-icon { width: 48px; height: 48px; background: #313338; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .server-icon:hover { border-radius: 15px; background: var(--discord-blurple); }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 id="login-title">歡迎回來！</h2>
+            <p id="login-desc" style="color: #b5bac1;">很高興見到你！這就是 Tacker 系統。</p>
+            <button class="btn-discord" id="login-btn" onclick="login()">使用 Discord 登入</button>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="guilds-bar">
+            <div class="server-icon" id="icon-home" title="首頁">🏠</div>
+            <div style="width: 32px; height: 2px; background: #35363c; margin: 4px 0;"></div>
+            <div class="server-icon" id="icon-add" title="新增伺服器">➕</div>
+        </div>
+        <div class="channels-bar">
+            <h3 id="channel-header" style="font-size: 12px; color: #949ba4; text-transform: uppercase;">文字頻道</h3>
+            <div id="channel-lobby" style="color: #949ba4; margin-bottom: 8px;"># 🧊 大廳聊天</div>
+            <div id="channel-dev" style="color: #949ba4;"># 🛠️ 開發討論</div>
+        </div>
+        <div class="chat-area">
+            <div class="messages" id="chat-messages">
+                <div style="margin-bottom: 16px;">
+                    <strong id="sys-msg-tag" style="color: white;">系統通知:</strong> <span id="sys-msg-content">歡迎來到 Tacker！目前後端已連接。</span>
+                </div>
+            </div>
+            <div class="input-box">
+                <input type="text" id="chat-input" placeholder="在 # 大廳聊天 發送訊息...">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 語言設定檔
+        const translations = {
+            'zh': {
+                loginTitle: '歡迎回來！',
+                loginDesc: '很高興見到你！這就是 Tacker 系統。',
+                loginBtn: '使用 Discord 登入',
+                iconHome: '首頁',
+                iconAdd: '新增伺服器',
+                channelHeader: '文字頻道',
+                channelLobby: '# 🧊 大廳聊天',
+                channelDev: '# 🛠️ 開發討論',
+                sysTag: '系統通知:',
+                sysContent: '歡迎來到 Tacker！目前後端已連接。',
+                inputPlaceholder: '在 # 大廳聊天 發送訊息...'
+            },
+            'en': {
+                loginTitle: 'Welcome back!',
+                loginDesc: "Excited to see you again! This is Tacker.",
+                loginBtn: 'Login with Discord',
+                iconHome: 'Home',
+                iconAdd: 'Add Server',
+                channelHeader: 'Text Channels',
+                channelLobby: '# 🧊 Lobby',
+                channelDev: '# 🛠️ Dev Discussion',
+                sysTag: 'System:',
+                sysContent: 'Welcome to Tacker! Backend connected.',
+                inputPlaceholder: 'Message in # Lobby...'
+            }
+        };
+
+        // 2. 自動判斷語系
+        const userLang = navigator.language.startsWith('zh') ? 'zh' : 'en';
+        const i18n = translations[userLang];
+
+        // 3. 套用語系
+        function applyLanguage() {
+            document.getElementById('login-title').innerText = i18n.loginTitle;
+            document.getElementById('login-desc').innerText = i18n.loginDesc;
+            document.getElementById('login-btn').innerText = i18n.loginBtn;
+            document.getElementById('icon-home').title = i18n.iconHome;
+            document.getElementById('icon-add').title = i18n.iconAdd;
+            document.getElementById('channel-header').innerText = i18n.channelHeader;
+            document.getElementById('channel-lobby').innerText = i18n.channelLobby;
+            document.getElementById('channel-dev').innerText = i18n.channelDev;
+            document.getElementById('sys-msg-tag').innerText = i18n.sysTag;
+            document.getElementById('sys-msg-content').innerText = i18n.sysContent;
+            document.getElementById('chat-input').placeholder = i18n.inputPlaceholder;
+        }
+        applyLanguage();
+
+        // 4. Supabase 初始化
+        const supabaseUrl = 'https://coyiifxxfopvabpjszis.supabase.co';
+        const supabaseKey = 'sb_publishable_auth_coyiifxxfopvabpjszis';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function login() {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'discord',
+                options: { redirectTo: window.location.href }
+            });
+            if (error) console.error(error);
+        }
+
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'grid';
+                console.log('Logged in user:', user);
+            }
+        }
+        checkUser();
+    </script>
+</body>
+</html>
