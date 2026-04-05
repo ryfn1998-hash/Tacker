@@ -3,184 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | FR Technology</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <title>Tacker | FR Tech</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
     <style>
-        :root {
-            --primary: #00ff41;    /* 螢光綠 */
-            --bg-dark: #0d1117;   /* 背景深黑 */
-            --bg-card: #161b22;   /* 卡片深灰 */
-            --bg-sidebar: #010409;/* 側邊純黑 */
-            --border: #30363d;    /* 工業邊框 */
-            --text: #f0f6fc;
-            --text-muted: #8b949e;
-        }
+        :root { --p-green: #00ff41; --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #f0f6fc; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg-dark); color: var(--text); height: 100vh; overflow: hidden; }
-
-        /* --- 1. 登入牆 (純色區塊) --- */
+        /* 登入牆 - 純色塊工業風 */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
-            background: var(--bg-dark); z-index: 9999;
+            background: var(--bg); z-index: 10000;
         }
         .login-box {
-            background: var(--bg-card); padding: 35px; border-radius: 4px; 
-            width: 90%; max-width: 400px; border: 1px solid var(--border);
+            background: var(--card); padding: 32px; border-radius: 4px; border: 1px solid var(--border);
+            width: 90%; max-width: 400px; text-align: center;
         }
-        h2 { text-align: center; color: var(--primary); margin: 0 0 25px 0; letter-spacing: 3px; font-weight: 900; }
-        label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: bold; text-transform: uppercase; }
+        h2 { color: var(--p-green); margin-bottom: 24px; letter-spacing: 2px; font-weight: 900; }
+        .field { text-align: left; margin-bottom: 16px; }
+        label { display: block; font-size: 11px; color: #8b949e; margin-bottom: 8px; font-weight: bold; }
         input {
-            width: 100%; padding: 12px; margin-bottom: 20px; background: #010409;
-            border: 1px solid var(--border); border-radius: 3px; color: white; font-size: 16px; outline: none;
+            width: 100%; padding: 12px; background: #010409; border: 1px solid var(--border);
+            border-radius: 4px; color: white; font-size: 16px; outline: none;
         }
-        input:focus { border-color: var(--primary); }
-        
         .btn {
-            width: 100%; padding: 14px; border-radius: 3px; font-weight: bold; 
-            cursor: pointer; font-size: 15px; border: none; display: block; margin-bottom: 12px;
+            width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; font-size: 16px;
+            cursor: pointer; border: none; margin-top: 12px; display: block;
         }
-        .btn-main { background: var(--primary); color: #000; }
-        .btn-discord { background: #5865F2; color: #fff; }
-        .btn:active { opacity: 0.8; }
-        .auth-footer { text-align: center; color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: underline; margin-top: 15px; }
+        .btn-main { background: var(--p-green); color: black; }
+        .btn-discord { background: #5865F2; color: white; }
+        .footer { margin-top: 20px; color: var(--p-green); font-size: 14px; cursor: pointer; text-decoration: underline; }
 
-        /* --- 2. 主介面 (三欄佈局) --- */
+        /* 主介面 - 預設隱藏 */
         #main-app { display: none; height: 100vh; flex-direction: row; }
-        
-        /* 最左側伺服器欄 */
-        .guilds { width: 72px; background: var(--bg-sidebar); display: flex; flex-direction: column; align-items: center; padding-top: 12px; border-right: 1px solid var(--border); }
-        .guild-icon { width: 48px; height: 48px; background: #21262d; border-radius: 50%; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
-        .guild-icon:hover { border-radius: 15px; border-color: var(--primary); color: var(--primary); }
-
-        /* 頻道欄 */
-        .channels { width: 240px; background: var(--bg-dark); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .channel-item { padding: 10px 16px; color: var(--text-muted); cursor: pointer; font-size: 15px; }
-        .channel-item:hover { background: #21262d; color: var(--text); }
-        .channel-active { color: var(--primary) !important; background: #1c2128; }
-
-        /* 聊天區域 */
-        .chat { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { height: 48px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; font-weight: bold; color: var(--text); }
-        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .input-area { padding: 20px; }
-        .chat-input { width: 100%; background: #383a40; border: none; border-radius: 8px; padding: 12px 16px; color: white; font-size: 15px; outline: none; }
-
-        /* 手機適應 */
-        @media (max-width: 600px) {
-            .guilds { display: none; }
-            .channels { width: 100px; font-size: 12px; }
-        }
+        .side { width: 70px; background: #010409; border-right: 1px solid var(--border); padding-top: 15px; display: flex; flex-direction: column; align-items: center; }
+        .chat-view { flex: 1; display: flex; flex-direction: column; }
+        .header { height: 50px; border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; font-weight: bold; }
+        .msgs { flex: 1; padding: 20px; overflow-y: auto; color: #8b949e; }
+        .input-box { padding: 20px; }
+        .input-box input { background: #383a40; border: none; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2 id="form-title">TACKER</h2>
-            <div id="email-fields">
-                <label>Email Address</label>
-                <input type="email" id="email" placeholder="輸入電子郵件">
-                <label>Password</label>
-                <input type="password" id="password" placeholder="輸入密碼">
+            <h2 id="title">TACKER SYSTEM</h2>
+            <div class="field">
+                <label>EMAIL</label>
+                <input type="email" id="u_email" placeholder="Email">
             </div>
-            <button class="btn btn-main" id="btn-auth" onclick="handleAuth()">登入</button>
-            <button class="btn btn-discord" onclick="handleDiscord()">使用 Discord 登入</button>
-            <div class="auth-footer" id="auth-toggle" onclick="toggleMode()">還沒有帳號？點此註冊</div>
+            <div class="field">
+                <label>PASSWORD</label>
+                <input type="password" id="u_pw" placeholder="Password">
+            </div>
+            <button class="btn btn-main" onclick="handleAuth()">登入 LOGIN</button>
+            <button class="btn btn-discord" onclick="handleDiscord()">DISCORD 登入</button>
+            <div class="footer" id="mode-text" onclick="toggleMode()">還沒有帳號？點此註冊</div>
         </div>
     </div>
 
     <div id="main-app">
-        <nav class="guilds">
-            <div class="guild-icon" style="background: var(--primary); color: black; font-weight: bold;">T</div>
-            <div class="guild-icon">➕</div>
-        </nav>
-        <aside class="channels">
-            <div style="padding: 16px; font-weight: 800; border-bottom: 1px solid var(--border); color: var(--primary);">FR TECHNOLOGY</div>
-            <div style="padding: 15px 0;">
-                <div class="channel-item"># 公告宣佈</div>
-                <div class="channel-item channel-active"># 🧊 大廳聊天</div>
-                <div class="channel-item"># 🛠️ 開發討論</div>
-            </div>
-        </aside>
-        <main class="chat">
-            <div class="chat-header"># 🧊 大廳聊天</div>
-            <div class="messages" id="msg-list">
-                <div style="color: var(--text-muted); font-size: 13px;">[系統] 歡迎進入 Tacker 加密頻道。</div>
-            </div>
-            <div class="input-area">
-                <input type="text" class="chat-input" placeholder="在 #大廳聊天 發送訊息...">
-            </div>
-        </main>
+        <div class="side"><div style="width:45px;height:45px;background:var(--p-green);border-radius:12px;"></div></div>
+        <div class="chat-view">
+            <div class="header"># TACKER_MAIN</div>
+            <div class="msgs" id="msg-list">系統訊息：連線成功，歡迎進入。</div>
+            <div class="input-box"><input type="text" placeholder="輸入訊息..."></div>
+        </div>
     </div>
 
     <script>
-        // 配置資訊
-        const SUPABASE_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_auth_coyiifxxfopvabpjszis';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        // 設定區
+        const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
+        const S_KEY = 'sb_publishable_auth_coyiifxxfopvabpjszis';
+        let supabase;
         let isSignUp = false;
 
-        // 模式切換
+        // 初始化檢查
+        window.onload = function() {
+            if (typeof window.supabase === 'undefined') {
+                alert("❌ 無法載入核心組件，請檢查網路連線或關閉廣告阻擋器！");
+                return;
+            }
+            // 建立客戶端
+            supabase = window.supabase.createClient(S_URL, S_KEY);
+            checkUser();
+        };
+
         function toggleMode() {
             isSignUp = !isSignUp;
-            document.getElementById('form-title').innerText = isSignUp ? "CREATE ACCOUNT" : "TACKER";
-            document.getElementById('btn-auth').innerText = isSignUp ? "立即註冊" : "登入";
-            document.getElementById('auth-toggle').innerText = isSignUp ? "已有帳號？返回登入" : "還沒有帳號？點此註冊";
+            document.getElementById('title').innerText = isSignUp ? "CREATE ACCOUNT" : "TACKER SYSTEM";
+            document.getElementById('mode-text').innerText = isSignUp ? "已有帳號？返回登入" : "還沒有帳號？點此註冊";
+            document.querySelector('.btn-main').innerText = isSignUp ? "立即註冊 SIGN UP" : "登入 LOGIN";
         }
 
-        // Email 認證
         async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if (!email || !password) return alert("請填寫完整資訊");
+            const email = document.getElementById('u_email').value;
+            const pw = document.getElementById('u_pw').value;
+            if (!email || !pw) { alert("請填寫帳密"); return; }
 
             if (isSignUp) {
-                const { error } = await supabase.auth.signUp({ email, password });
-                if (error) alert(error.message);
-                else alert("註冊成功！若已關閉驗證可直接登入。");
+                const { error } = await supabase.auth.signUp({ email, password: pw });
+                if (error) alert("註冊失敗: " + error.message);
+                else alert("註冊成功！若已關閉驗證可直接嘗試登入。");
             } else {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) alert(error.message);
-                else location.reload();
+                const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+                if (error) alert("登入失敗: " + error.message);
+                else window.location.reload();
             }
         }
 
-        // Discord 認證
         async function handleDiscord() {
-            // 自動鎖定當前 GitHub 網址作為回傳點
-            const redirectUrl = window.location.origin + window.location.pathname;
-            await supabase.auth.signInWithOAuth({
+            const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'discord',
-                options: { redirectTo: redirectUrl }
+                options: { redirectTo: window.location.origin + window.location.pathname }
             });
+            if (error) alert("Discord 失敗: " + error.message);
         }
 
-        // 核心偵測：判斷是否登入成功
-        async function checkStatus() {
+        async function checkUser() {
             const { data: { session } } = await supabase.auth.getSession();
-            
             if (session) {
-                // 已登入：隱藏登入牆，顯示 App
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
-                console.log("用戶已連線:", session.user.email);
-            } else {
-                // 未登入：確保登入牆顯示
-                document.getElementById('login-screen').style.display = 'flex';
-                document.getElementById('main-app').style.display = 'none';
             }
         }
 
-        // 啟動偵測
-        checkStatus();
-
-        // 監聽登入狀態更動 (處理跳轉回來的瞬間)
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN') checkStatus();
-        });
+        // 監聽回傳狀態
+        setTimeout(() => {
+            if (supabase) {
+                supabase.auth.onAuthStateChange((event, session) => {
+                    if (session) {
+                        document.getElementById('login-screen').style.display = 'none';
+                        document.getElementById('main-app').style.display = 'flex';
+                    }
+                });
+            }
+        }, 1000);
     </script>
 </body>
 </html>
