@@ -3,108 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | FR Tech</title>
+    <title>Tacker | Terminal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
     <style>
-        :root { --p-green: #00ff41; --bg: #0d1117; --card: #161b22; --border: #30363d; }
+        :root { 
+            --p-green: #00ff41; 
+            --bg-deep: #010409; 
+            --bg-main: #0d1117; 
+            --bg-sidebar: #161b22;
+            --border: #30363d;
+            --text-muted: #8b949e;
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
-        #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10000; }
-        .login-box { background: var(--card); padding: 32px; border-radius: 4px; border: 1px solid var(--border); width: 90%; max-width: 400px; text-align: center; }
-        h2 { color: var(--p-green); margin: 0 0 24px 0; letter-spacing: 2px; font-weight: 800; }
-        input { width: 100%; padding: 14px; margin-bottom: 16px; background: #010409; border: 1px solid var(--border); color: white; border-radius: 4px; outline: none; font-size: 16px; }
-        .btn { width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; width: 100%; }
+        body { margin: 0; background: var(--bg-deep); color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+
+        /* --- 登入畫面 --- */
+        #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-deep); z-index: 10000; }
+        .login-box { background: var(--bg-sidebar); padding: 35px; border-radius: 4px; border: 1px solid var(--border); width: 90%; max-width: 400px; text-align: center; }
+        h2 { color: var(--p-green); margin-bottom: 25px; letter-spacing: 4px; font-weight: 900; }
+        input { width: 100%; padding: 14px; margin-bottom: 15px; background: #010409; border: 1px solid var(--border); color: white; border-radius: 4px; outline: none; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 15px; }
         .btn-main { background: var(--p-green); color: black; }
         .btn-discord { background: #5865F2; color: white; }
-        .footer { margin-top: 20px; color: var(--p-green); cursor: pointer; text-decoration: underline; font-size: 14px; }
+
+        /* --- 主程式佈局 (三欄式) --- */
         #main-app { display: none; height: 100vh; flex-direction: row; }
-        .sidebar { width: 72px; background: #010409; border-right: 1px solid var(--border); padding-top: 15px; display: flex; flex-direction: column; align-items: center; }
-        .content { flex: 1; display: flex; flex-direction: column; }
+
+        /* 1. 伺服器欄 (最左) */
+        .guild-bar { width: 72px; background: var(--bg-deep); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 12px; }
+        .g-icon { width: 48px; height: 48px; background: var(--bg-sidebar); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 1px solid var(--border); }
+        .g-icon:hover { border-radius: 15px; border-color: var(--p-green); color: var(--p-green); }
+        .g-logout { margin-top: auto; margin-bottom: 12px; color: #ff4d4d; border-color: #442222; }
+
+        /* 2. 頻道欄 (中) */
+        .channel-bar { width: 240px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .ch-header { height: 50px; display: flex; align-items: center; padding: 0 16px; font-weight: bold; border-bottom: 1px solid var(--border); color: var(--p-green); font-size: 14px; }
+        .ch-list { padding: 10px 0; flex: 1; }
+        .ch-item { padding: 8px 16px; color: var(--text-muted); cursor: pointer; font-size: 15px; }
+        .ch-item:hover { background: #21262d; color: white; }
+        .ch-active { color: white; background: #1c2128; border-left: 3px solid var(--p-green); }
+
+        /* 3. 聊天區 (右) */
+        .chat-view { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); }
+        .chat-header { height: 50px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; font-weight: bold; }
+        .msg-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+        .msg-box { display: flex; gap: 12px; }
+        .avatar { width: 40px; height: 40px; background: #30363d; border-radius: 50%; flex-shrink: 0; }
+        .msg-content { font-size: 15px; }
+        .u-name { font-weight: bold; color: var(--p-green); font-size: 13px; margin-bottom: 4px; }
+        .input-area { padding: 20px; }
+        .input-wrapper { background: #383a40; border-radius: 8px; padding: 10px 16px; }
+        .chat-input { width: 100%; background: transparent; border: none; color: white; outline: none; font-size: 15px; }
+
+        /* 手機 RWD */
+        @media (max-width: 768px) {
+            .channel-bar { display: none; }
+        }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2 id="title">TACKER</h2>
-            <input type="email" id="email" placeholder="電子信箱" autocomplete="email">
-            <input type="password" id="pw" placeholder="密碼">
-            <button class="btn btn-main" onclick="handleAuth()">登入</button>
-            <button class="btn btn-discord" onclick="handleDiscord()">DISCORD 登入</button>
-            <div class="footer" onclick="toggleMode()" id="mode-text">還沒有帳號？點此註冊</div>
+            <h2>TACKER</h2>
+            <input type="email" id="email" placeholder="Terminal ID (Email)">
+            <input type="password" id="pw" placeholder="Access Code (Password)">
+            <button class="btn btn-main" onclick="handleAuth()">進入系統</button>
+            <button class="btn btn-discord" onclick="handleDiscord()">DISCORD 授權</button>
+            <p onclick="toggleMode()" id="mode-text" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px;">[ 請求新帳號 ]</p>
         </div>
     </div>
 
     <div id="main-app">
-        <div class="sidebar"><div style="width:48px;height:48px;background:var(--p-green);border-radius:12px;"></div></div>
-        <div class="content">
-            <div style="padding:15px; border-bottom:1px solid var(--border); font-weight:bold;"># 🧊 大廳聊天</div>
-            <div id="msgs" style="flex:1; padding:20px; color:#8b949e; overflow-y:auto;">連線中...</div>
-            <div style="padding:20px;"><input type="text" style="width:100%; background:#383a40; border:none; padding:12px; border-radius:8px; color:white;" placeholder="輸入訊息..."></div>
-        </div>
+        <nav class="guild-bar">
+            <div class="g-icon" style="color:var(--p-green); border-color:var(--p-green);">T</div>
+            <div class="g-icon">+</div>
+            <div class="g-icon g-logout" onclick="doLogout()" title="登出系統">🚪</div>
+        </nav>
+
+        <aside class="channel-bar">
+            <div class="ch-header">FR TECHNOLOGY</div>
+            <div class="ch-list">
+                <div class="ch-item ch-active"># 🧊 大廳聊天</div>
+                <div class="ch-item"># 🛠️ 開發日誌</div>
+                <div class="ch-item"># 🔐 秘密頻道</div>
+            </div>
+        </aside>
+
+        <main class="chat-view">
+            <div class="chat-header"># 🧊 大廳聊天</div>
+            <div class="msg-container" id="msg-list">
+                <div class="msg-box">
+                    <div class="avatar"></div>
+                    <div class="msg-content">
+                        <div class="u-name">SYSTEM</div>
+                        <div style="color: #8b949e;">連線加密成功。歡迎進入 Tacker 終端。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <input type="text" class="chat-input" placeholder="發送訊息至 #大廳聊天..." id="chat-msg">
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
+        // 配置資料 (請確認與你之前成功連線的資料一致)
         const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
-        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
-        let supabaseClient;
-
-        // 初始化 Supabase
-        try {
-            supabaseClient = window.supabase.createClient(S_URL, S_KEY);
-            console.log("Supabase 初始化成功");
-        } catch (e) {
-            alert("SDK 載入失敗，請檢查網路或更換瀏覽器！");
-        }
+        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH'; 
+        const supabase = window.supabase.createClient(S_URL, S_KEY);
 
         let isSignUp = false;
-        function toggleMode() {
-            isSignUp = !isSignUp;
-            document.getElementById('title').innerText = isSignUp ? "註冊帳號" : "TACKER";
-            document.getElementById('mode-text').innerText = isSignUp ? "已有帳號？返回登入" : "還沒有帳號？點此註冊";
-        }
 
-        async function handleAuth() {
-            if (!supabaseClient) return alert("系統尚未就緒");
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('pw').value;
-            if(!email || !password) return alert("請填寫帳密");
-
-            const { error } = isSignUp 
-                ? await supabaseClient.auth.signUp({ email, password })
-                : await supabaseClient.auth.signInWithPassword({ email, password });
-            
-            if (error) alert(error.message);
-            else {
-                if(isSignUp) alert("註冊成功！請至信箱認證或直接嘗試登入");
-                checkUser();
-            }
-        }
-
-        async function handleDiscord() {
-            if (!supabaseClient) return alert("系統尚未就緒");
-            const { error } = await supabaseClient.auth.signInWithOAuth({
-                provider: 'discord',
-                options: { redirectTo: window.location.origin + window.location.pathname }
-            });
-            if (error) alert("Discord 失敗: " + error.message);
-        }
-
-        async function checkUser() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
+        // 核心：檢查登入狀態 (解決「下次進來會自動登入」)
+        async function checkStatus() {
+            const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
-                document.getElementById('msgs').innerText = "歡迎回來，" + session.user.email;
+                console.log("登入者:", session.user.email);
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
             }
         }
 
-        // 頁面載入即檢查
-        window.onload = checkUser;
+        // 登出功能
+        async function doLogout() {
+            const { error } = await supabase.auth.signOut();
+            if (error) alert(error.message);
+            else location.reload(); // 重新整理網頁回到登入畫面
+        }
 
-        // 監聽狀態改變
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session) checkUser();
+        function toggleMode() {
+            isSignUp = !isSignUp;
+            document.getElementById('mode-text').innerText = isSignUp ? "[ 返回登入 ]" : "[ 請求新帳號 ]";
+            document.querySelector('.btn-main').innerText = isSignUp ? "立即註冊" : "進入系統";
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('pw').value;
+            const { error } = isSignUp 
+                ? await supabase.auth.signUp({ email, password })
+                : await supabase.auth.signInWithPassword({ email, password });
+            
+            if (error) alert(error.message);
+            else checkStatus();
+        }
+
+        async function handleDiscord() {
+            await supabase.auth.signInWithOAuth({
+                provider: 'discord',
+                options: { redirectTo: window.location.origin + window.location.pathname }
+            });
+        }
+
+        // 初始化
+        checkStatus();
+
+        // 監聽狀態改變 (處理 Discord 跳轉回來的瞬間)
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) checkStatus();
+        });
+
+        // 聊天輸入 Enter 偵測 (範例)
+        document.getElementById('chat-msg').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && this.value) {
+                const text = this.value;
+                const list = document.getElementById('msg-list');
+                list.innerHTML += `<div class="msg-box"><div class="avatar"></div><div class="msg-content"><div class="u-name">YOU</div><div>${text}</div></div></div>`;
+                this.value = '';
+                list.scrollTop = list.scrollHeight;
+            }
         });
     </script>
 </body>
