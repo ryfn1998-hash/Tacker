@@ -2,32 +2,84 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tacker Private | FR Tech</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #010409; color: #00ff41; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #161b22; padding: 30px; border: 1px solid #30363d; border-radius: 8px; width: 300px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #30363d; color: #fff; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #00ff41; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .link { margin-top: 20px; font-size: 14px; cursor: pointer; text-decoration: underline; }
-        #main { display: none; padding: 20px; text-align: center; }
+        :root { --p-green: #00ff41; --bg-main: #0d1117; --bg-side: #161b22; --brd: #30363d; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { margin: 0; background: #010409; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
+        
+        /* 登入牆 */
+        #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #010409; z-index: 10000; }
+        .login-box { background: var(--bg-side); padding: 35px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 380px; text-align: center; }
+        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; }
+        .btn-main { background: var(--p-green); color: black; }
+
+        /* 主畫面佈局 */
+        #main-app { display: none; height: 100vh; flex-direction: row; }
+        .side-bar { width: 260px; background: var(--bg-side); border-right: 1px solid var(--brd); display: flex; flex-direction: column; }
+        .side-head { padding: 20px; font-weight: bold; color: var(--p-green); border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; }
+        .tabs { display: flex; border-bottom: 1px solid var(--brd); background: #0d1117; }
+        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-size: 13px; color: #8b949e; }
+        .tab-active { color: var(--p-green); border-bottom: 2px solid var(--p-green); background: var(--bg-side); }
+        
+        .list-area { flex: 1; overflow-y: auto; }
+        .item-row { padding: 12px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #21262d; }
+        .item-row:hover { background: #21262d; }
+
+        /* 聊天區 */
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); }
+        .chat-head { height: 60px; padding: 0 20px; display: flex; align-items: center; border-bottom: 1px solid var(--brd); font-weight: bold; font-size: 16px; }
+        .msgs { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .m-line { display: flex; flex-direction: column; gap: 4px; }
+        .m-user { color: var(--p-green); font-size: 12px; font-weight: bold; }
+        .m-text { background: #21262d; padding: 10px 15px; border-radius: 8px; max-width: 80%; width: fit-content; line-height: 1.5; }
+
+        .input-wrap { padding: 20px; }
+        .input-box { background: #1c2128; border: 1px solid var(--brd); border-radius: 8px; padding: 12px; display: flex; gap: 10px; }
+        #msg-in { flex: 1; background: transparent; border: none; color: white; font-size: 15px; }
+
+        @media (max-width: 650px) { .side-bar { width: 100%; } .chat-area { display: none; } }
     </style>
 </head>
 <body>
 
-    <div id="auth-ui" class="box">
-        <h2 id="title">TACKER 登入</h2>
-        <input type="email" id="email" placeholder="信箱">
-        <input type="password" id="pw" placeholder="密碼">
-        <button id="btn" onclick="handle()">立即進入</button>
-        <div class="link" id="switch" onclick="toggle()">[ 沒有帳號？點此註冊 ]</div>
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 id="ui-title" style="color:var(--p-green); margin-bottom:25px;">TACKER 系統</h2>
+            <input type="email" id="email" placeholder="電子信箱">
+            <input type="password" id="pw" placeholder="密碼">
+            <button class="btn btn-main" id="go-btn" onclick="handleAuth()">登入系統</button>
+            <p id="sw-text" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:14px;">[ 沒有帳號？點此註冊 ]</p>
+        </div>
     </div>
 
-    <div id="main">
-        <h1>連線成功</h1>
-        <p>歡迎進入 FR Tech 系統</p>
-        <button onclick="location.reload()" style="background:#ff4141">登出</button>
+    <div id="main-app">
+        <aside class="side-bar">
+            <div class="side-head">
+                <span>TACKER PRIVATE</span>
+                <span onclick="location.reload()" style="cursor:pointer">🚪</span>
+            </div>
+            <div class="tabs">
+                <div class="tab tab-active" id="t-f" onclick="setTab('fr')">好友</div>
+                <div class="tab" id="t-g" onclick="setTab('gr')">私人群組</div>
+            </div>
+            <div class="list-area" id="list-box"></div>
+            <div style="padding:15px; text-align:center; color:var(--p-green); cursor:pointer; border-top:1px solid var(--brd)" onclick="addItem()">+ 新增項目</div>
+        </aside>
+
+        <main class="chat-area">
+            <div class="chat-head" id="cur-target">請選擇對話</div>
+            <div class="msgs" id="msg-box"></div>
+            <div class="input-wrap">
+                <div class="input-box">
+                    <input type="text" id="msg-in" placeholder="輸入訊息..." onkeypress="if(event.key==='Enter') send()">
+                    <b onclick="send()" style="color:var(--p-green); cursor:pointer">發送</b>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -36,30 +88,84 @@
         const supabase = window.supabase.createClient(S_URL, S_KEY);
 
         let isSign = false;
+        let mode = 'fr';
 
-        function toggle() {
-            isSign = !isSign;
-            document.getElementById('title').innerText = isSign ? "註冊帳號" : "TACKER 登入";
-            document.getElementById('btn').innerText = isSign ? "立即註冊" : "立即進入";
-            document.getElementById('switch').innerText = isSign ? "[ 已有帳號？返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                render();
+            }
         }
 
-        async function handle() {
+        async function handleAuth() {
             const e = document.getElementById('email').value;
             const p = document.getElementById('pw').value;
-            if(!e || !p) return alert("請輸入帳密");
+            if(!e || !p) return alert("請輸入完整資料");
+            
+            const btn = document.getElementById('go-btn');
+            btn.innerText = "處理中...";
 
-            const { data, error } = isSign 
+            const { error } = isSign 
                 ? await supabase.auth.signUp({email:e, password:p})
                 : await supabase.auth.signInWithPassword({email:e, password:p});
 
             if(error) {
-                alert("錯誤: " + error.message);
+                alert(error.message);
+                btn.innerText = isSign ? "立即註冊" : "登入系統";
             } else {
-                document.getElementById('auth-ui').style.display = 'none';
-                document.getElementById('main').style.display = 'block';
+                init();
             }
         }
+
+        function toggleMode() {
+            isSign = !isSign;
+            document.getElementById('ui-title').innerText = isSign ? "建立新帳號" : "TACKER 系統";
+            document.getElementById('go-btn').innerText = isSign ? "立即註冊" : "登入系統";
+            document.getElementById('sw-text').innerText = isSign ? "[ 已有帳號？點此登入 ]" : "[ 沒有帳號？點此註冊 ]";
+        }
+
+        function setTab(t) {
+            mode = t;
+            document.getElementById('t-f').className = t==='fr' ? 'tab tab-active' : 'tab';
+            document.getElementById('t-g').className = t==='gr' ? 'tab tab-active' : 'tab';
+            render();
+        }
+
+        function render() {
+            const box = document.getElementById('list-box');
+            if(mode === 'fr') {
+                box.innerHTML = `<div class="item-row" onclick="openC('Shadow')">👤 Shadow (管理員)</div>`;
+            } else {
+                box.innerHTML = `<div class="item-row" onclick="openC('FR 核心群組')">🔒 FR 核心群組</div>`;
+            }
+        }
+
+        function addItem() {
+            const n = prompt(mode==='fr' ? "好友 Email:" : "群組名稱:");
+            if(n) {
+                const box = document.getElementById('list-box');
+                const icon = mode==='fr' ? '👤' : '🔒';
+                box.innerHTML += `<div class="item-row" onclick="openC('${n}')">${icon} ${n}</div>`;
+            }
+        }
+
+        function openC(name) {
+            document.getElementById('cur-target').innerText = name;
+            document.getElementById('msg-box').innerHTML = `<div class="m-line"><div class="m-user">系統</div><div class="m-text">與 ${name} 的安全連線已建立。</div></div>`;
+        }
+
+        function send() {
+            const inpt = document.getElementById('msg-in');
+            if(!inpt.value) return;
+            const mbox = document.getElementById('msg-box');
+            mbox.innerHTML += `<div class="m-line"><div class="m-user">我</div><div class="m-text">${inpt.value}</div></div>`;
+            inpt.value = '';
+            mbox.scrollTop = mbox.scrollHeight;
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
