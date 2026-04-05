@@ -2,116 +2,64 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker Private | FR Tech</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tacker Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --p-green: #00ff41; --bg-main: #0d1117; --bg-side: #161b22; --brd: #30363d; --discord: #5865F2; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: #010409; color: white; font-family: sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        
-        .login-box { background: var(--bg-side); padding: 30px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 380px; text-align: center; }
-        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; }
-        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; }
-        .btn-main { background: var(--p-green); color: black; }
-        .btn-discord { background: var(--discord); color: white; }
-        
-        #main-app { display: none; position: fixed; inset: 0; background: var(--bg-main); z-index: 1000; padding: 20px; flex-direction: column; }
+        body { background: #010409; color: #00ff41; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #161b22; padding: 30px; border: 1px solid #30363d; border-radius: 8px; width: 300px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #30363d; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #00ff41; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .link { margin-top: 20px; font-size: 14px; cursor: pointer; text-decoration: underline; }
+        #main { display: none; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="login-box">
-            <h2 id="ui-title" style="color:var(--p-green)">TACKER 系統</h2>
-            <input type="email" id="u-email" placeholder="輸入信箱">
-            <input type="password" id="u-pw" placeholder="輸入密碼">
-            
-            <button class="btn btn-main" id="primary-btn" onclick="startAuth()">登入系統</button>
-            <button class="btn btn-discord" onclick="startDiscord()">Discord 帳號登入</button>
-            
-            <p id="switch-text" onclick="changeMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:14px;">
-                [ 沒有帳號？點此註冊 ]
-            </p>
-        </div>
+    <div id="auth-ui" class="box">
+        <h2 id="title">TACKER 登入</h2>
+        <input type="email" id="email" placeholder="信箱">
+        <input type="password" id="pw" placeholder="密碼">
+        <button id="btn" onclick="handle()">立即進入</button>
+        <div class="link" id="switch" onclick="toggle()">[ 沒有帳號？點此註冊 ]</div>
     </div>
 
-    <div id="main-app">
-        <h1 style="color:var(--p-green)">連線成功</h1>
-        <p>歡迎回來，FR Technology 負責人。</p>
-        <button class="btn" style="background:#f85149; color:white; width:200px;" onclick="location.reload()">登出</button>
+    <div id="main">
+        <h1>連線成功</h1>
+        <p>歡迎進入 FR Tech 系統</p>
+        <button onclick="location.reload()" style="background:#ff4141">登出</button>
     </div>
 
     <script>
         const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
-        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH'; 
-        let supabase;
-        let isJoinMode = false;
+        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
+        const supabase = window.supabase.createClient(S_URL, S_KEY);
 
-        // 1. 強制初始化
-        try {
-            supabase = window.supabase.createClient(S_URL, S_KEY);
-            console.log("Supabase 載入成功");
-        } catch (e) {
-            alert("系統初始化失敗，請檢查網路！");
+        let isSign = false;
+
+        function toggle() {
+            isSign = !isSign;
+            document.getElementById('title').innerText = isSign ? "註冊帳號" : "TACKER 登入";
+            document.getElementById('btn').innerText = isSign ? "立即註冊" : "立即進入";
+            document.getElementById('switch').innerText = isSign ? "[ 已有帳號？返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
         }
 
-        // 2. 切換模式按鈕 (點擊 [點此註冊] 時觸發)
-        function changeMode() {
-            isJoinMode = !isJoinMode;
-            const title = document.getElementById('ui-title');
-            const btn = document.getElementById('primary-btn');
-            const text = document.getElementById('switch-text');
+        async function handle() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('pw').value;
+            if(!e || !p) return alert("請輸入帳密");
 
-            if (isJoinMode) {
-                title.innerText = "建立新帳號";
-                btn.innerText = "立即註冊";
-                text.innerText = "[ 已有帳號？點此登入 ]";
+            const { data, error } = isSign 
+                ? await supabase.auth.signUp({email:e, password:p})
+                : await supabase.auth.signInWithPassword({email:e, password:p});
+
+            if(error) {
+                alert("錯誤: " + error.message);
             } else {
-                title.innerText = "TACKER 系統";
-                btn.innerText = "登入系統";
-                text.innerText = "[ 沒有帳號？點此註冊 ]";
+                document.getElementById('auth-ui').style.display = 'none';
+                document.getElementById('main').style.display = 'block';
             }
         }
-
-        // 3. 核心登入按鈕 (點擊 [登入系統] 時觸發)
-        async function startAuth() {
-            const email = document.getElementById('u-email').value;
-            const password = document.getElementById('u-pw').value;
-
-            if (!email || !password) {
-                alert("請填寫完整的信箱與密碼！");
-                return;
-            }
-
-            console.log("正在嘗試連線...");
-
-            const { data, error } = isJoinMode 
-                ? await supabase.auth.signUp({ email, password })
-                : await supabase.auth.signInWithPassword({ email, password });
-
-            if (error) {
-                alert("失敗：" + error.message);
-            } else {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-            }
-        }
-
-        // 4. Discord 按鈕
-        async function startDiscord() {
-            const { error } = await supabase.auth.signInWithOAuth({ provider: 'discord' });
-            if (error) alert("Discord 錯誤：" + error.message);
-        }
-
-        // 自動檢查登入狀態
-        window.onload = async () => {
-            const { data } = await supabase.auth.getSession();
-            if (data.session) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-            }
-        };
     </script>
 </body>
 </html>
