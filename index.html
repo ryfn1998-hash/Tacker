@@ -3,116 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Tacker v2.0 | FR Tech</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --p-green: #00ff41; --bg: #010409; --card: #161b22; --brd: #30363d; --ds: #5865F2; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        
-        /* 登入框 */
         .login-box { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 360px; text-align: center; }
-        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--p-green); }
+        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; }
         .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; transition: 0.2s; }
         .btn-main { background: var(--p-green); color: black; }
         .btn-ds { background: var(--ds); color: white; }
-        .btn:active { transform: scale(0.96); opacity: 0.8; }
-        
-        /* 主程式 */
-        #app { display: none; position: fixed; inset: 0; background: #0d1117; flex-direction: row; z-index: 100; }
-        .side { width: 260px; background: var(--card); border-right: 1px solid var(--brd); display: flex; flex-direction: column; }
-        .chat { flex: 1; display: flex; flex-direction: column; background: #0d1117; }
-        .msg-list { flex: 1; padding: 20px; overflow-y: auto; }
-        .input-wrap { padding: 20px; border-top: 1px solid var(--brd); display: flex; gap: 10px; }
-        
-        @media (max-width: 600px) { .side { width: 100%; } .chat { display: none; } }
+        #app { display: none; position: fixed; inset: 0; background: #0d1117; z-index: 100; flex-direction: row; }
+        .side { width: 260px; background: var(--card); border-right: 1px solid var(--brd); }
     </style>
 </head>
 <body>
 
     <div id="auth-page">
         <div class="login-box">
-            <h2 id="ui-title" style="color:var(--p-green); margin-bottom:20px;">TACKER v2.0</h2>
+            <h2 id="ui-title" style="color:var(--p-green)">TACKER v2.0</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="pass" placeholder="Password">
-            <button class="btn btn-main" onclick="handleLogin()">進入系統</button>
-            <button class="btn btn-ds" onclick="handleDiscord()">Discord 帳號登入</button>
-            <p id="ui-switch" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px; text-decoration: underline;">[ 沒有帳號？點此註冊 ]</p>
+            <button class="btn btn-main" onclick="handleAuth()">進入系統</button>
+            <button class="btn btn-ds" onclick="handleDS()">Discord 登入</button>
+            <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px;">[ 沒有帳號？點此註冊 ]</p>
         </div>
     </div>
 
     <div id="app">
         <aside class="side">
             <div style="padding:20px; font-weight:bold; color:var(--p-green); border-bottom:1px solid var(--brd)">TACKER PRIVATE</div>
-            <div style="padding:15px; border-bottom:1px solid #21262d; cursor:pointer;" onclick="setChat('Shadow')">👤 Shadow (管理員)</div>
-            <div style="padding:15px; border-bottom:1px solid #21262d; cursor:pointer;" onclick="setChat('FR 群組')">🔒 FR 核心群組</div>
-            <button onclick="location.reload()" style="margin-top:auto; padding:15px; background:none; color:red; border:none; cursor:pointer;">登出系統 🚪</button>
+            <div style="padding:15px; cursor:pointer;" onclick="alert('載入好友中...')">👤 Shadow (管理員)</div>
+            <button onclick="location.reload()" style="margin-top:auto; padding:15px; background:none; color:red; border:none; cursor:pointer;">登出系統</button>
         </aside>
-        <main class="chat">
-            <div id="chat-h" style="padding:15px; border-bottom:1px solid var(--brd); font-weight:bold;"># 系統大廳</div>
-            <div class="msg-list" id="msgs"></div>
-            <div class="input-wrap">
-                <input type="text" id="m-in" style="flex:1; background:#000; border:1px solid var(--brd); color:white; padding:10px; border-radius:5px;" placeholder="輸入訊息...">
-                <button onclick="sendMsg()" style="background:var(--p-green); border:none; padding:10px 20px; border-radius:5px; font-weight:bold;">發送</button>
-            </div>
-        </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
         const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
-        const supabase = window.supabase.createClient(S_URL, S_KEY);
+        let supabase;
+        
+        try {
+            supabase = window.supabase.createClient(S_URL, S_KEY);
+        } catch(e) {
+            console.error("Supabase 初始化失敗");
+        }
 
         let isSign = false;
-
-        async function checkUser() {
-            const { data } = await supabase.auth.getSession();
-            if (data.session) {
-                document.getElementById('auth-page').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                setChat('系統大廳');
-            }
-        }
 
         function toggleMode() {
             isSign = !isSign;
             document.getElementById('ui-title').innerText = isSign ? "建立新帳號" : "TACKER v2.0";
-            document.getElementById('ui-switch').innerText = isSign ? "[ 已有帳號？返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
+            document.getElementById('ui-sw').innerText = isSign ? "[ 已有帳號？返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
         }
 
-        async function handleLogin() {
+        async function handleAuth() {
             const email = document.getElementById('email').value;
-            const password = document.getElementById('pass').value;
-            if(!email || !password) return alert("請輸入完整帳密");
+            const pass = document.getElementById('pass').value;
+            if(!email || !pass) return alert("請輸入完整帳密");
 
-            const { error } = isSign 
-                ? await supabase.auth.signUp({ email, password })
-                : await supabase.auth.signInWithPassword({ email, password });
-
-            if (error) alert(error.message); else checkUser();
+            try {
+                const { error } = isSign 
+                    ? await supabase.auth.signUp({ email, password: pass })
+                    : await supabase.auth.signInWithPassword({ email, password: pass });
+                
+                if(error) alert(error.message);
+                else location.reload(); // 成功後刷新自動進入
+            } catch(e) {
+                alert("網路連線異常，請重試");
+            }
         }
 
-        async function handleDiscord() {
+        async function handleDS() {
             await supabase.auth.signInWithOAuth({ provider: 'discord' });
         }
 
-        function setChat(name) {
-            document.getElementById('chat-h').innerText = "# " + name;
-            document.getElementById('msgs').innerHTML = `<div style="color:var(--p-green); font-size:12px;">[系統] 與 ${name} 的加密連線已建立。</div>`;
+        // 自動檢查登入
+        window.onload = async () => {
+            const { data } = await supabase.auth.getSession();
+            if (data?.session) {
+                document.getElementById('auth-page').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+            }
         }
-
-        function sendMsg() {
-            const input = document.getElementById('m-in');
-            if(!input.value) return;
-            document.getElementById('msgs').innerHTML += `<div style="margin-top:10px;"><b>我:</b> ${input.value}</div>`;
-            input.value = '';
-            const box = document.getElementById('msgs');
-            box.scrollTop = box.scrollHeight;
-        }
-
-        window.onload = checkUser;
     </script>
 </body>
 </html>
