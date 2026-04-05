@@ -8,99 +8,98 @@
     <style>
         :root {
             --primary-green: #00ff41; 
-            --bg-dark: #0d1117;      /* 背景深黑 */
-            --bg-card: #161b22;      /* 卡片深灰 */
-            --bg-input: #010409;     /* 輸入框純黑 */
+            --bg-dark: #0d1117;      
+            --bg-card: #161b22;      
+            --bg-input: #010409;     
             --text-main: #f0f6fc;
             --text-muted: #8b949e;
             --border: #30363d;
         }
 
-        /* 全域設定：確保在手機與平板上都能完美填滿 */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; }
 
-        /* 1. 登入牆：純色塊設計 */
+        /* 登入牆容器 */
         #login-screen {
-            display: flex; align-items: center; justify-content: center; flex: 1; padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 999; background: var(--bg-dark); padding: 20px;
         }
         .login-box {
-            background: var(--bg-card); padding: 32px; border-radius: 8px; width: 100%; max-width: 400px;
-            border: 1px solid var(--border);
+            background: var(--bg-card); padding: 32px; border-radius: 8px; 
+            width: 100%; max-width: 400px; border: 1px solid var(--border);
+            position: relative; z-index: 1000;
         }
-        h2 { text-align: center; color: var(--primary-green); margin: 0 0 24px 0; font-size: 24px; font-weight: 800; }
+        h2 { text-align: center; color: var(--primary-green); margin: 0 0 24px 0; letter-spacing: 2px; }
         .input-group { margin-bottom: 20px; }
         label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: bold; }
+        
         input {
-            width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border);
-            border-radius: 4px; color: white; font-size: 16px; outline: none;
+            width: 100%; padding: 14px; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 4px; color: white; font-size: 16px; outline: none; display: block;
         }
-        input:focus { border-color: var(--primary-green); }
         
-        .btn-main {
-            width: 100%; padding: 14px; background: var(--primary-green); color: black;
-            border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 8px;
+        /* 按鈕樣式強化 */
+        .btn {
+            width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; 
+            cursor: pointer; font-size: 16px; margin-top: 12px; border: none;
+            display: block; text-align: center;
         }
-        .btn-discord {
-            width: 100%; padding: 14px; background: transparent; color: white;
-            border: 1px solid #5865F2; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 12px; font-size: 16px;
+        .btn-main { background: var(--primary-green); color: black; }
+        .btn-discord { background: transparent; color: white; border: 1px solid #5865F2; }
+        
+        .auth-footer { 
+            text-align: center; margin-top: 20px; font-size: 14px; 
+            color: var(--primary-green); cursor: pointer; text-decoration: underline;
+            padding: 10px; /* 增加點擊範圍 */
         }
-        .auth-footer { text-align: center; margin-top: 20px; font-size: 14px; color: var(--primary-green); cursor: pointer; }
 
-        /* 2. 主介面：響應式佈局 (Mobile Friendly) */
+        /* 主介面 (初始隱藏) */
         #main-app { display: none; height: 100vh; flex-direction: row; }
-        
-        /* 側邊伺服器欄 (手機隱藏，平板顯示) */
         .sidebar { width: 72px; background: #010409; display: flex; flex-direction: column; align-items: center; padding-top: 12px; border-right: 1px solid var(--border); }
-        
-        /* 頻道欄 (手機端預設顯示) */
-        .channel-list { width: 240px; background: var(--bg-dark); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        
-        /* 聊天主區域 */
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-dark); }
-        .chat-header { height: 48px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; font-weight: bold; }
+        .channel-list { width: 240px; background: var(--bg-dark); border-right: 1px solid var(--border); }
+        .chat-area { flex: 1; display: flex; flex-direction: column; }
         .messages { flex: 1; padding: 16px; overflow-y: auto; }
-        .input-area { padding: 16px; }
-        .chat-input { background: #383a40; border: none; border-radius: 8px; padding: 12px; width: 100%; color: white; font-size: 15px; }
+        .input-area { padding: 16px; border-top: 1px solid var(--border); }
+        .chat-input { background: #383a40; border: none; border-radius: 8px; padding: 12px; width: 100%; color: white; }
 
-        /* 手機版優化：當螢幕太小時隱藏側邊欄 */
-        @media (max-width: 600px) {
-            .sidebar { display: none; }
-            .channel-list { width: 100px; font-size: 12px; }
-        }
+        @media (max-width: 600px) { .sidebar { display: none; } .channel-list { width: 120px; } }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2>TACKER</h2>
+            <h2 id="form-title">TACKER</h2>
+            
             <div class="input-group">
                 <label>電子郵件</label>
                 <input type="email" id="email" placeholder="Email">
             </div>
+            
             <div class="input-group">
                 <label>密碼</label>
                 <input type="password" id="password" placeholder="Password">
             </div>
-            <button class="btn-main" id="btn-auth" onclick="handleEmailAuth()">登入</button>
-            <button class="btn-discord" onclick="loginWithDiscord()">Discord 登入</button>
+
+            <button class="btn btn-main" id="btn-auth" onclick="handleEmailAuth()">登入</button>
+            <button class="btn btn-discord" onclick="loginWithDiscord()">Discord 登入</button>
+            
             <div class="auth-footer" id="auth-toggle" onclick="toggleAuthMode()">還沒有帳號？註冊一個</div>
         </div>
     </div>
 
     <div id="main-app">
         <nav class="sidebar">
-            <div style="width: 48px; height: 48px; background: var(--primary-green); border-radius: 16px; margin-bottom: 8px;"></div>
+            <div style="width: 48px; height: 48px; background: var(--primary-green); border-radius: 12px; margin-bottom: 8px;"></div>
         </nav>
         <aside class="channel-list">
-            <div style="padding: 12px; font-weight: 800; border-bottom: 1px solid var(--border);">FR TECH</div>
-            <div style="padding: 10px 16px; color: var(--text-muted);"># 🧊 大廳聊天</div>
+            <div style="padding: 16px; font-weight: bold; border-bottom: 1px solid var(--border);">FR TECH</div>
+            <div style="padding: 12px 16px; color: var(--primary-green);"># 🧊 大廳聊天</div>
         </aside>
         <main class="chat-area">
-            <div class="chat-header"># 🧊 大廳聊天</div>
             <div class="messages" id="chat-messages">
-                <div style="color: var(--text-muted);">系統：加密連線已建立。</div>
+                <div style="color: var(--text-muted);">[系統] Tacker 加密連線已就緒。</div>
             </div>
             <div class="input-area">
                 <input type="text" class="chat-input" placeholder="傳送訊息到 # 🧊 大廳聊天">
@@ -115,19 +114,37 @@
 
         let isSignUp = false;
 
+        // 切換模式：登入 vs 註冊
         function toggleAuthMode() {
             isSignUp = !isSignUp;
-            document.getElementById('btn-auth').innerText = isSignUp ? '立即註冊' : '登入';
-            document.getElementById('auth-toggle').innerText = isSignUp ? '已有帳號？返回登入' : '還沒有帳號？註冊一個';
+            const btn = document.getElementById('btn-auth');
+            const footer = document.getElementById('auth-toggle');
+            const title = document.getElementById('form-title');
+            
+            if (isSignUp) {
+                title.innerText = "註冊帳號";
+                btn.innerText = "立即註冊";
+                footer.innerText = "已有帳號？返回登入";
+            } else {
+                title.innerText = "TACKER";
+                btn.innerText = "登入";
+                footer.innerText = "還沒有帳號？註冊一個";
+            }
         }
 
         async function handleEmailAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert("請輸入完整帳密");
+                return;
+            }
+
             if (isSignUp) {
                 const { error } = await supabase.auth.signUp({ email, password });
-                if (error) alert("錯誤: " + error.message);
-                else alert("註冊成功！如果無法登入，請去信箱點擊驗證信，或到 Supabase 後台關閉 Email 驗證。");
+                if (error) alert("註冊失敗: " + error.message);
+                else alert("註冊成功！請檢查信箱或直接嘗試登入（若已關閉驗證）。");
             } else {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) alert("登入失敗: " + error.message);
@@ -136,7 +153,10 @@
         }
 
         async function loginWithDiscord() {
-            await supabase.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.href } });
+            await supabase.auth.signInWithOAuth({
+                provider: 'discord',
+                options: { redirectTo: window.location.href }
+            });
         }
 
         async function checkSession() {
@@ -144,6 +164,7 @@
             if (session) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
+                console.log("登入成功");
             }
         }
         checkSession();
