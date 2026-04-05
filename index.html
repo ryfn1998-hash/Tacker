@@ -6,53 +6,65 @@
     <title>Tacker OS | FR Tech Terminal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --p-green: #00ff41; --bg-d: #010409; --bg-m: #0d1117; --bg-s: #161b22; --brd: #30363d; }
+        :root { --p-green: #00ff41; --bg-d: #010409; --bg-m: #0d1117; --bg-s: #161b22; --brd: #30363d; --discord-v: #5865F2; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { margin: 0; background: var(--bg-d); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: var(--bg-d); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; overflow: hidden; }
         
-        /* 登入牆 */
+        /* 登入介面 */
         #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-d); z-index: 10000; }
-        .login-box { background: var(--bg-s); padding: 40px; border-radius: 8px; border: 1px solid var(--brd); width: 90%; max-width: 400px; text-align: center; }
-        .btn { width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; }
+        .login-box { background: var(--bg-s); padding: 40px; border-radius: 8px; border: 1px solid var(--brd); width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: var(--p-green); letter-spacing: 5px; margin-bottom: 30px; font-weight: 900; }
+        input { width: 100%; padding: 14px; margin-bottom: 15px; background: #010409; border: 1px solid var(--brd); color: white; border-radius: 4px; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; transition: 0.2s; font-size: 15px; }
         .btn-main { background: var(--p-green); color: black; }
-        .btn-discord { background: #5865F2; color: white; }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-discord { background: var(--discord-v); color: white; }
 
-        /* 主介面佈局 */
+        /* 主程式框架 */
         #main-app { display: none; height: 100vh; flex-direction: row; }
 
-        /* 伺服器欄 */
+        /* 1. 伺服器欄 */
         .guilds { width: 72px; background: var(--bg-d); border-right: 1px solid var(--brd); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 12px; }
-        .g-item { width: 48px; height: 48px; background: var(--bg-s); border-radius: 50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border: 1px solid var(--brd); transition: 0.2s; font-weight: bold; }
+        .g-item { width: 48px; height: 48px; background: var(--bg-s); border-radius: 50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border: 1px solid var(--brd); transition: 0.2s; font-weight: bold; font-size: 14px; }
         .g-item:hover, .g-active { border-radius: 12px; border-color: var(--p-green); color: var(--p-green); }
-        .g-logout { margin-top: auto; margin-bottom: 12px; filter: grayscale(1); }
+        .g-add { color: var(--p-green); font-size: 24px; }
+        .g-logout { margin-top: auto; margin-bottom: 15px; font-size: 20px; border-color: #442222; }
 
-        /* 頻道與好友欄 */
+        /* 2. 頻道/好友欄 */
         .side-panel { width: 240px; background: var(--bg-s); border-right: 1px solid var(--brd); display: flex; flex-direction: column; }
-        .panel-tab { display: flex; border-bottom: 1px solid var(--brd); }
-        .tab-btn { flex: 1; padding: 12px; text-align: center; font-size: 12px; cursor: pointer; color: var(--text-muted); }
-        .tab-active { color: var(--p-green); border-bottom: 2px solid var(--p-green); }
+        .panel-header { height: 50px; padding: 0 16px; display: flex; align-items: center; font-weight: bold; border-bottom: 1px solid var(--brd); color: var(--p-green); justify-content: space-between; }
+        .panel-tabs { display: flex; background: var(--bg-d); }
+        .tab { flex: 1; padding: 10px; text-align: center; font-size: 12px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; }
+        .tab-active { color: var(--p-green); border-bottom-color: var(--p-green); background: var(--bg-s); }
         
-        .list-area { flex: 1; overflow-y: auto; padding: 10px 0; }
-        .item { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #8b949e; font-size: 14px; }
-        .item:hover { background: #21262d; color: white; }
-        .item-del { color: #f85149; font-size: 10px; visibility: hidden; }
-        .item:hover .item-del { visibility: visible; }
+        .list-content { flex: 1; overflow-y: auto; padding: 10px 0; }
+        .item-row { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #8b949e; font-size: 14px; transition: 0.1s; }
+        .item-row:hover { background: #21262d; color: white; }
+        .item-active { background: #1c2128; color: white; border-left: 3px solid var(--p-green); }
+        .del-btn { color: #f85149; font-size: 10px; opacity: 0; padding: 4px; }
+        .item-row:hover .del-btn { opacity: 1; }
 
-        /* 聊天主區 */
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-m); }
-        .chat-head { height: 50px; border-bottom: 1px solid var(--brd); display: flex; align-items: center; padding: 0 20px; font-weight: bold; justify-content: space-between; }
-        .msg-list { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .msg { display: flex; gap: 12px; }
-        .avatar { width: 38px; height: 38px; background: #30363d; border-radius: 50%; }
-        .msg-info { font-size: 12px; color: var(--p-green); margin-bottom: 4px; display: flex; gap: 10px; }
-        .msg-text { background: #161b22; padding: 10px 14px; border-radius: 0 12px 12px 12px; font-size: 14px; line-height: 1.5; position: relative; }
-        .msg-del { font-size: 10px; color: #f85149; cursor: pointer; margin-left: 10px; }
+        /* 3. 聊天主區 */
+        .chat-view { flex: 1; display: flex; flex-direction: column; background: var(--bg-m); position: relative; }
+        .chat-header { height: 50px; border-bottom: 1px solid var(--brd); display: flex; align-items: center; padding: 0 20px; font-weight: bold; font-size: 15px; }
+        .msg-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+        .msg-group { display: flex; gap: 14px; animation: msgSlide 0.2s ease-out; }
+        .avatar { width: 40px; height: 40px; background: #30363d; border-radius: 50%; flex-shrink: 0; border: 1px solid var(--brd); }
+        .msg-body { flex: 1; }
+        .msg-meta { font-size: 12px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .msg-user { color: var(--p-green); font-weight: bold; }
+        .msg-time { color: #8b949e; font-size: 10px; }
+        .msg-text { font-size: 15px; color: #e6edf3; line-height: 1.5; word-break: break-all; }
+        .msg-tools { margin-left: auto; opacity: 0; cursor: pointer; color: #f85149; font-size: 11px; }
+        .msg-group:hover .msg-tools { opacity: 1; }
 
-        /* 輸入框 */
-        .input-box { padding: 20px; }
-        .input-inner { background: #21262d; border-radius: 8px; padding: 12px; display: flex; gap: 10px; }
-        #chat-input { flex: 1; background: transparent; border: none; color: white; }
+        /* 4. 輸入區域 */
+        .input-area { padding: 0 20px 20px 20px; }
+        .input-box { background: #383a40; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+        #chat-input { flex: 1; background: transparent; border: none; color: white; font-size: 15px; }
+        .send-btn { color: var(--p-green); font-weight: bold; cursor: pointer; font-size: 14px; }
 
+        @keyframes msgSlide { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
         @media (max-width: 768px) { .side-panel { display: none; } }
     </style>
 </head>
@@ -60,152 +72,90 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <h2 style="color:var(--p-green); letter-spacing:5px;">TACKER</h2>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="pw" placeholder="Password">
-            <button class="btn btn-main" onclick="handleAuth()">進入系統</button>
+            <h2>TACKER</h2>
+            <input type="email" id="email" placeholder="Terminal ID (Email)">
+            <input type="password" id="pw" placeholder="Access Code (Password)">
+            <button class="btn btn-main" onclick="handleAuth()">進入系統 ENTER</button>
             <button class="btn btn-discord" onclick="handleDiscord()">DISCORD 登入</button>
-            <p onclick="toggleMode()" id="mode-text" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:12px;">[ 請求新權限 ]</p>
+            <p id="mode-toggle" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:25px; font-size:13px; text-decoration: underline;">[ 請求新存取權限 ]</p>
         </div>
     </div>
 
     <div id="main-app">
         <nav class="guilds">
-            <div class="g-item g-active" onclick="switchView('guild')">FR</div>
-            <div class="g-item" onclick="createSomething('server')">+</div>
-            <div class="g-item g-logout" onclick="doLogout()">🚪</div>
+            <div class="g-item g-active">FR</div>
+            <div class="g-item g-add" onclick="createNew('server')">+</div>
+            <div class="g-item g-logout" onclick="doLogout()" title="登出系統">🚪</div>
         </nav>
-        
+
         <aside class="side-panel">
-            <div class="panel-tab">
-                <div class="tab-btn tab-active" id="tab-ch" onclick="setTab('ch')">頻道</div>
-                <div class="tab-btn" id="tab-fr" onclick="setTab('fr')">好友</div>
+            <div class="panel-header">
+                <span id="panel-title">CHANNELS</span>
+                <span style="cursor:pointer; font-size:20px;" onclick="createNew('item')">+</span>
             </div>
-            <div class="list-area" id="data-list">
+            <div class="panel-tabs">
+                <div class="tab tab-active" id="tab-ch" onclick="switchTab('ch')">頻道</div>
+                <div class="tab" id="tab-fr" onclick="switchTab('fr')">好友</div>
+            </div>
+            <div class="list-content" id="list-data">
                 </div>
-            <div style="padding:10px; border-top:1px solid var(--brd); font-size:12px; color:var(--p-green); text-align:center; cursor:pointer;" onclick="createSomething('item')">
-                + 新增項目
-            </div>
         </aside>
 
-        <main class="chat-area">
-            <div class="chat-header">
-                <span id="active-title"># 大廳聊天</span>
-                <span style="font-size:12px; color:var(--p-green); cursor:pointer;" onclick="clearAllMsgs()">[ 清空頻道 ]</span>
+        <main class="chat-view">
+            <div class="chat-header" id="chat-title"># 大廳聊天</div>
+            <div class="msg-container" id="msg-list">
+                <div class="msg-group">
+                    <div class="avatar"></div>
+                    <div class="msg-body">
+                        <div class="msg-meta"><span class="msg-user">SYSTEM</span><span class="msg-time">Online</span></div>
+                        <div class="msg-text">終端連線成功。歡迎回來，負責人。</div>
+                    </div>
+                </div>
             </div>
-            <div class="msg-list" id="msg-display"></div>
-            <div class="input-box">
-                <div class="input-inner">
-                    <input type="text" id="chat-input" placeholder="鍵入訊息..." onkeypress="if(event.key==='Enter') sendMsg()">
-                    <button onclick="sendMsg()" style="background:none; border:none; color:var(--p-green); cursor:pointer; font-weight:bold;">發送</button>
+            <div class="input-area">
+                <div class="input-box">
+                    <input type="text" id="chat-input" placeholder="發送訊息..." onkeypress="if(event.key==='Enter') sendMsg()">
+                    <div class="send-btn" onclick="sendMsg()">發送</div>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
+        // --- 1. 初始化 Supabase ---
         const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
-        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
+        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH'; 
         const supabase = window.supabase.createClient(S_URL, S_KEY);
 
         let isSignUp = false;
-        let user = null;
-        let currentTab = 'ch';
+        let currentUser = null;
+        let activeTab = 'ch';
 
-        // --- 核心：身分與初始化 ---
-        async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
+        // --- 2. 登入與狀態檢查 ---
+        async function checkStatus() {
+            const { data: { session }, error } = await supabase.auth.getSession();
             if (session) {
-                user = session.user;
+                currentUser = session.user;
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
                 renderList();
-            }
-        }
-
-        // --- 功能：加好友/建頻道/建伺服器 ---
-        function createSomething(type) {
-            const val = prompt(type === 'server' ? "伺服器名稱：" : (currentTab === 'ch' ? "頻道名稱：" : "好友 Email："));
-            if (!val) return;
-
-            if (type === 'server') {
-                alert("伺服器「" + val + "」已建立");
-            } else if (currentTab === 'ch') {
-                const list = document.getElementById('data-list');
-                list.innerHTML += `<div class="item"># ${val} <span class="item-del" onclick="this.parentElement.remove()">刪除</span></div>`;
             } else {
-                alert("已向 " + val + " 送出好友邀請");
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
             }
-        }
-
-        // --- 功能：發送與刪除訊息 ---
-        function sendMsg() {
-            const input = document.getElementById('chat-input');
-            if (!input.value) return;
-
-            const list = document.getElementById('msg-display');
-            const msgId = Date.now();
-            const html = `
-                <div class="msg" id="m-${msgId}">
-                    <div class="avatar"></div>
-                    <div class="msg-content">
-                        <div class="msg-info">
-                            <span>${user.email.split('@')[0]}</span>
-                            <span>${new Date().toLocaleTimeString()}</span>
-                            <span class="msg-del" onclick="document.getElementById('m-${msgId}').remove()">[刪除]</span>
-                        </div>
-                        <div class="msg-text">${input.value}</div>
-                    </div>
-                </div>
-            `;
-            list.innerHTML += html;
-            input.value = '';
-            list.scrollTop = list.scrollHeight;
-        }
-
-        function clearAllMsgs() {
-            if(confirm("確定要清空所有訊息？")) document.getElementById('msg-display').innerHTML = "";
-        }
-
-        // --- UI 控制 ---
-        function setTab(t) {
-            currentTab = t;
-            document.getElementById('tab-ch').className = t === 'ch' ? 'tab-btn tab-active' : 'tab-btn';
-            document.getElementById('tab-fr').className = t === 'fr' ? 'tab-btn tab-active' : 'tab-btn';
-            renderList();
-        }
-
-        function renderList() {
-            const list = document.getElementById('data-list');
-            if (currentTab === 'ch') {
-                list.innerHTML = `
-                    <div class="item"># 大廳聊天</div>
-                    <div class="item"># 開發日誌</div>
-                    <div class="item"># 測試頻道</div>
-                `;
-            } else {
-                list.innerHTML = `
-                    <div class="item">👤 管理員 (Shadow)</div>
-                    <div class="item">👤 測試帳號 <span class="item-del">刪除</span></div>
-                `;
-            }
-        }
-
-        // --- 登入邏輯 ---
-        function toggleMode() {
-            isSignUp = !isSignUp;
-            document.getElementById('mode-text').innerText = isSignUp ? "[ 返回登入 ]" : "[ 請求新權限 ]";
-            document.querySelector('.btn-main').innerText = isSignUp ? "立即註冊" : "進入系統";
         }
 
         async function handleAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('pw').value;
-            const { error } = isSignUp 
+            if(!email || !password) return alert("請輸入完整憑證");
+
+            const { data, error } = isSignUp 
                 ? await supabase.auth.signUp({ email, password })
                 : await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message);
-            else init();
+            
+            if (error) alert("錯誤: " + error.message);
+            else checkStatus();
         }
 
         async function handleDiscord() {
@@ -220,8 +170,85 @@
             location.reload();
         }
 
-        window.onload = init;
-        supabase.auth.onAuthStateChange((ev, sess) => { if(sess) init(); });
+        function toggleMode() {
+            isSignUp = !isSignUp;
+            document.getElementById('mode-toggle').innerText = isSignUp ? "[ 返回登入 ]" : "[ 請求新存取權限 ]";
+            document.querySelector('.btn-main').innerText = isSignUp ? "立即註冊 SIGN UP" : "進入系統 ENTER";
+        }
+
+        // --- 3. 聊天與社交功能 ---
+        function switchTab(t) {
+            activeTab = t;
+            document.getElementById('tab-ch').className = t === 'ch' ? 'tab tab-active' : 'tab';
+            document.getElementById('tab-fr').className = t === 'fr' ? 'tab tab-active' : 'tab';
+            document.getElementById('panel-title').innerText = t === 'ch' ? 'CHANNELS' : 'FRIENDS';
+            renderList();
+        }
+
+        function renderList() {
+            const container = document.getElementById('list-data');
+            if (activeTab === 'ch') {
+                container.innerHTML = `
+                    <div class="item-row item-active"># 大廳聊天</div>
+                    <div class="item-row"># 開發日誌 <span class="del-btn" onclick="deleteItem(this)">[刪除]</span></div>
+                    <div class="item-row"># 測試頻道 <span class="del-btn" onclick="deleteItem(this)">[刪除]</span></div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="item-row">👤 管理員 (Shadow)</div>
+                    <div class="item-row">👤 測試好友 <span class="del-btn" onclick="deleteItem(this)">[刪除]</span></div>
+                `;
+            }
+        }
+
+        function createNew(type) {
+            const name = prompt(type === 'server' ? "請輸入伺服器名稱：" : (activeTab === 'ch' ? "請輸入新頻道名稱：" : "請輸入好友 Email："));
+            if (!name) return;
+
+            if (type === 'server') {
+                alert(`伺服器「${name}」建立成功！`);
+            } else {
+                const list = document.getElementById('list-data');
+                const prefix = activeTab === 'ch' ? '# ' : '👤 ';
+                list.innerHTML += `<div class="item-row">${prefix}${name} <span class="del-btn" onclick="deleteItem(this)">[刪除]</span></div>`;
+            }
+        }
+
+        function deleteItem(btn) {
+            if (confirm("確定要刪除嗎？")) btn.parentElement.remove();
+        }
+
+        function sendMsg() {
+            const input = document.getElementById('chat-input');
+            if (!input.value) return;
+
+            const list = document.getElementById('msg-list');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const userName = currentUser ? currentUser.email.split('@')[0] : "Guest";
+
+            const msgHtml = `
+                <div class="msg-group">
+                    <div class="avatar"></div>
+                    <div class="msg-body">
+                        <div class="msg-meta">
+                            <span class="msg-user">${userName}</span>
+                            <span class="msg-time">${time}</span>
+                            <span class="msg-tools" onclick="this.closest('.msg-group').remove()">[刪除訊息]</span>
+                        </div>
+                        <div class="msg-text">${input.value}</div>
+                    </div>
+                </div>
+            `;
+            list.innerHTML += msgHtml;
+            input.value = '';
+            list.scrollTop = list.scrollHeight;
+        }
+
+        // --- 4. 啟動腳本 ---
+        window.onload = checkStatus;
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) checkStatus();
+        });
     </script>
 </body>
 </html>
