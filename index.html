@@ -6,75 +6,62 @@
     <title>Tacker Private | FR Tech</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --p-green: #00ff41; --bg-main: #0d1117; --bg-side: #161b22; --brd: #30363d; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        :root { --p-green: #00ff41; --bg: #0d1117; --side: #161b22; --brd: #30363d; --ds: #5865F2; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: #010409; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         
-        /* 登入牆 */
-        #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #010409; z-index: 10000; }
-        .login-box { background: var(--bg-side); padding: 35px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 380px; text-align: center; }
+        /* 登入介面 */
+        #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #010409; z-index: 9999; }
+        .login-box { background: var(--side); padding: 30px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 360px; text-align: center; }
         input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; }
-        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; }
-        .btn-main { background: var(--p-green); color: black; }
+        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; }
+        .btn-main { background: var(--p-green); color: #000; }
+        .btn-ds { background: var(--ds); color: #fff; }
 
-        /* 主畫面佈局 */
+        /* 主程式 */
         #main-app { display: none; height: 100vh; flex-direction: row; }
-        .side-bar { width: 260px; background: var(--bg-side); border-right: 1px solid var(--brd); display: flex; flex-direction: column; }
-        .side-head { padding: 20px; font-weight: bold; color: var(--p-green); border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; }
-        .tabs { display: flex; border-bottom: 1px solid var(--brd); background: #0d1117; }
+        .sidebar { width: 260px; background: var(--side); border-right: 1px solid var(--brd); display: flex; flex-direction: column; }
+        .tabs { display: flex; border-bottom: 1px solid var(--brd); }
         .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-size: 13px; color: #8b949e; }
-        .tab-active { color: var(--p-green); border-bottom: 2px solid var(--p-green); background: var(--bg-side); }
+        .tab.active { color: var(--p-green); border-bottom: 2px solid var(--p-green); }
         
-        .list-area { flex: 1; overflow-y: auto; }
-        .item-row { padding: 12px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #21262d; }
-        .item-row:hover { background: #21262d; }
+        .chat-view { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+        .msgs { flex: 1; padding: 20px; overflow-y: auto; }
+        .input-area { padding: 20px; }
+        .in-box { background: #1c2128; border: 1px solid var(--brd); border-radius: 8px; padding: 10px; display: flex; }
+        #msg-in { flex: 1; background: transparent; border: none; color: white; font-size: 16px; }
 
-        /* 聊天區 */
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); }
-        .chat-head { height: 60px; padding: 0 20px; display: flex; align-items: center; border-bottom: 1px solid var(--brd); font-weight: bold; font-size: 16px; }
-        .msgs { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .m-line { display: flex; flex-direction: column; gap: 4px; }
-        .m-user { color: var(--p-green); font-size: 12px; font-weight: bold; }
-        .m-text { background: #21262d; padding: 10px 15px; border-radius: 8px; max-width: 80%; width: fit-content; line-height: 1.5; }
-
-        .input-wrap { padding: 20px; }
-        .input-box { background: #1c2128; border: 1px solid var(--brd); border-radius: 8px; padding: 12px; display: flex; gap: 10px; }
-        #msg-in { flex: 1; background: transparent; border: none; color: white; font-size: 15px; }
-
-        @media (max-width: 650px) { .side-bar { width: 100%; } .chat-area { display: none; } }
+        @media (max-width: 600px) { .sidebar { width: 100%; } .chat-view { display: none; } }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2 id="ui-title" style="color:var(--p-green); margin-bottom:25px;">TACKER 系統</h2>
-            <input type="email" id="email" placeholder="電子信箱">
-            <input type="password" id="pw" placeholder="密碼">
-            <button class="btn btn-main" id="go-btn" onclick="handleAuth()">登入系統</button>
-            <p id="sw-text" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:14px;">[ 沒有帳號？點此註冊 ]</p>
+            <h2 id="title" style="color:var(--p-green)">TACKER 系統</h2>
+            <input type="email" id="u-email" placeholder="信箱">
+            <input type="password" id="u-pw" placeholder="密碼">
+            <button class="btn btn-main" onclick="authAction()">進入系統</button>
+            <button class="btn btn-ds" onclick="dsLogin()">Discord 登入</button>
+            <p id="switch" onclick="toggle()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:14px;">[ 沒有帳號？點此註冊 ]</p>
         </div>
     </div>
 
     <div id="main-app">
-        <aside class="side-bar">
-            <div class="side-head">
-                <span>TACKER PRIVATE</span>
-                <span onclick="location.reload()" style="cursor:pointer">🚪</span>
-            </div>
+        <aside class="sidebar">
+            <div style="padding:20px; font-weight:bold; color:var(--p-green); border-bottom:1px solid var(--brd)">TACKER PRIVATE</div>
             <div class="tabs">
-                <div class="tab tab-active" id="t-f" onclick="setTab('fr')">好友</div>
-                <div class="tab" id="t-g" onclick="setTab('gr')">私人群組</div>
+                <div class="tab active" id="tab-f" onclick="changeTab('fr')">好友</div>
+                <div class="tab" id="tab-g" onclick="changeTab('gr')">私人群組</div>
             </div>
-            <div class="list-area" id="list-box"></div>
-            <div style="padding:15px; text-align:center; color:var(--p-green); cursor:pointer; border-top:1px solid var(--brd)" onclick="addItem()">+ 新增項目</div>
+            <div id="list" style="flex:1; padding:10px;"></div>
+            <button onclick="location.reload()" style="padding:15px; background:none; color:red; border:none; cursor:pointer;">登出 🚪</button>
         </aside>
-
-        <main class="chat-area">
-            <div class="chat-head" id="cur-target">請選擇對話</div>
-            <div class="msgs" id="msg-box"></div>
-            <div class="input-wrap">
-                <div class="input-box">
+        <main class="chat-view">
+            <div style="padding:15px; border-bottom:1px solid var(--brd); font-weight:bold;" id="chat-t"># 大廳</div>
+            <div class="msgs" id="msg-list"></div>
+            <div class="input-area">
+                <div class="in-box">
                     <input type="text" id="msg-in" placeholder="輸入訊息..." onkeypress="if(event.key==='Enter') send()">
                     <b onclick="send()" style="color:var(--p-green); cursor:pointer">發送</b>
                 </div>
@@ -87,85 +74,65 @@
         const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
         const supabase = window.supabase.createClient(S_URL, S_KEY);
 
-        let isSign = false;
-        let mode = 'fr';
+        let isSignUp = false;
+        let currentTab = 'fr';
 
-        async function init() {
+        async function check() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
-                render();
+                updateList();
             }
         }
 
-        async function handleAuth() {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('pw').value;
-            if(!e || !p) return alert("請輸入完整資料");
-            
-            const btn = document.getElementById('go-btn');
-            btn.innerText = "處理中...";
-
-            const { error } = isSign 
-                ? await supabase.auth.signUp({email:e, password:p})
-                : await supabase.auth.signInWithPassword({email:e, password:p});
-
-            if(error) {
-                alert(error.message);
-                btn.innerText = isSign ? "立即註冊" : "登入系統";
-            } else {
-                init();
-            }
+        function toggle() {
+            isSignUp = !isSignUp;
+            document.getElementById('title').innerText = isSignUp ? "建立帳號" : "TACKER 系統";
+            document.getElementById('switch').innerText = isSignUp ? "[ 已有帳號？點此登入 ]" : "[ 沒有帳號？點此註冊 ]";
         }
 
-        function toggleMode() {
-            isSign = !isSign;
-            document.getElementById('ui-title').innerText = isSign ? "建立新帳號" : "TACKER 系統";
-            document.getElementById('go-btn').innerText = isSign ? "立即註冊" : "登入系統";
-            document.getElementById('sw-text').innerText = isSign ? "[ 已有帳號？點此登入 ]" : "[ 沒有帳號？點此註冊 ]";
+        async function authAction() {
+            const e = document.getElementById('u-email').value;
+            const p = document.getElementById('u-pw').value;
+            if(!e || !p) return alert("請填寫資料");
+
+            const { error } = isSignUp 
+                ? await supabase.auth.signUp({ email: e, password: p })
+                : await supabase.auth.signInWithPassword({ email: e, password: p });
+
+            if(error) alert(error.message); else check();
         }
 
-        function setTab(t) {
-            mode = t;
-            document.getElementById('t-f').className = t==='fr' ? 'tab tab-active' : 'tab';
-            document.getElementById('t-g').className = t==='gr' ? 'tab tab-active' : 'tab';
-            render();
+        async function dsLogin() { await supabase.auth.signInWithOAuth({ provider: 'discord' }); }
+
+        function changeTab(t) {
+            currentTab = t;
+            document.getElementById('tab-f').className = t==='fr' ? 'tab active' : 'tab';
+            document.getElementById('tab-g').className = t==='gr' ? 'tab active' : 'tab';
+            updateList();
         }
 
-        function render() {
-            const box = document.getElementById('list-box');
-            if(mode === 'fr') {
-                box.innerHTML = `<div class="item-row" onclick="openC('Shadow')">👤 Shadow (管理員)</div>`;
-            } else {
-                box.innerHTML = `<div class="item-row" onclick="openC('FR 核心群組')">🔒 FR 核心群組</div>`;
-            }
+        function updateList() {
+            const l = document.getElementById('list');
+            l.innerHTML = currentTab === 'fr' 
+                ? `<div onclick="openChat('Shadow')" style="padding:10px; cursor:pointer;">👤 Shadow (管理員)</div>`
+                : `<div onclick="openChat('FR官方群組')" style="padding:10px; cursor:pointer;">🔒 FR 核心群組</div>`;
         }
 
-        function addItem() {
-            const n = prompt(mode==='fr' ? "好友 Email:" : "群組名稱:");
-            if(n) {
-                const box = document.getElementById('list-box');
-                const icon = mode==='fr' ? '👤' : '🔒';
-                box.innerHTML += `<div class="item-row" onclick="openC('${n}')">${icon} ${n}</div>`;
-            }
-        }
-
-        function openC(name) {
-            document.getElementById('cur-target').innerText = name;
-            document.getElementById('msg-box').innerHTML = `<div class="m-line"><div class="m-user">系統</div><div class="m-text">與 ${name} 的安全連線已建立。</div></div>`;
+        function openChat(n) {
+            document.getElementById('chat-t').innerText = "# " + n;
+            document.getElementById('msg-list').innerHTML = `<p style="color:gray;">已建立安全加密連線。</p>`;
         }
 
         function send() {
-            const inpt = document.getElementById('msg-in');
-            if(!inpt.value) return;
-            const mbox = document.getElementById('msg-box');
-            mbox.innerHTML += `<div class="m-line"><div class="m-user">我</div><div class="m-text">${inpt.value}</div></div>`;
-            inpt.value = '';
-            mbox.scrollTop = mbox.scrollHeight;
+            const i = document.getElementById('msg-in');
+            if(!i.value) return;
+            document.getElementById('msg-list').innerHTML += `<div style="margin-bottom:10px;"><b>我:</b> ${i.value}</div>`;
+            i.value = '';
         }
 
-        window.onload = init;
+        window.onload = check;
     </script>
 </body>
 </html>
