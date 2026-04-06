@@ -9,8 +9,8 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
         .login-box { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 360px; text-align: center; }
-        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; }
-        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; }
+        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; display: block; }
+        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; }
         .btn-main { background: var(--p-green); color: black; }
         #app { display: none; position: fixed; inset: 0; background: #0d1117; z-index: 100; padding: 20px; }
     </style>
@@ -20,10 +20,10 @@
     <div id="auth-page">
         <div class="login-box">
             <h2 id="ui-title" style="color:var(--p-green)">TACKER 系統</h2>
-            <input type="email" id="u-email" placeholder="輸入信箱">
-            <input type="password" id="u-pass" placeholder="輸入密碼">
-            <button class="btn btn-main" onclick="handleButtonClick()">登入系統</button>
-            <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px;">[ 沒有帳號？點此註冊 ]</p>
+            <input type="email" id="email" placeholder="信箱">
+            <input type="password" id="pass" placeholder="密碼">
+            <button class="btn btn-main" onclick="handleAuth()">進入系統</button>
+            <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px; text-decoration: underline;">[ 沒有帳號？點此註冊 ]</p>
         </div>
     </div>
 
@@ -33,17 +33,11 @@
         <button onclick="location.reload()" style="color:red; background:none; border:none; cursor:pointer;">[ 登出系統 ]</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // 設定 Supabase 資料
         const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
         const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
-        let supabase;
         let isSignUp = false;
-
-        // 立即初始化
-        try {
-            supabase = window.supabase.createClient(S_URL, S_KEY);
-        } catch(e) { console.log("等待加載..."); }
 
         function toggleMode() {
             isSignUp = !isSignUp;
@@ -51,50 +45,44 @@
             document.getElementById('ui-sw').innerText = isSignUp ? "[ 返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
         }
 
-        // 按鈕點擊的主邏輯
-        async function handleButtonClick() {
-            const email = document.getElementById('u-email').value;
-            const pass = document.getElementById('u-pass').value;
+        async function handleAuth() {
+            // 點擊瞬間立刻跳出測試，確認按鈕沒死
+            console.log("按鈕已觸發");
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('pass').value;
 
-            if(!email || !pass) {
-                alert("請填寫帳號密碼");
+            if(!email || !password) {
+                alert("請輸入帳密");
                 return;
             }
 
-            // 如果 Supabase 還沒加載完，給予提示而不是沒反應
-            if(!supabase || !window.supabase) {
-                alert("系統初始化中，請稍候 2 秒再試");
-                return;
-            }
-
+            // 使用原生 fetch 呼叫 Supabase API，不依賴 SDK
+            const endpoint = isSignUp ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
+            
             try {
-                const { data, error } = isSignUp 
-                    ? await supabase.auth.signUp({ email, password: pass })
-                    : await supabase.auth.signInWithPassword({ email, password: pass });
+                const response = await fetch(S_URL + endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': S_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
 
-                if(error) {
-                    alert("連線失敗：" + error.message);
-                } else {
+                const result = await response.json();
+
+                if (response.ok) {
+                    // 成功登入
                     document.getElementById('auth-page').style.display = 'none';
                     document.getElementById('app').style.display = 'block';
+                } else {
+                    alert("連線失敗: " + (result.error_description || result.msg || "未知錯誤"));
                 }
-            } catch(err) {
-                alert("網路異常，請檢查連線");
+            } catch (err) {
+                alert("網路異常，請確認連線");
             }
         }
-
-        // 自動登入檢查
-        window.onload = async () => {
-            setTimeout(async () => {
-                if(supabase) {
-                    const { data } = await supabase.auth.getSession();
-                    if(data?.session) {
-                        document.getElementById('auth-page').style.display = 'none';
-                        document.getElementById('app').style.display = 'block';
-                    }
-                }
-            }, 1000);
-        };
     </script>
 </body>
 </html>
