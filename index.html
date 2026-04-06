@@ -3,224 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | FR Technology</title>
+    <title>Tacker | Private Social</title>
     <style>
         :root {
-            /* 進階紫色系 */
-            --bg-deep: #0a0514;
-            --bg-side: #120a21;
-            --bg-main: #1a112e;
-            --accent-purple: #8a2be2;
-            --light-purple: #bf77ff;
-            --glass-purple: rgba(138, 43, 226, 0.15);
-            --text-main: #e0d5f5;
-            --text-dim: #9d8db5;
-            --border: rgba(191, 119, 255, 0.1);
+            --bg-body: #050508; /* 極深黑 */
+            --bg-side: #0b0b12; /* 深紫色塊 */
+            --bg-item: #13131f; 
+            --accent: #a855f7;  /* 亮紫色 (用於線條) */
+            --border: rgba(168, 85, 247, 0.15);
+            --text: #ececf1;
+            --text-dim: #71717a;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', 'PingFang TC', sans-serif; cursor: default; }
-        body { margin: 0; background: var(--bg-deep); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; cursor: default; }
+        body { margin: 0; background: var(--bg-body); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
 
-        /* --- 左側：導覽列 --- */
-        .nav-rail { width: 72px; background: #07030d; display: flex; flex-direction: column; align-items: center; padding: 15px 0; gap: 12px; border-right: 1px solid var(--border); }
-        .nav-icon { width: 50px; height: 50px; background: var(--bg-side); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; border: 1px solid var(--border); }
-        .nav-icon:hover { background: var(--accent-purple); box-shadow: 0 0 15px var(--accent-purple); transform: translateY(-2px); }
+        /* --- 左側精簡選單 --- */
+        .rail { width: 64px; background: #000; display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid var(--border); }
+        .rail-btn { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-item); margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid transparent; transition: 0.2s; }
+        .rail-btn.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 15px rgba(168, 85, 247, 0.2); }
 
-        /* --- 中間：功能列 --- */
+        /* --- 好友與私人群組欄 --- */
         .sidebar { width: 260px; background: var(--bg-side); display: flex; flex-direction: column; border-right: 1px solid var(--border); }
-        .sidebar-header { padding: 20px; font-weight: 800; font-size: 18px; letter-spacing: 1px; color: var(--light-purple); border-bottom: 1px solid var(--border); }
+        .side-title { padding: 25px 20px 15px; font-size: 12px; font-weight: 800; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
         
-        .list-wrap { flex: 1; padding: 10px; overflow-y: auto; }
-        .item-btn { padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; color: var(--text-dim); transition: 0.2s; }
-        .item-btn:hover { background: var(--glass-purple); color: white; }
-        .item-btn.active { background: linear-gradient(90deg, var(--accent-purple), transparent); color: white; border-left: 3px solid var(--light-purple); }
+        .list-container { flex: 1; padding: 0 10px; overflow-y: auto; }
+        .chat-item { padding: 12px; border-radius: 10px; display: flex; align-items: center; gap: 12px; margin-bottom: 4px; transition: 0.2s; }
+        .chat-item:hover { background: rgba(255,255,255,0.03); }
+        .chat-item.active { background: var(--bg-item); border: 1px solid var(--border); }
+        .avatar { width: 38px; height: 38px; border-radius: 10px; background: #27272a; border: 1px solid var(--border); }
 
-        /* --- 左下角：個人資料雙重顯示 (核心要求) --- */
-        .user-section { background: rgba(0,0,0,0.2); padding: 10px; border-top: 1px solid var(--border); }
-        .user-pill { 
-            display: flex; align-items: center; gap: 12px; padding: 8px; 
-            border-radius: 12px; transition: 0.3s; cursor: pointer;
-            border: 1px solid transparent;
-        }
-        .user-pill:hover { background: var(--glass-purple); border-color: var(--border); }
-        .avatar-box { position: relative; width: 40px; height: 40px; }
-        .pfp { width: 100%; height: 100%; border-radius: 12px; background: var(--accent-purple); object-fit: cover; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
-        .status-badge { position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%; background: #00ff41; border: 2px solid var(--bg-side); }
-        .user-text { flex: 1; overflow: hidden; }
-        .u-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .u-id { font-size: 11px; color: var(--text-dim); }
+        /* --- 個人資料 (兩段式) --- */
+        .user-panel { padding: 15px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border); }
+        .user-card { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; border-radius: 8px; }
+        .user-card:hover { background: rgba(168, 85, 247, 0.1); }
+        .u-info { flex: 1; line-height: 1.2; }
+        .u-info b { font-size: 14px; display: block; }
+        .u-info span { font-size: 11px; color: var(--text-dim); }
 
-        /* --- 右側：主介面 --- */
-        main { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
-        .top-bar { height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 25px; font-weight: bold; background: rgba(0,0,0,0.1); }
-
-        /* --- 高級感：個人資料設定卡片 --- */
-        #settings-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
-            display: none; z-index: 9999; align-items: center; justify-content: center;
-        }
-        .settings-card {
-            width: 800px; height: 550px; background: var(--bg-side); border-radius: 24px;
-            display: flex; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,1);
-        }
-        .settings-nav { width: 200px; background: rgba(0,0,0,0.2); padding: 30px 15px; border-right: 1px solid var(--border); }
-        .settings-content { flex: 1; padding: 40px; overflow-y: auto; }
+        /* --- 右側對話區 --- */
+        main { flex: 1; display: flex; flex-direction: column; background: #08080c; }
+        .chat-h { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; font-weight: bold; background: rgba(0,0,0,0.2); }
+        .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg-bubble { max-width: 70%; padding: 12px 16px; border-radius: 12px; background: var(--bg-item); border: 1px solid var(--border); font-size: 15px; line-height: 1.5; }
+        .msg-me { align-self: flex-end; background: var(--accent); color: black; border: none; font-weight: 500; }
         
-        .input-group { margin-bottom: 25px; }
-        label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
-        input, textarea { 
-            width: 100%; background: #000; border: 1px solid var(--border); 
-            padding: 12px; color: white; border-radius: 10px; outline: none; transition: 0.3s;
-        }
-        input:focus { border-color: var(--light-purple); box-shadow: 0 0 10px var(--glass-purple); }
+        .input-box { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+        #m-in { flex: 1; background: #000; border: 1px solid var(--border); color: white; padding: 12px 18px; border-radius: 12px; outline: none; }
 
-        .btn-action { background: var(--accent-purple); color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--glass-purple); }
-        .btn-danger { background: #ff4d4d; margin-top: 50px; }
-
-        /* 內容隱藏顯示 */
-        .view { display: none; height: 100%; }
-        .view.active { display: flex; flex-direction: column; }
+        /* --- 設定牆 (Overlay) --- */
+        #settings-ui { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); display: none; z-index: 1000; }
+        .settings-win { width: 90%; max-width: 800px; height: 80%; background: var(--bg-side); margin: 5vh auto; border-radius: 20px; border: 1px solid var(--border); display: flex; overflow: hidden; }
+        .set-side { width: 200px; background: rgba(0,0,0,0.2); padding: 30px 15px; border-right: 1px solid var(--border); }
+        .set-main { flex: 1; padding: 40px; }
+        .set-btn { padding: 10px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; color: var(--text-dim); }
+        .set-btn.active { color: var(--accent); background: rgba(168, 85, 247, 0.1); }
     </style>
 </head>
 <body>
 
-    <nav class="nav-rail">
-        <div class="nav-icon" style="background: var(--accent-purple);">T</div>
-        <div style="width: 30px; height: 1px; background: var(--border);"></div>
-        <div class="nav-icon">⭐</div>
-        <div class="nav-icon">🔮</div>
+    <nav class="rail">
+        <div class="rail-btn active">💬</div>
+        <div class="rail-btn">👥</div>
     </nav>
 
     <aside class="sidebar">
-        <div class="sidebar-header">TACKER</div>
-        <div class="list-wrap">
-            <div class="item-btn active">👤 核心好友</div>
-            <div class="item-btn">📩 邀請請求</div>
-            <div style="margin: 20px 15px 10px; font-size: 11px; color: var(--text-dim); font-weight: bold;">私人群組</div>
-            <div class="item-btn">💎 FR 董事會</div>
+        <div class="side-title">直連好友</div>
+        <div class="list-container">
+            <div class="chat-item active" onclick="setRoom('Shadow (管理員)')">
+                <div class="avatar" style="background: url('https://ui-avatars.com/api/?name=S&background=a855f7&color=fff') center/cover;"></div>
+                <div class="u-info"><b>Shadow</b><span>線上</span></div>
+            </div>
+            <div class="side-title">私人小群組</div>
+            <div class="chat-item" onclick="setRoom('FR 核心工程組')">
+                <div class="avatar" style="background: #a855f7; display:flex; align-items:center; justify-content:center; font-weight:bold;">FR</div>
+                <div class="u-info"><b>FR 核心工程組</b><span>3 位成員</span></div>
+            </div>
         </div>
-        
-        <div class="user-section">
-            <div class="user-pill" onclick="openSettings()">
-                <div class="avatar-box">
-                    <div class="pfp"></div>
-                    <div class="status-badge"></div>
+
+        <div class="user-panel">
+            <div class="user-card" onclick="openSet()">
+                <div class="avatar" id="my-avatar" style="width:32px; height:32px; background: var(--accent);"></div>
+                <div class="u-info">
+                    <b id="my-name">新成員</b>
+                    <span id="my-id">@ryfn888</span>
                 </div>
-                <div class="user-text">
-                    <div class="u-name" id="display-name-label">新成員</div>
-                    <div class="u-id" id="username-label">@ryfn888</div>
-                </div>
-                <div style="color: var(--text-dim); font-size: 14px;">⚙️</div>
+                <span style="font-size:12px;">⚙️</span>
             </div>
         </div>
     </aside>
 
     <main>
-        <div id="view-friends" class="view active">
-            <div class="top-bar">好友列表</div>
-            <div style="flex: 1; display: flex; align-items: center; justify-content: center; opacity: 0.3;">
-                <div style="text-align: center;">
-                    <span style="font-size: 80px;">💜</span>
-                    <p>正在搜尋雲端連線...</p>
-                </div>
-            </div>
+        <div class="chat-h" id="chat-title"># Shadow</div>
+        <div class="msg-area" id="msg-list">
+            <div class="msg-bubble">歡迎進入 Tacker 加密頻道。</div>
+        </div>
+        <div class="input-box">
+            <input type="text" id="m-in" placeholder="發送加密訊息..." onkeypress="if(event.key==='Enter')send()">
+            <button onclick="send()" style="background:var(--accent); border:none; padding:0 20px; border-radius:10px; font-weight:bold; cursor:pointer;">發送</button>
         </div>
     </main>
 
-    <div id="settings-overlay">
-        <div class="settings-card">
-            <div class="settings-nav">
-                <div style="font-weight: bold; margin-bottom: 30px; color: var(--light-purple);">設定</div>
-                <div class="item-btn active">我的帳號</div>
-                <div class="item-btn" onclick="alert('開發中...')">隱私與安全</div>
-                <div class="item-btn" onclick="alert('開發中...')">外觀主題</div>
-                <button class="btn-action btn-danger" onclick="logout()">登出 Tacker</button>
+    <div id="settings-ui">
+        <div class="settings-win">
+            <div class="set-side">
+                <div style="font-weight:bold; margin-bottom:20px; color:var(--accent);">帳戶設定</div>
+                <div class="set-btn active">個人資料</div>
+                <div class="set-btn" onclick="alert('安全加密已啟動')">隱私與安全</div>
+                <div class="set-btn" style="color: #ff4d4d; margin-top: 50px;" onclick="logout()">登出</div>
             </div>
-            <div class="settings-content">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-                    <h2 style="margin:0;">個人資料管理</h2>
-                    <span style="cursor:pointer; font-size: 24px;" onclick="closeSettings()">✕</span>
+            <div class="set-main">
+                <div style="display:flex; justify-content:space-between;">
+                    <h2>個人資料</h2>
+                    <span style="cursor:pointer;" onclick="closeSet()">✕</span>
                 </div>
-
-                <div class="input-group">
-                    <label>顯示名稱 (Display Name)</label>
-                    <input type="text" id="in-display-name" placeholder="輸入要在群組顯示的名稱">
-                </div>
-
-                <div class="input-group">
-                    <label>個人代號 (Unique ID)</label>
-                    <input type="text" id="in-username" placeholder="例如: ryfn_official">
-                    <p style="font-size:11px; color:var(--text-dim); margin-top:5px;">這將作為他人搜尋你時的唯一憑據。</p>
-                </div>
-
-                <div class="input-group">
-                    <label>個人簡介</label>
-                    <textarea id="in-bio" rows="3" placeholder="介紹一下你自己..."></textarea>
-                </div>
-
-                <div style="background: var(--glass-purple); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-                    <p style="margin:0 0 15px 0; font-size: 13px;">想要更改密碼或電子信箱嗎？</p>
-                    <button class="btn-action" style="background: transparent; border: 1px solid var(--light-purple); color: var(--light-purple);" onclick="alert('重設郵件已發送')">發送密碼重設郵件</button>
-                </div>
-
-                <div style="margin-top: 40px; display: flex; justify-content: flex-end;">
-                    <button class="btn-action" onclick="saveData()">儲存所有變更</button>
+                <div style="margin-top:30px;">
+                    <label style="color:var(--text-dim); font-size:12px;">顯示名稱</label>
+                    <input type="text" id="set-n" style="width:100%; margin-top:8px; background:#000; border:1px solid var(--border); padding:10px; color:white; border-radius:8px;">
+                    
+                    <label style="color:var(--text-dim); font-size:12px; display:block; margin-top:20px;">個人代號 (ID)</label>
+                    <input type="text" id="set-t" style="width:100%; margin-top:8px; background:#000; border:1px solid var(--border); padding:10px; color:white; border-radius:8px;">
+                    
+                    <button onclick="save()" style="margin-top:30px; width:100%; background:var(--accent); border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">儲存變更</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function openSettings() {
-            document.getElementById('settings-overlay').style.display = 'flex';
-        }
-
-        function closeSettings() {
-            document.getElementById('settings-overlay').style.display = 'none';
-        }
-
-        function saveData() {
-            const name = document.getElementById('in-display-name').value;
-            const tag = document.getElementById('in-username').value;
-            
-            if(name) {
-                document.getElementById('display-name-label').innerText = name;
-                localStorage.setItem('tacker_name', name);
-            }
-            if(tag) {
-                document.getElementById('username-label').innerText = "@" + tag;
-                localStorage.setItem('tacker_tag', tag);
-            }
-            
-            alert("資料已同步至 FR 伺服器！");
-            closeSettings();
-        }
-
-        function logout() {
-            if(confirm("確定要登出並斷開加密連線嗎？")) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
-        window.onload = () => {
-            const n = localStorage.getItem('tacker_name');
-            const t = localStorage.getItem('tacker_tag');
+        function openSet() { document.getElementById('settings-ui').style.display = 'block'; }
+        function closeSet() { document.getElementById('settings-ui').style.display = 'none'; }
+        
+        function save() {
+            const n = document.getElementById('set-n').value;
+            const t = document.getElementById('set-t').value;
             if(n) {
-                document.getElementById('display-name-label').innerText = n;
-                document.getElementById('in-display-name').value = n;
+                document.getElementById('my-name').innerText = n;
+                localStorage.setItem('n', n);
             }
             if(t) {
-                document.getElementById('username-label').innerText = "@" + t;
-                document.getElementById('in-username').value = t;
+                document.getElementById('my-id').innerText = "@" + t;
+                localStorage.setItem('t', t);
             }
-        };
+            closeSet();
+        }
 
-        // 點擊外面關閉
-        document.getElementById('settings-overlay').onclick = function(e) {
-            if(e.target === this) closeSettings();
-        };
+        function setRoom(name) {
+            document.getElementById('chat-title').innerText = "# " + name;
+            document.getElementById('msg-list').innerHTML = `<div class="msg-bubble">已進入 ${name} 的加密對話。</div>`;
+        }
+
+        function send() {
+            const i = document.getElementById('m-in');
+            if(!i.value) return;
+            document.getElementById('msg-list').innerHTML += `<div class="msg-bubble msg-me">${i.value}</div>`;
+            i.value = '';
+            const m = document.getElementById('msg-list');
+            m.scrollTop = m.scrollHeight;
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+
+        window.onload = () => {
+            const n = localStorage.getItem('n');
+            const t = localStorage.getItem('t');
+            if(n) { document.getElementById('my-name').innerText = n; document.getElementById('set-n').value = n; }
+            if(t) { document.getElementById('my-id').innerText = "@" + t; document.getElementById('set-t').value = t; }
+        }
     </script>
 </body>
 </html>
