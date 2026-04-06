@@ -3,211 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | Official Integration</title>
+    <title>Tacker | Full Discord Clone</title>
     <style>
         :root {
             --bg-auth: #313338; --bg-server: #1e1f22; --bg-side: #2b2d31; --bg-main: #313338;
-            --accent: #5865f2; --text: #dbdee1; --text-muted: #949ba4; --border: #1e1f22;
+            --accent: #5865f2; --text: #dbdee1; --text-muted: #949ba4; --border: #2b2d31;
+            --popout-bg: #111214; --status-online: #23a55a;
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; transition: 0.15s; }
+        * { box-sizing: border-box; font-family: 'Whitney', 'Helvetica Neue', sans-serif; }
         body { margin: 0; background: #000; color: var(--text); height: 100vh; overflow: hidden; display: flex; }
 
-        /* --- 登入介面升級 --- */
-        #auth-overlay { 
-            position: fixed; inset: 0; background: #5865f2 url('https://discord.com/assets/7c01f740da893444036e.png'); 
-            background-size: cover; z-index: 9999; display: flex; align-items: center; justify-content: center; 
-        }
-        .auth-card { 
-            background: #313338; width: 480px; padding: 32px; border-radius: 8px; 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3); text-align: center;
-        }
+        /* --- 登入牆 --- */
+        #auth-overlay { position: fixed; inset: 0; background: url('https://discord.com/assets/7c01f740da893444036e.png') center/cover; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: #313338; width: 480px; padding: 32px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); text-align: center; }
         .input-group { text-align: left; margin-bottom: 16px; }
         .input-group label { color: #b5bac1; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .input-group input { 
-            width: 100%; padding: 10px; background: #1e1f22; border: none; border-radius: 3px; 
-            color: white; margin-top: 8px; outline: none; border: 1px solid transparent;
-        }
-        .input-group input:focus { border-color: var(--accent); }
+        .input-group input { width: 100%; padding: 10px; background: #1e1f22; border: none; border-radius: 3px; color: white; margin-top: 8px; outline: none; }
         .auth-btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; }
-        .discord-btn { 
-            width: 100%; padding: 10px; background: #4e5058; color: white; border: none; 
-            border-radius: 3px; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
 
-        /* --- 主程式佈局 --- */
+        /* --- 主架構 --- */
         #app-root { display: none; width: 100%; height: 100vh; flex-direction: row; }
+        
+        /* 伺服器列 */
         #guild-rail { width: 72px; background: var(--bg-server); display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; flex-shrink: 0; }
-        .server-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-main); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
-        .server-icon.active { border-radius: 16px; background: var(--accent); color: white; }
-        .official-badge { position: absolute; bottom: 0; right: 0; background: #23a55a; width: 15px; height: 15px; border-radius: 50%; border: 3px solid var(--bg-server); }
+        .server-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-main); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .server-icon.active { border-radius: 16px; background: var(--accent); }
+        .server-icon:hover:not(.active) { border-radius: 16px; background: var(--accent); }
 
+        /* 頻道列 */
         #sidebar { width: 240px; background: var(--bg-side); display: flex; flex-direction: column; flex-shrink: 0; }
-        .list-item { padding: 8px 12px; border-radius: 4px; display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 2px 8px; color: var(--text-muted); }
-        .list-item.active { background: #3f4147; color: white; }
+        .side-header { height: 48px; padding: 0 16px; display: flex; align-items: center; font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.2); box-shadow: 0 1px 0 rgba(255,255,255,0.05); }
+        .list-item { padding: 8px 12px; border-radius: 4px; display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 2px 8px; color: var(--text-muted); font-size: 15px; }
+        .list-item.active, .list-item:hover { background: #3f4147; color: white; }
 
-        /* --- 訊息流 --- */
-        #chat-window { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; min-width: 0; }
-        .msg-row { display: flex; padding: 4px 16px; width: 100%; margin-top: 10px; }
-        .msg-pfp { width: 40px; height: 40px; border-radius: 50%; background: #4e5058; flex-shrink: 0; margin-right: 16px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
-        .msg-user-info { display: flex; align-items: baseline; gap: 8px; }
-        .msg-username { font-weight: bold; color: white; }
-        .msg-time { font-size: 12px; color: var(--text-muted); }
-        .msg-text { color: var(--text); line-height: 1.3; word-wrap: break-word; }
+        /* 聊天主窗 */
+        #chat-window { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; min-width: 0; position: relative; }
+        .messages { flex: 1; overflow-y: auto; padding: 20px 0; }
+        .msg-row { display: flex; padding: 2px 16px; margin-top: 17px; width: 100%; position: relative; }
+        .msg-row:hover { background: rgba(0,0,0,0.05); }
+        .msg-pfp { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-right: 16px; cursor: pointer; }
+        .msg-username { font-weight: bold; color: white; cursor: pointer; }
+        .msg-username:hover { text-decoration: underline; }
+        .msg-text { color: var(--text); line-height: 1.375; margin-top: 2px; }
 
-        .input-area { padding: 0 16px 24px; }
-        .input-area input { width: 100%; background: #383a40; border: none; padding: 11px 16px; border-radius: 8px; color: white; outline: none; }
+        /* --- 歌詞面版 --- */
+        #lyrics-panel { width: 300px; background: var(--bg-side); border-left: 1px solid var(--border); display: none; flex-direction: column; }
+        .lyrics-content { flex: 1; padding: 20px; overflow-y: auto; font-size: 14px; line-height: 1.8; color: #fff; }
+
+        /* --- 個資彈窗 (User Popout) --- */
+        #user-popout { 
+            position: absolute; width: 300px; background: var(--popout-bg); border-radius: 8px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4); display: none; z-index: 20000; overflow: hidden;
+        }
+        .pop-banner { height: 60px; background: var(--accent); }
+        .pop-pfp-wrap { padding: 0 16px; margin-top: -30px; margin-bottom: 10px; }
+        .pop-pfp { width: 80px; height: 80px; border-radius: 50%; border: 6px solid var(--popout-bg); background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; }
+        .pop-info { padding: 0 16px 16px; }
+        .pop-name { font-size: 20px; font-weight: bold; color: white; }
+        .pop-tag { color: var(--text-muted); font-size: 14px; }
+        .pop-divider { height: 1px; background: var(--border); margin: 12px 0; }
+        .pop-section-title { font-size: 12px; font-weight: bold; color: white; text-transform: uppercase; margin-bottom: 8px; }
+
+        /* 底欄 */
+        .user-footer { padding: 8px; background: #232428; display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 <body>
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <h2 id="auth-title">登入 Tacker</h2>
-            <p id="auth-desc">歡迎回到 FR Technology 官方平台</p>
-            
-            <div id="auth-fields">
-                <div class="input-group">
-                    <label>電子郵件</label>
-                    <input type="email" id="email-in" placeholder="email@example.com">
-                </div>
-                <div class="input-group">
-                    <label>密碼</label>
-                    <input type="password" id="pass-in">
-                </div>
-                <button class="auth-btn" onclick="handleAuth()">登入</button>
-                <div style="margin: 15px 0; color: var(--text-muted); font-size: 12px;">或使用其他方式</div>
-                <button class="discord-btn" onclick="mockDiscordLogin()">
-                    <img src="https://assets-global.website-files.com/6257adef93867e3d0394e36a/6257d0f461ce200926d16f86_Discord-Logo-Color.svg" width="20">
-                    使用 Discord 帳號登入
-                </button>
-                <div style="margin-top:20px; font-size:13px;">
-                    <span style="color:var(--text-muted)">需要新帳號？</span>
-                    <span style="color:var(--accent); cursor:pointer;" onclick="alert('請輸入 Email 與 密碼後點擊登入，系統將自動為新用戶建立官方群組權限')">立即註冊</span>
-                </div>
-            </div>
+            <h2>TACKER 核心登入</h2>
+            <div class="input-group"><label>Email</label><input type="text" id="auth-email"></div>
+            <div class="input-group"><label>Password</label><input type="password" id="auth-pass"></div>
+            <button class="auth-btn" onclick="handleLogin()">登入</button>
+            <div style="margin-top:15px; color:var(--text-muted); font-size:13px;">(測試帳號: admin / 1234)</div>
         </div>
     </div>
 
     <div id="app-root">
         <nav id="guild-rail">
-            <div class="server-icon active" id="g-home" onclick="switchG('home')">🏠</div>
+            <div class="server-icon active" onclick="switchG('home')">🏠</div>
             <div style="width:32px; height:2px; background:#35363c;"></div>
-            <div class="server-icon" id="g-official" onclick="switchG('official')" style="position:relative;">
-                FR
-                <div class="official-badge"></div>
-            </div>
+            <div class="server-icon" onclick="switchG('fr')">FR</div>
         </nav>
 
         <aside id="sidebar">
-            <div style="padding:15px; font-weight:bold; border-bottom:1px solid var(--border);" id="side-title">訊息</div>
-            <div style="flex:1; padding-top:8px;" id="side-list"></div>
-            <div style="padding:10px; background:#232428; display:flex; align-items:center; gap:10px;">
-                <div id="nav-pfp" style="width:32px; height:32px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
-                <div style="flex:1; font-size:13px; font-weight:bold;" id="nav-name">...</div>
-                <div style="cursor:pointer;" onclick="location.reload()">🚪</div>
+            <div class="side-header" id="side-title">首頁</div>
+            <div style="flex:1; padding-top:8px;">
+                <div class="list-item active" onclick="switchC('chat')"># 📢 公告頻道</div>
+                <div class="list-item" onclick="toggleLyrics()">🎵 顯示歌詞</div>
+            </div>
+            <div class="user-footer">
+                <div class="msg-pfp" style="width:32px; height:32px;" onclick="showPopout(event, 'Admin', '1337', 'FR Technology 負責人')">A</div>
+                <div style="flex:1; font-size:13px; font-weight:bold;">Admin<br><span style="font-size:10px; color:var(--text-muted);">#1337</span></div>
+                <div style="cursor:pointer;" onclick="location.reload()">⚙️</div>
             </div>
         </aside>
 
-        <main id="chat-window">
-            <div style="height:48px; border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; font-weight:bold;" id="chat-header"># 頻道</div>
-            <div style="flex:1; overflow-y:auto;" id="msg-box"></div>
-            <div class="input-area">
-                <input type="text" id="msg-in" placeholder="發送訊息..." onkeypress="if(event.key==='Enter')send()">
+        <main id="chat-window" onclick="closePopout()">
+            <div class="side-header"># 頻道內容</div>
+            <div class="messages" id="msg-box"></div>
+            <div style="padding: 0 16px 24px;">
+                <input type="text" id="msg-in" placeholder="發送訊息..." style="width:100%; background:#383a40; border:none; padding:12px; border-radius:8px; color:white; outline:none;" onkeypress="if(event.key==='Enter')send()">
+            </div>
+
+            <div id="user-popout">
+                <div class="pop-banner"></div>
+                <div class="pop-pfp-wrap"><div class="pop-pfp" id="p-pfp">U</div></div>
+                <div class="pop-info">
+                    <div class="pop-name" id="p-name">Username</div>
+                    <div class="pop-tag" id="p-tag">#0000</div>
+                    <div class="pop-divider"></div>
+                    <div class="pop-section-title">關於我</div>
+                    <div id="p-bio" style="font-size:14px;">這是一個神祕的用戶...</div>
+                </div>
             </div>
         </main>
+
+        <div id="lyrics-panel">
+            <div class="side-header">🎵 歌詞同步</div>
+            <div class="lyrics-content" id="lyrics-text">
+                [00:10.00] 正在播放：Alan Walker - Faded<br><br>
+                You were the shadow to my light<br>
+                Did you feel us?<br>
+                Another start, you fade away...<br>
+                Afraid our aim is out of sight<br>
+                Wanna see us, alive...
+            </div>
+        </div>
     </div>
 
     <script>
-        // 核心數據庫：預設包含「官方公告」
-        let db = JSON.parse(localStorage.getItem('tacker_pro_db')) || {
-            users: {},
-            messages: {
-                "official_announcement": [
-                    {user: "FR 官方", text: "歡迎來到 Tacker！這是您的官方服務起點。", time: "系統訊息"},
-                    {user: "Shadow", text: "所有新用戶皆已自動加入此公告伺服器。", time: "09:00"}
-                ],
-                "home_direct": []
-            }
+        let db = {
+            users: {
+                "admin": { name: "Admin", tag: "1337", bio: "FR Technology 創辦人 / 核心開發者" },
+                "Shadow": { name: "Shadow", tag: "8888", bio: "系統 AI 助手" }
+            },
+            msgs: [{user: "Shadow", text: "歡迎回來，負責人。歌詞系統已就緒。", time: "10:00"}]
         };
-        let currentUser = null;
-        let curG = 'home', curC = 'direct';
 
-        function save() { localStorage.setItem('tacker_pro_db', JSON.stringify(db)); }
-
-        // 登入邏輯：如果帳號不存在，自動「註冊」並關聯官方群組
-        function handleAuth() {
-            const email = document.getElementById('email-in').value;
-            const pass = document.getElementById('pass-in').value;
-
-            if(!email || !pass) return alert("請填寫欄位");
-
-            if(!db.users[email]) {
-                // 自動註冊邏輯
-                db.users[email] = { name: email.split('@')[0], pass: pass };
-                save();
-                alert("歡迎新用戶！已自動為您配置【FR 官方公告】權限。");
-            } else if (db.users[email].pass !== pass) {
-                return alert("密碼錯誤");
+        function handleLogin() {
+            if(document.getElementById('auth-email').value === "admin") {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('app-root').style.display = 'flex';
+                render();
             }
-
-            currentUser = email;
-            initApp();
-        }
-
-        function mockDiscordLogin() {
-            alert("正在調用 Discord API 授權...");
-            // 模擬成功
-            const mockEmail = "discord_user@tacker.io";
-            if(!db.users[mockEmail]) {
-                db.users[mockEmail] = { name: "DiscordUser", pass: "oauth" };
-                save();
-            }
-            currentUser = mockEmail;
-            initApp();
-        }
-
-        function initApp() {
-            document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('app-root').style.display = 'flex';
-            document.getElementById('nav-name').innerText = db.users[currentUser].name;
-            document.getElementById('nav-pfp').innerText = db.users[currentUser].name[0].toUpperCase();
-            switchG('official'); // 預設進去直接看官方群組
-        }
-
-        function switchG(g) {
-            curG = g;
-            document.querySelectorAll('.server-icon').forEach(e => e.classList.remove('active'));
-            document.getElementById('g-'+g).classList.add('active');
-            const list = document.getElementById('side-list');
-            
-            if(g === 'home') {
-                document.getElementById('side-title').innerText = "直接訊息";
-                list.innerHTML = `<div class="list-item active" onclick="switchC('direct')">👤 系統小助手</div>`;
-                switchC('direct');
-            } else {
-                document.getElementById('side-title').innerText = "FR 官方伺服器";
-                list.innerHTML = `<div class="list-item active" onclick="switchC('announcement')"># 📢 官方公告</div>`;
-                switchC('announcement');
-            }
-        }
-
-        function switchC(c) {
-            curC = c;
-            document.getElementById('chat-header').innerText = (curG==='home' ? "@ " : "# ") + c;
-            render();
         }
 
         function render() {
             const box = document.getElementById('msg-box');
-            const key = `${curG}_${curC}`;
-            const msgs = db.messages[key] || [];
-            box.innerHTML = msgs.map(m => `
+            box.innerHTML = db.msgs.map(m => `
                 <div class="msg-row">
-                    <div class="msg-pfp" style="${m.user === 'FR 官方' ? 'background: #23a55a;' : ''}">${m.user[0]}</div>
+                    <div class="msg-pfp" onclick="showPopout(event, '${m.user}', '${db.users[m.user]?.tag || '0000'}', '${db.users[m.user]?.bio || ''}')">${m.user[0]}</div>
                     <div class="msg-body">
-                        <div class="msg-user-info">
-                            <span class="msg-username" style="${m.user === 'FR 官方' ? 'color: #23a55a;' : ''}">${m.user}</span>
-                            <span class="msg-time">${m.time}</span>
+                        <div style="display:flex; gap:8px; align-items:baseline;">
+                            <span class="msg-username" onclick="showPopout(event, '${m.user}', '${db.users[m.user]?.tag || '0000'}', '${db.users[m.user]?.bio || ''}')">${m.user}</span>
+                            <span style="font-size:12px; color:var(--text-muted);">${m.time}</span>
                         </div>
                         <div class="msg-text">${m.text}</div>
                     </div>
@@ -218,21 +169,36 @@
 
         function send() {
             const input = document.getElementById('msg-in');
-            if(!input.value.trim() || curC === 'announcement') {
-                if(curC === 'announcement') alert("此頻道為官方唯讀公告頻道。");
-                return;
-            }
-            const key = `${curG}_${curC}`;
-            if(!db.messages[key]) db.messages[key] = [];
-            db.messages[key].push({
-                user: db.users[currentUser].name,
-                text: input.value,
-                time: new Date().getHours() + ":" + String(new Date().getMinutes()).padStart(2, '0')
-            });
-            save();
+            if(!input.value.trim()) return;
+            db.msgs.push({ user: "Admin", text: input.value, time: "現在" });
             render();
             input.value = '';
         }
+
+        // 個資彈窗邏輯
+        function showPopout(e, name, tag, bio) {
+            e.stopPropagation();
+            const pop = document.getElementById('user-popout');
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('p-tag').innerText = "#" + tag;
+            document.getElementById('p-pfp').innerText = name[0];
+            document.getElementById('p-bio').innerText = bio || "這個用戶很懶，什麼都沒寫。";
+            
+            pop.style.display = 'block';
+            pop.style.left = "20px";
+            pop.style.bottom = "80px"; 
+        }
+
+        function closePopout() { document.getElementById('user-popout').style.display = 'none'; }
+
+        // 歌詞開關
+        function toggleLyrics() {
+            const panel = document.getElementById('lyrics-panel');
+            panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function switchG(g) { alert("切換至: " + g); }
+        function switchC(c) { alert("切換至頻道: " + c); }
     </script>
 </body>
 </html>
