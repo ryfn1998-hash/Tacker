@@ -3,162 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | Official v1.5.1</title>
+    <title>Tacker | Next-Gen Communication</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { 
-            --bg: #313338; --side: #2b2d31; --dark: #1e1f22; --accent: #5865f2; 
-            --text: #f2f3f5; --muted: #949ba4; --online: #23a55a; --idle: #f0b232; --dnd: #f23f43; --offline: #80848e;
-        }
-        * { box-sizing: border-box; font-family: 'gg sans', 'Noto Sans TC', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
-        .hidden { display: none !important; }
-
-        /* 個人資料卡 (Discord Style) */
-        .profile-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .profile-card { background: var(--dark); width: 340px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .profile-banner { height: 60px; background: var(--accent); }
-        .profile-content { padding: 16px; position: relative; padding-top: 45px; }
-        .profile-avatar-big { width: 80px; height: 80px; border-radius: 50%; border: 6px solid var(--dark); position: absolute; top: -40px; left: 16px; background: var(--accent); background-size: cover; }
-        .status-dot { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--dark); position: absolute; bottom: 5px; right: 5px; }
+        :root { --main-green: #00ff88; --bg-black: #0a0a0a; }
+        body { margin: 0; background: var(--bg-black); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
-        .info-box { background: var(--side); padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px; }
-        .info-label { font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+        /* 登入卡片樣式 */
+        #login-screen { height: 100vh; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
+        .login-card { background: #111; padding: 40px; border-radius: 20px; border: 1px solid var(--main-green); text-align: center; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
+        .btn-google { background: white; color: black; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; border: none; transition: 0.3s; }
+        .btn-google:hover { transform: scale(1.05); box-shadow: 0 0 15px white; }
 
-        /* 主介面 footer 狀態顯示 */
-        .user-footer { background: #232428; padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; }
-        .user-footer:hover { background: #35373c; }
-        .avatar-wrap { position: relative; width: 32px; height: 32px; }
-        .pfp { width: 32px; height: 32px; border-radius: 50%; background-size: cover; }
-        .mini-status { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #232428; position: absolute; bottom: 0; right: 0; }
-
-        /* 介面框架 */
-        #sidebar { width: 260px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #1e1f22; }
-        .btn-main { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        input, textarea { width: 100%; padding: 10px; background: var(--dark); border: none; color: white; border-radius: 4px; margin: 8px 0; outline: none; }
+        /* 主程式樣式 (預設隱藏) */
+        #main-app { display: none; height: 100vh; grid-template-columns: 260px 1fr; }
+        .sidebar { background: #151515; border-right: 1px solid #222; padding: 20px; }
+        .content { padding: 40px; }
+        .status-online { color: var(--main-green); font-size: 14px; }
+        
+        /* 載入動畫 */
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; display: flex; justify-content: center; align-items: center; z-index: 9999; }
     </style>
 </head>
 <body>
 
-    <div id="setup-layer" class="hidden" style="position:fixed; inset:0; background:var(--bg); z-index:2000; display:flex; align-items:center; justify-content:center;">
-        <div style="background:var(--side); padding:40px; border-radius:8px; width:400px; border:1px solid #4e5058;">
-            <h2 style="text-align:center; margin-bottom:20px;">初始化身分</h2>
-            <label class="info-label">帳號 ID</label>
-            <input type="text" id="reg-id" placeholder="例如: ryfn888">
-            <label class="info-label">出生日期</label>
-            <input type="date" id="reg-birth" style="color-scheme: dark;">
-            <label class="info-label">關於我</label>
-            <textarea id="reg-bio" placeholder="介紹一下你自己..." style="height:80px; resize:none;"></textarea>
-            <button class="btn-main" style="margin-top:20px;" onclick="saveProfile()">啟動協定</button>
+    <div id="loader"><h1>TACKER LOADING...</h1></div>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <h1 style="color: var(--main-green); letter-spacing: 5px;">TACKER</h1>
+            <p>請使用 Google 帳號啟動通訊系統</p>
+            <button class="btn-google" onclick="signInWithGoogle()">Login with Google</button>
         </div>
     </div>
 
-    <div id="profile-modal" class="profile-modal" onclick="closeProfile()">
-        <div class="profile-card" onclick="event.stopPropagation()">
-            <div class="profile-banner"></div>
-            <div class="profile-content">
-                <div class="profile-avatar-big" id="card-avatar">
-                    <div class="status-dot" id="card-status-dot"></div>
-                </div>
-                <h3 id="card-display-name">---</h3>
-                <div style="font-size:14px; color:var(--muted); margin-bottom:15px;" id="card-id">@---</div>
-                
-                <div class="info-box">
-                    <div class="info-label">關於我</div>
-                    <div id="card-bio">這傢伙很懶，什麼都沒留下。</div>
-                    <div class="info-label" style="margin-top:12px;">TACKER 成員時間</div>
-                    <div id="card-join-date">2026年4月</div>
-                    <div class="info-label" style="margin-top:12px;">生日</div>
-                    <div id="card-birthday">未設定</div>
-                </div>
-                
-                <div style="margin-top:15px; display:flex; gap:10px;">
-                    <button class="btn-main" style="flex:1; background:#4e5058;" onclick="logout()">登出帳號</button>
-                    <button class="btn-main" style="flex:1;" onclick="closeProfile()">關閉</button>
-                </div>
+    <div id="main-app">
+        <div class="sidebar">
+            <h2 style="color: var(--main-green);">Tacker</h2>
+            <div id="user-info">
+                <p id="user-name">載入中...</p>
+                <span class="status-online">● 系統在線</span>
+            </div>
+            <hr style="border: 0.5px solid #333; margin: 20px 0;">
+            <button onclick="signOut()" style="background:none; border:1px solid red; color:red; cursor:pointer;">登出系統</button>
+        </div>
+        <div class="content">
+            <h1>歡迎回來，負責人</h1>
+            <p>目前版本：v1.6.0 (穩定版)</p>
+            <div id="app-status" style="padding: 20px; border: 1px dashed var(--main-green);">
+                系統狀態：正常運行中
             </div>
         </div>
-    </div>
-
-    <div id="app" style="width:100%; display:flex;">
-        <aside id="sidebar">
-            <div style="padding:16px; font-weight:bold; color:var(--muted); font-size:12px;">頻道</div>
-            <div style="flex:1;"></div>
-            
-            <div class="user-footer" onclick="openProfile()">
-                <div class="avatar-wrap">
-                    <div class="pfp" id="mini-pfp"></div>
-                    <div class="mini-status" id="mini-status-dot"></div>
-                </div>
-                <div style="flex:1; overflow:hidden;">
-                    <div id="my-name" style="font-weight:bold; font-size:13px;">載入中...</div>
-                    <div style="font-size:11px; color:var(--muted);">線上</div>
-                </div>
-                <div style="opacity:0.5; font-size:12px;">⚙️</div>
-            </div>
-        </aside>
-
-        <main style="flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; background:var(--bg);">
-            <h1 style="color:var(--muted); opacity:0.2; font-size:80px;">TACKER</h1>
-            <p style="color:var(--muted);">請從左側開啟對話</p>
-        </main>
     </div>
 
     <script>
-        const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
-        let myData = null;
+        // --- 初始化 Supabase ---
+        const _s = supabase.createClient(
+            'https://coyiifxxfopvabpjszis.supabase.co', 
+            '你的_SUPABASE_ANON_KEY' // 負責人，請把這裡換成你的金鑰！
+        );
 
-        async function checkSession() {
-            const { data: { user } } = await _s.auth.getUser();
-            if (!user) return window.location.href = "login.html"; // 假設你有個 login 頁面
-
-            const { data: p } = await _s.from('profiles').select('*').eq('id', user.id).single();
-
-            if (!p || !p.username) {
-                document.getElementById('setup-layer').classList.remove('hidden');
-            } else {
-                myData = p;
-                renderApp();
-            }
+        // --- 登入邏輯 ---
+        async function signInWithGoogle() {
+            const { error } = await _s.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    // 這裡一定要對齊你的 GitHub 網址！
+                    redirectTo: 'https://ryfn1998-hash.github.io/Tacker/'
+                }
+            });
+            if (error) console.error('登入失敗:', error.message);
         }
 
-        async function saveProfile() {
-            const id = document.getElementById('reg-id').value;
-            const birth = document.getElementById('reg-birth').value;
-            const bio = document.getElementById('reg-bio').value;
-            const { data: { user } } = await _s.auth.getUser();
-
-            if(!/^[a-zA-Z0-9]+$/.test(id)) return alert("ID 格式不正確");
-
-            const { error } = await _s.from('profiles').upsert({
-                id: user.id, username: id, display_name: user.user_metadata.full_name,
-                avatar_url: user.user_metadata.avatar_url, bio: bio, birthday: birth
-            });
-
-            if (error) return alert("ID 已被佔用！");
+        // --- 登出邏輯 ---
+        async function signOut() {
+            await _s.auth.signOut();
             location.reload();
         }
 
-        function renderApp() {
-            document.getElementById('my-name').innerText = myData.display_name;
-            document.getElementById('mini-pfp').style.backgroundImage = `url(${myData.avatar_url})`;
-            document.getElementById('mini-status-dot').style.backgroundColor = 'var(--online)';
+        // --- 狀態檢查 (核心邏輯) ---
+        async function checkStatus() {
+            const { data: { session } } = await _s.auth.getSession();
+            const loader = document.getElementById('loader');
+            const loginScreen = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+
+            if (session) {
+                // 已登入：顯示主程式，隱藏登入頁
+                loginScreen.style.display = 'none';
+                mainApp.style.display = 'grid';
+                document.getElementById('user-name').innerText = session.user.user_metadata.full_name || '使用者';
+            } else {
+                // 未登入：顯示登入頁，隱藏主程式
+                loginScreen.style.display = 'flex';
+                mainApp.style.display = 'none';
+            }
+            loader.style.display = 'none'; // 關閉載入動畫
         }
 
-        function openProfile() {
-            document.getElementById('card-display-name').innerText = myData.display_name;
-            document.getElementById('card-id').innerText = "@" + myData.username;
-            document.getElementById('card-avatar').style.backgroundImage = `url(${myData.avatar_url})`;
-            document.getElementById('card-bio').innerText = myData.bio || "這傢伙很懶...";
-            document.getElementById('card-birthday').innerText = myData.birthday || "未設定";
-            document.getElementById('card-status-dot').style.backgroundColor = 'var(--online)';
-            document.getElementById('profile-modal').style.display = 'flex';
-        }
-
-        function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
-        async function logout() { await _s.auth.signOut(); location.reload(); }
-
-        window.onload = checkSession;
+        // 網頁開啟後立刻執行檢查
+        window.onload = checkStatus;
     </script>
 </body>
 </html>
