@@ -3,77 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | Google Login</title>
+    <title>Tacker | Official Protocol</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg-auth: #313338; --accent: #5865f2; --text: #f2f3f5; }
-        * { box-sizing: border-box; font-family: 'gg sans', sans-serif; margin: 0; padding: 0; }
-        body { 
-            background: #5865f2 url('https://discord.com/assets/7c01f740da893444036e.png') center/cover; 
-            height: 100vh; display: flex; align-items: center; justify-content: center; 
-        }
-        .auth-card { 
-            background: var(--bg-auth); width: 400px; padding: 32px; border-radius: 8px; 
-            text-align: center; color: var(--text); box-shadow: 0 8px 16px rgba(0,0,0,0.3); 
-        }
-        .google-btn {
-            width: 100%; padding: 12px; background: white; color: #757575; border: none; 
-            border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; 
-            align-items: center; justify-content: center; gap: 10px; margin-top: 20px;
-            font-size: 16px; transition: 0.2s;
-        }
-        .google-btn:hover { background: #eeeeee; }
+        :root { --bg: #313338; --side: #2b2d31; --dark: #1e1f22; --accent: #5865f2; --text: #f2f3f5; --muted: #949ba4; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--dark); color: var(--text); height: 100vh; overflow: hidden; }
+
+        /* --- 登入與 Google 註冊補完 (P1) --- */
+        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: var(--side); width: 400px; padding: 32px; border-radius: 8px; text-align: center; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+        .input-box { width: 100%; padding: 12px; background: var(--dark); border: none; border-radius: 4px; color: white; margin: 10px 0; outline: none; }
+        .btn-google { width: 100%; padding: 12px; background: white; color: #757575; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* --- 主程式佈局 (圖一/圖三) --- */
+        #app-root { display: none; height: 100vh; width: 100%; }
+        #sidebar { width: 260px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #1e1f22; }
+        #main-view { flex: 1; background: var(--bg); display: flex; flex-direction: column; position: relative; }
+
+        /* 左側好友列 (P2 手稿) */
+        .friend-header { padding: 16px; font-size: 14px; font-weight: bold; border-bottom: 1px solid #1e1f22; }
+        .friend-list { flex: 1; padding: 8px; }
+        .add-friend-trigger { padding: 8px; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .add-friend-trigger:hover { color: white; }
+
+        /* 左下角個人資訊 (P1 手稿：點擊筆可自訂) */
+        .user-footer { height: 52px; background: #232428; padding: 0 8px; display: flex; align-items: center; gap: 8px; }
+        .pfp { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); }
+        .edit-icon { cursor: pointer; opacity: 0.7; font-size: 12px; }
+
+        /* 中央空白狀態 (圖一) */
+        .empty-ui { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .circle-icon { width: 80px; height: 80px; border: 4px solid #4e5058; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 16px; opacity: 0.5; }
+
+        /* 加好友小視窗 (圖二) */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 10000; }
+        .modal-card { background: var(--bg); width: 340px; padding: 24px; border-radius: 8px; }
+
+        /* 聊天區域 (圖三) */
+        #chat-area { display: none; flex: 1; flex-direction: column; }
+        .msg-container { flex: 1; overflow-y: auto; padding: 16px; }
+        .input-wrap { padding: 20px; display: flex; align-items: center; gap: 12px; }
+        .input-bar { flex: 1; background: #383a40; border-radius: 8px; display: flex; align-items: center; padding: 0 12px; }
+        .input-bar input { flex: 1; padding: 11px 0; background: transparent; border: none; color: white; outline: none; }
     </style>
 </head>
 <body>
 
-    <div class="auth-card">
-        <h2>Tacker</h2>
-        <p style="color:#b5bac1; margin-top:8px;">使用 Google 帳號安全進入</p>
-        
-        <button class="google-btn" onclick="loginWithGoogle()">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-            使用 Google 登入
-        </button>
+    <div id="auth-overlay" class="overlay">
+        <div id="login-card" class="auth-card">
+            <h2>Tacker</h2>
+            <p style="color:var(--muted); margin: 10px 0 20px;">跨平台安全通訊協定</p>
+            <button class="btn-google" onclick="loginWithGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Google 一鍵登入
+            </button>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 20px;">(Google 登入後需補完帳號 ID 才算完成)</p>
+        </div>
 
-        <p style="font-size: 12px; color: #949ba4; margin-top: 24px;">
-            登入即代表同意 FR Technology 的服務條款。
-        </p>
+        <div id="addon-card" class="auth-card" style="display:none;">
+            <h3>完善註冊資料</h3>
+            <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">請設定您的 Tacker 帳號代碼</p>
+            <div style="text-align:left;">
+                <label style="font-size:12px; font-weight:bold;">顯示名稱</label>
+                <input type="text" id="final-name" class="input-box" placeholder="例如: 暗影">
+                <label style="font-size:12px; font-weight:bold;">帳號 ID (英文與數字)</label>
+                <input type="text" id="final-id" class="input-box" placeholder="例如: ryfn888">
+            </div>
+            <button class="btn-primary" style="width:100%; padding:12px; background:var(--accent); color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="finishRegistration()">完成註冊並進入</button>
+        </div>
+    </div>
+
+    <div id="app-root">
+        <aside id="sidebar">
+            <div class="friend-header">目前沒有好友</div>
+            <div class="friend-list">
+                <div class="add-friend-trigger" onclick="toggleModal(true)">目前沒有好友 ⊕</div>
+                <div id="active-friend-list"></div>
+            </div>
+            <div class="user-footer">
+                <div class="pfp"></div>
+                <div style="flex:1; overflow:hidden;">
+                    <div style="font-size:13px; font-weight:bold;" id="nav-display-name">User</div>
+                    <div style="font-size:11px; color:var(--muted);" id="nav-user-id">ID: ----</div>
+                </div>
+                <div class="edit-icon" onclick="alert('進入 P1 自訂設定頁')">✏️</div>
+            </div>
+        </aside>
+
+        <main id="main-view">
+            <div id="empty-ui">
+                <div class="circle-icon">#</div>
+                <h3 style="font-size:20px;">這裡什麼都沒有 :/</h3>
+                <p style="color:var(--muted); font-size:13px; margin-top:8px;">因為你沒有在任何頻道</p>
+            </div>
+
+            <div id="chat-area">
+                <div class="msg-container" id="msgs"></div>
+                <div class="input-wrap">
+                    <div class="input-bar">
+                        <span style="cursor:pointer; margin-right:12px;" onclick="document.getElementById('file-in').click()">⊕</span>
+                        <input type="text" id="chat-in" placeholder="發送訊息..." onkeypress="if(event.key==='Enter')sendMsg()">
+                        <span style="cursor:pointer; color:var(--accent);" onclick="sendMsg()">➤</span>
+                    </div>
+                </div>
+                <input type="file" id="file-in" style="display:none;" onchange="checkFile(this)">
+            </div>
+        </main>
+    </div>
+
+    <div id="friend-modal" class="modal" onclick="toggleModal(false)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:15px;">新增好友</h3>
+            <input type="text" id="target-id" class="input-box" placeholder="輸入對方帳號 ID">
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button onclick="toggleModal(false)" style="background:none; border:none; color:white; cursor:pointer;">取消</button>
+                <button onclick="sendFriendRequest()" style="background:var(--accent); border:none; padding:8px 16px; color:white; border-radius:4px; cursor:pointer;">確認 ✓</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const _supabase = supabase.createClient(
-            'https://coyiifxxfopvabpjszis.supabase.co', 
-            'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH'
-        );
+        const _supabase = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
+        // 步驟 A: Google 登入 (需在後台啟用 Provider)
         async function loginWithGoogle() {
-            const { data, error } = await _supabase.auth.signInWithOAuth({
+            const { error } = await _supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: {
-                    // 登入成功後，跳轉回你目前的網頁
-                    redirectTo: window.location.href 
-                }
+                options: { redirectTo: window.location.href }
             });
-
-            if (error) alert("Google 登入失敗：" + error.message);
+            if(error) alert("Provider 未開啟，請至 Supabase 後台開啟 Google！");
         }
 
-        // 檢查是否已經登入成功（從 Google 跳轉回來後）
-        async function checkUser() {
+        // 步驟 B: 檢查用戶狀態 (補完註冊)
+        async function checkStatus() {
             const { data: { user } } = await _supabase.auth.getUser();
-            if (user) {
-                alert("歡迎回來，" + user.user_metadata.full_name);
-                // 這裡直接銜接進入你的主程式畫面 (圖一、圖三)
-                enterMainApp(user);
+            if(!user) return;
+
+            // 模擬資料庫查詢：如果沒設定過 ID，就顯示補完卡片
+            document.getElementById('login-card').style.display = 'none';
+            document.getElementById('addon-card').style.display = 'block';
+            document.getElementById('final-name').value = user.user_metadata.full_name || "";
+        }
+
+        function finishRegistration() {
+            const id = document.getElementById('final-id').value;
+            const name = document.getElementById('final-name').value;
+            if(!/^[a-zA-Z0-9]+$/.test(id)) return alert("ID 僅限英文與數字！");
+
+            alert("註冊成功！帳號 ID: " + id);
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('app-root').style.display = 'flex';
+            document.getElementById('nav-display-name').innerText = name;
+            document.getElementById('nav-user-id').innerText = "ID: " + id;
+        }
+
+        // 步驟 C: 加好友與通訊 (P2)
+        function toggleModal(show) { document.getElementById('friend-modal').style.display = show ? 'flex' : 'none'; }
+        
+        function sendFriendRequest() {
+            const tid = document.getElementById('target-id').value;
+            alert("已發送請求給 " + tid + "\n對方按接受後才會顯示個資。");
+            toggleModal(false);
+            // 模擬對方接受後進入圖三
+            setTimeout(() => {
+                document.getElementById('active-friend-list').innerHTML = `<div class="add-friend-trigger" onclick="openChat('${tid}')">👤 ${tid}</div>`;
+            }, 2000);
+        }
+
+        function openChat(name) {
+            document.getElementById('empty-ui').style.display = 'none';
+            document.getElementById('chat-area').style.display = 'flex';
+        }
+
+        function checkFile(input) {
+            if(input.files[0].size > 10 * 1024 * 1024) { // 10MB 限制
+                alert("檔案過大！請限制在 10MB 以內。");
+                input.value = "";
             }
         }
-        window.onload = checkUser;
 
-        function enterMainApp(user) {
-            // 負責人，這裡我們會放入你之前的圖一、圖三 HTML 代碼
-            console.log("已登入用戶個資：", user);
-        }
+        window.onload = checkStatus;
     </script>
 </body>
 </html>
