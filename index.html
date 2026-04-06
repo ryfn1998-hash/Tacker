@@ -3,90 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | Private Social</title>
+    <title>Tacker | Private Net</title>
     <style>
         :root {
-            --bg-body: #050508; /* 極深黑 */
-            --bg-side: #0b0b12; /* 深紫色塊 */
-            --bg-item: #13131f; 
-            --accent: #a855f7;  /* 亮紫色 (用於線條) */
-            --border: rgba(168, 85, 247, 0.15);
-            --text: #ececf1;
-            --text-dim: #71717a;
+            --bg-deep: #050508; --bg-side: #0b0b12; --bg-item: #13131f; 
+            --accent: #a855f7; --border: rgba(168, 85, 247, 0.15);
+            --text: #ececf1; --text-dim: #71717a;
         }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
+        body { margin: 0; background: var(--bg-deep); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; cursor: default; }
-        body { margin: 0; background: var(--bg-body); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        /* 左側導覽 */
+        .rail { width: 64px; background: #000; display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid var(--border); gap: 15px; }
+        .rail-btn { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-item); display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid transparent; cursor: pointer; transition: 0.2s; }
+        .rail-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .rail-btn.active { background: var(--accent); color: black; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
 
-        /* --- 左側精簡選單 --- */
-        .rail { width: 64px; background: #000; display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid var(--border); }
-        .rail-btn { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-item); margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid transparent; transition: 0.2s; }
-        .rail-btn.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 15px rgba(168, 85, 247, 0.2); }
-
-        /* --- 好友與私人群組欄 --- */
+        /* 側邊列表 (動態生成) */
         .sidebar { width: 260px; background: var(--bg-side); display: flex; flex-direction: column; border-right: 1px solid var(--border); }
-        .side-title { padding: 25px 20px 15px; font-size: 12px; font-weight: 800; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
-        
+        .side-head { padding: 25px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .side-title { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+        .add-btn { cursor: pointer; font-size: 18px; color: var(--text-dim); transition: 0.2s; }
+        .add-btn:hover { color: var(--accent); }
+
         .list-container { flex: 1; padding: 0 10px; overflow-y: auto; }
-        .chat-item { padding: 12px; border-radius: 10px; display: flex; align-items: center; gap: 12px; margin-bottom: 4px; transition: 0.2s; }
+        .empty-hint { padding: 20px; font-size: 13px; color: var(--text-dim); text-align: center; margin-top: 20px; border: 1px dashed var(--border); border-radius: 10px; }
+        
+        .chat-item { padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 12px; margin-bottom: 4px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
         .chat-item:hover { background: rgba(255,255,255,0.03); }
-        .chat-item.active { background: var(--bg-item); border: 1px solid var(--border); }
-        .avatar { width: 38px; height: 38px; border-radius: 10px; background: #27272a; border: 1px solid var(--border); }
+        .chat-item.active { background: var(--bg-item); border-color: var(--border); }
+        .avatar { width: 36px; height: 36px; border-radius: 10px; background: #27272a; border: 1px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; }
 
-        /* --- 個人資料 (兩段式) --- */
-        .user-panel { padding: 15px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border); }
-        .user-card { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; border-radius: 8px; }
-        .user-card:hover { background: rgba(168, 85, 247, 0.1); }
-        .u-info { flex: 1; line-height: 1.2; }
-        .u-info b { font-size: 14px; display: block; }
-        .u-info span { font-size: 11px; color: var(--text-dim); }
+        /* 個人欄 */
+        .user-panel { padding: 12px; background: rgba(0,0,0,0.4); border-top: 1px solid var(--border); }
+        .user-card { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; border-radius: 10px; transition: 0.2s; }
+        .user-card:hover { background: var(--glass-purple); box-shadow: 0 0 10px rgba(168, 85, 247, 0.1); }
 
-        /* --- 右側對話區 --- */
-        main { flex: 1; display: flex; flex-direction: column; background: #08080c; }
-        .chat-h { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; font-weight: bold; background: rgba(0,0,0,0.2); }
-        .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .msg-bubble { max-width: 70%; padding: 12px 16px; border-radius: 12px; background: var(--bg-item); border: 1px solid var(--border); font-size: 15px; line-height: 1.5; }
+        /* 右側主視窗 */
+        main { flex: 1; display: flex; flex-direction: column; background: #08080c; position: relative; }
+        .welcome-screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08080c; z-index: 5; text-align: center; }
+        
+        .chat-h { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; font-weight: bold; }
+        .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { max-width: 75%; padding: 12px 16px; border-radius: 12px; background: var(--bg-item); border: 1px solid var(--border); font-size: 14px; position: relative; }
         .msg-me { align-self: flex-end; background: var(--accent); color: black; border: none; font-weight: 500; }
         
-        .input-box { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
-        #m-in { flex: 1; background: #000; border: 1px solid var(--border); color: white; padding: 12px 18px; border-radius: 12px; outline: none; }
+        .input-bar { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+        input[type="text"] { flex: 1; background: #000; border: 1px solid var(--border); color: white; padding: 12px 18px; border-radius: 12px; outline: none; }
 
-        /* --- 設定牆 (Overlay) --- */
-        #settings-ui { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); display: none; z-index: 1000; }
-        .settings-win { width: 90%; max-width: 800px; height: 80%; background: var(--bg-side); margin: 5vh auto; border-radius: 20px; border: 1px solid var(--border); display: flex; overflow: hidden; }
-        .set-side { width: 200px; background: rgba(0,0,0,0.2); padding: 30px 15px; border-right: 1px solid var(--border); }
-        .set-main { flex: 1; padding: 40px; }
-        .set-btn { padding: 10px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; color: var(--text-dim); }
-        .set-btn.active { color: var(--accent); background: rgba(168, 85, 247, 0.1); }
+        /* 設定牆 */
+        #settings-ui { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); display: none; z-index: 1000; }
+        .settings-win { width: 95%; max-width: 800px; height: 85vh; background: var(--bg-side); margin: 7vh auto; border-radius: 24px; border: 1px solid var(--border); display: flex; overflow: hidden; }
+        .set-side { width: 220px; background: rgba(0,0,0,0.3); padding: 30px 15px; border-right: 1px solid var(--border); }
+        .set-main { flex: 1; padding: 40px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
     <nav class="rail">
-        <div class="rail-btn active">💬</div>
-        <div class="rail-btn">👥</div>
+        <div class="rail-btn active" onclick="switchTab('chats')">💬</div>
+        <div class="rail-btn" onclick="switchTab('friends')">👥</div>
     </nav>
 
     <aside class="sidebar">
-        <div class="side-title">直連好友</div>
-        <div class="list-container">
-            <div class="chat-item active" onclick="setRoom('Shadow (管理員)')">
-                <div class="avatar" style="background: url('https://ui-avatars.com/api/?name=S&background=a855f7&color=fff') center/cover;"></div>
-                <div class="u-info"><b>Shadow</b><span>線上</span></div>
-            </div>
-            <div class="side-title">私人小群組</div>
-            <div class="chat-item" onclick="setRoom('FR 核心工程組')">
-                <div class="avatar" style="background: #a855f7; display:flex; align-items:center; justify-content:center; font-weight:bold;">FR</div>
-                <div class="u-info"><b>FR 核心工程組</b><span>3 位成員</span></div>
-            </div>
+        <div class="side-head">
+            <div class="side-title" id="list-title">直接訊息</div>
+            <div class="add-btn" onclick="addAction()">＋</div>
+        </div>
+        
+        <div class="list-container" id="main-list">
+            <div class="empty-hint">目前沒有對話<br>點擊上方 ＋ 開始聯絡</div>
         </div>
 
         <div class="user-panel">
             <div class="user-card" onclick="openSet()">
-                <div class="avatar" id="my-avatar" style="width:32px; height:32px; background: var(--accent);"></div>
-                <div class="u-info">
-                    <b id="my-name">新成員</b>
-                    <span id="my-id">@ryfn888</span>
+                <div class="avatar" id="my-pfp" style="width:32px; height:32px; background: var(--accent); color:black;">U</div>
+                <div style="flex:1; overflow:hidden;">
+                    <b id="my-name" style="font-size:13px; display:block;">未設定名稱</b>
+                    <span id="my-id" style="font-size:10px; color:var(--text-dim);">@id_unknown</span>
                 </div>
                 <span style="font-size:12px;">⚙️</span>
             </div>
@@ -94,81 +88,137 @@
     </aside>
 
     <main>
-        <div class="chat-h" id="chat-title"># Shadow</div>
-        <div class="msg-area" id="msg-list">
-            <div class="msg-bubble">歡迎進入 Tacker 加密頻道。</div>
+        <div class="welcome-screen" id="empty-page">
+            <div style="font-size: 50px; margin-bottom: 20px;">🛡️</div>
+            <h2 style="color:var(--accent)">TACKER ENCRYPTED</h2>
+            <p style="color:var(--text-dim); max-width: 300px;">選擇一個好友或群組開始加密對話，或點擊左側「＋」發送新的邀請。</p>
         </div>
-        <div class="input-box">
-            <input type="text" id="m-in" placeholder="發送加密訊息..." onkeypress="if(event.key==='Enter')send()">
-            <button onclick="send()" style="background:var(--accent); border:none; padding:0 20px; border-radius:10px; font-weight:bold; cursor:pointer;">發送</button>
+
+        <div class="chat-h" id="chat-title"># 頻道名稱</div>
+        <div class="msg-area" id="msg-box"></div>
+        <div class="input-bar">
+            <input type="text" id="m-in" placeholder="發送訊息..." onkeypress="if(event.key==='Enter')send()">
+            <button onclick="send()" style="background:var(--accent); border:none; padding:0 20px; border-radius:12px; font-weight:bold; cursor:pointer;">發送</button>
         </div>
     </main>
 
     <div id="settings-ui">
         <div class="settings-win">
             <div class="set-side">
-                <div style="font-weight:bold; margin-bottom:20px; color:var(--accent);">帳戶設定</div>
-                <div class="set-btn active">個人資料</div>
-                <div class="set-btn" onclick="alert('安全加密已啟動')">隱私與安全</div>
-                <div class="set-btn" style="color: #ff4d4d; margin-top: 50px;" onclick="logout()">登出</div>
+                <div style="font-weight:bold; margin-bottom:20px; color:var(--accent);">個人設定</div>
+                <div style="padding:10px; color:var(--accent); background:rgba(168,85,247,0.1); border-radius:8px;">帳戶資訊</div>
+                <div style="padding:10px; color:var(--text-dim); cursor:pointer;" onclick="logout()">登出 Tacker</div>
             </div>
             <div class="set-main">
-                <div style="display:flex; justify-content:space-between;">
-                    <h2>個人資料</h2>
-                    <span style="cursor:pointer;" onclick="closeSet()">✕</span>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>個人檔案編輯</h2>
+                    <span style="cursor:pointer; font-size:24px;" onclick="closeSet()">✕</span>
                 </div>
                 <div style="margin-top:30px;">
                     <label style="color:var(--text-dim); font-size:12px;">顯示名稱</label>
-                    <input type="text" id="set-n" style="width:100%; margin-top:8px; background:#000; border:1px solid var(--border); padding:10px; color:white; border-radius:8px;">
+                    <input type="text" id="set-n" style="width:100%; margin:8px 0 20px; background:#000; border:1px solid var(--border); padding:12px; color:white; border-radius:10px;">
                     
-                    <label style="color:var(--text-dim); font-size:12px; display:block; margin-top:20px;">個人代號 (ID)</label>
-                    <input type="text" id="set-t" style="width:100%; margin-top:8px; background:#000; border:1px solid var(--border); padding:10px; color:white; border-radius:8px;">
+                    <label style="color:var(--text-dim); font-size:12px;">帳號代號 (Unique ID)</label>
+                    <input type="text" id="set-t" style="width:100%; margin-top:8px; background:#000; border:1px solid var(--border); padding:12px; color:white; border-radius:10px;">
                     
-                    <button onclick="save()" style="margin-top:30px; width:100%; background:var(--accent); border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">儲存變更</button>
+                    <button onclick="save()" style="margin-top:30px; width:100%; background:var(--accent); border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer;">更新個資</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function openSet() { document.getElementById('settings-ui').style.display = 'block'; }
-        function closeSet() { document.getElementById('settings-ui').style.display = 'none'; }
+        let currentTab = 'chats';
+        let activeChat = null;
         
-        function save() {
-            const n = document.getElementById('set-n').value;
-            const t = document.getElementById('set-t').value;
-            if(n) {
-                document.getElementById('my-name').innerText = n;
-                localStorage.setItem('n', n);
-            }
-            if(t) {
-                document.getElementById('my-id').innerText = "@" + t;
-                localStorage.setItem('t', t);
-            }
-            closeSet();
+        // 1. 初始化資料
+        const contacts = []; // 真正的資料庫會存這裡
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('list-title').innerText = tab === 'chats' ? '直接訊息' : '好友邀請';
+            renderList();
         }
 
-        function setRoom(name) {
-            document.getElementById('chat-title').innerText = "# " + name;
-            document.getElementById('msg-list').innerHTML = `<div class="msg-bubble">已進入 ${name} 的加密對話。</div>`;
+        function renderList() {
+            const list = document.getElementById('main-list');
+            if (contacts.length === 0) {
+                list.innerHTML = `<div class="empty-hint">目前沒有內容<br>點擊 ＋ 開始聯絡</div>`;
+                return;
+            }
+            list.innerHTML = contacts.map((c, idx) => `
+                <div class="chat-item ${activeChat === idx ? 'active' : ''}" onclick="openChat(${idx})">
+                    <div class="avatar">${c.name[0]}</div>
+                    <div style="flex:1"><b>${c.name}</b><br><span style="font-size:10px;color:var(--text-dim)">${c.type}</span></div>
+                </div>
+            `).join('');
+        }
+
+        // 2. 添加好友/群組 (核心邏輯)
+        function addAction() {
+            const type = prompt("請選擇：\n1. 添加好友 (輸入代號)\n2. 建立群組 (輸入名稱)");
+            if (type === "1") {
+                const id = prompt("請輸入對方的帳號代號 (例如: Shadow#888):");
+                if (id) {
+                    contacts.push({ name: id.split('#')[0], id: id, type: '好友', msgs: [] });
+                    alert("已發送請求！(模擬直接成功)");
+                    renderList();
+                }
+            } else if (type === "2") {
+                const gname = prompt("請輸入群組名稱:");
+                if (gname) {
+                    contacts.push({ name: gname, type: '一對多群組', msgs: [] });
+                    renderList();
+                }
+            }
+        }
+
+        function openChat(idx) {
+            activeChat = idx;
+            const chat = contacts[idx];
+            document.getElementById('empty-page').style.display = 'none';
+            document.getElementById('chat-title').innerText = `# ${chat.name} (${chat.type})`;
+            renderList();
+            renderMsgs();
         }
 
         function send() {
             const i = document.getElementById('m-in');
-            if(!i.value) return;
-            document.getElementById('msg-list').innerHTML += `<div class="msg-bubble msg-me">${i.value}</div>`;
+            if (!i.value || activeChat === null) return;
+            contacts[activeChat].msgs.push({ sender: 'me', text: i.value });
             i.value = '';
-            const m = document.getElementById('msg-list');
-            m.scrollTop = m.scrollHeight;
+            renderMsgs();
         }
 
+        function renderMsgs() {
+            const box = document.getElementById('msg-box');
+            const chat = contacts[activeChat];
+            box.innerHTML = chat.msgs.map(m => `
+                <div class="msg ${m.sender === 'me' ? 'msg-me' : ''}">${m.text}</div>
+            `).join('');
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // 設定控制
+        function openSet() { document.getElementById('settings-ui').style.display = 'block'; }
+        function closeSet() { document.getElementById('settings-ui').style.display = 'none'; }
+        function save() {
+            const n = document.getElementById('set-n').value;
+            const t = document.getElementById('set-t').value;
+            if(n) { document.getElementById('my-name').innerText = n; localStorage.setItem('n', n); document.getElementById('my-pfp').innerText = n[0]; }
+            if(t) { document.getElementById('my-id').innerText = "@" + t; localStorage.setItem('t', t); }
+            closeSet();
+        }
         function logout() { localStorage.clear(); location.reload(); }
 
         window.onload = () => {
             const n = localStorage.getItem('n');
             const t = localStorage.getItem('t');
-            if(n) { document.getElementById('my-name').innerText = n; document.getElementById('set-n').value = n; }
+            if(n) { document.getElementById('my-name').innerText = n; document.getElementById('set-n').value = n; document.getElementById('my-pfp').innerText = n[0]; }
             if(t) { document.getElementById('my-id').innerText = "@" + t; document.getElementById('set-t').value = t; }
+            renderList();
         }
     </script>
 </body>
