@@ -3,106 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | Developer Preview</title>
+    <title>Tacker | 功能測試版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --text: #dbdee1; --muted: #b5bac1; }
+        :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --text: #dbdee1; --danger: #f23f43; }
         body { margin: 0; background: var(--bg-p); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         .hidden { display: none !important; }
         
-        /* 測試用登入頁 */
-        .dev-auth { height: 100vh; display: flex; justify-content: center; align-items: center; background: #1e1f22; flex-direction: column; }
-        .card { background: var(--bg-s); padding: 40px; border-radius: 8px; text-align: center; width: 300px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-
-        /* 主介面 (遵照 P1 手稿) */
-        #main-app { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
+        /* 主佈局 */
+        #app-root { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
         .sidebar { background: var(--bg-s); border-right: 1px solid #1e1f22; display: flex; flex-direction: column; position: relative; }
-        .user-status { background: var(--bg-t); padding: 10px; position: absolute; bottom: 0; width: 100%; display: flex; align-items: center; gap: 10px; border-top: 1px solid #1e1f22; cursor: pointer; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #5865f2; }
-
-        /* 聊天區域 */
+        .user-footer { background: var(--bg-t); padding: 8px 12px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); object-fit: cover; }
+        
+        /* 聊天區 */
         .chat-view { display: flex; flex-direction: column; }
-        .msg-flow { flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.2; }
-        .input-area { padding: 20px; }
-        .input-box { background: #383a40; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; }
+        #msg-flow { flex: 1; padding: 20px; overflow-y: auto; }
+        .input-bar { padding: 20px; }
+        .input-box { background: #383a40; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; }
+        .input-box input { background: transparent; border: none; flex: 1; color: white; outline: none; }
 
-        /* 設定頁面彈窗 (圖二內容) */
-        #settings-page { display: none; position: fixed; inset: 0; background: var(--bg-p); z-index: 100; padding: 40px; }
-        .set-item { margin-bottom: 20px; padding: 15px; background: var(--bg-s); border-radius: 8px; }
+        /* 彈窗 (圖二) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .settings-card { background: var(--bg-p); width: 90%; max-width: 700px; height: 80vh; border-radius: 8px; display: flex; overflow: hidden; }
+        .settings-sidebar { width: 200px; background: var(--bg-s); padding: 20px; }
+        .settings-main { flex: 1; padding: 40px; position: relative; }
+        .nav-link { padding: 10px; cursor: pointer; color: #b5bac1; font-size: 14px; border-radius: 4px; }
+        .nav-link:hover, .nav-link.active { background: #3f4147; color: white; }
+        
+        .close-btn { position: absolute; top: 20px; right: 20px; cursor: pointer; border: 1px solid white; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; }
+        input.dark { width: 100%; background: #1e1f22; border: none; padding: 10px; color: white; border-radius: 4px; margin: 10px 0; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; background: var(--brand); color: white; }
     </style>
 </head>
 <body>
 
-    <div id="dev-gate" class="dev-auth">
-        <div class="card">
-            <h2>Tacker 預覽模式</h2>
-            <p style="font-size:12px; color:var(--muted);">跳過驗證，直接檢查 UI</p>
-            <button class="btn" style="background:var(--brand); color:white;" onclick="enterApp()">進入查看內部介面</button>
-        </div>
-    </div>
-
-    <div id="main-app">
+    <div id="app-root">
         <aside class="sidebar">
-            <div style="padding:20px; color:var(--muted); text-align:center;">好友列表</div>
-            <div class="user-status" onclick="openSettings()">
-                <div class="avatar"></div>
-                <div style="font-size:12px;">
-                    <div style="font-weight:bold;">測試管理員</div>
-                    <div style="color:var(--muted);">@dev_admin</div>
+            <div style="padding:15px; font-weight:bold; border-bottom:1px solid #1e1f22;">好友列表</div>
+            <div style="flex:1; padding:15px;">
+                <div style="font-size:12px; color:gray;">加好友</div>
+                <div style="color:var(--brand); font-size:24px; cursor:pointer;" onclick="openModal('add-ui')">⊕</div>
+            </div>
+            
+            <div class="user-footer" onclick="openModal('set-ui')">
+                <img id="my-ava" class="avatar" src="https://via.placeholder.com/32">
+                <div style="font-size:11px;">
+                    <div id="my-name" style="font-weight:bold;">測試負責人</div>
+                    <div id="my-id" style="color:gray;">@admin_test</div>
                 </div>
             </div>
         </aside>
+
         <main class="chat-view">
-            <div class="msg-flow">
-                <div style="font-size:80px;">#</div>
-                <p>因為你沒有在任何頻道 :/</p>
-            </div>
-            <div class="input-area">
+            <div id="msg-flow">
+                </div>
+            <div class="input-bar">
                 <div class="input-box">
-                    <span style="color:var(--muted);">⊕</span>
-                    <input type="text" placeholder="鍵入訊息..." style="background:transparent; border:none; flex:1; color:white; outline:none;">
-                    <button style="background:none; border:none; color:var(--brand); font-weight:bold;">發送</button>
+                    <span style="color:gray;">⊕</span>
+                    <input type="text" id="m-in" placeholder="鍵入訊息...">
+                    <button class="btn" onclick="send()">發送</button>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="settings-page">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <button onclick="closeSettings()" style="background:none; color:var(--brand); border:none; cursor:pointer; margin-bottom:20px;">← 返回對話</button>
-            <h1>使用者設定</h1>
-            
-            <div class="set-item">
-                <h3>基本資訊</h3>
-                <p style="color:var(--muted);">顯示名稱：測試管理員</p>
-                <p style="color:var(--muted);">帳號 ID：dev_admin</p>
-            </div>
+    <div id="add-ui" class="modal-overlay">
+        <div style="background:var(--bg-s); padding:30px; border-radius:8px; width:300px; text-align:center;">
+            <h3>新增好友</h3>
+            <input type="text" class="dark" placeholder="輸入 ID">
+            <button class="btn" onclick="closeModal('add-ui')">確認 ✓</button>
+        </div>
+    </div>
 
-            <div class="set-item">
-                <h3>外觀設定</h3>
-                <button class="btn" style="width:auto; background:#4e5058; color:white;">更換頭像</button>
-                <button class="btn" style="width:auto; background:#4e5058; color:white; margin-left:10px;">更換橫幅</button>
+    <div id="set-ui" class="modal-overlay">
+        <div class="settings-card">
+            <div class="settings-sidebar">
+                <div class="nav-link active" onclick="tab('base')">基本資訊</div>
+                <div class="nav-link" onclick="tab('look')">外觀</div>
+                <div class="nav-link" onclick="tab('acc')">帳戶</div>
             </div>
-
-            <div class="set-item">
-                <h3>帳戶安全</h3>
-                <button class="btn" style="width:auto; background:#f23f43; color:white;">登出帳號</button>
-                <button class="btn" style="width:auto; background:none; border:1px solid #f23f43; color:#f23f43; margin-left:10px;">移除帳戶</button>
+            <div class="settings-main">
+                <div class="close-btn" onclick="closeModal('set-ui')">✕</div>
+                <div id="tab-base">
+                    <h2>基本資訊</h2>
+                    <label>顯示名稱</label>
+                    <input type="text" id="edit-name" class="dark" value="測試負責人">
+                    <label>帳號 ID</label>
+                    <input type="text" id="edit-id" class="dark" value="admin_test">
+                    <button class="btn" onclick="save()">儲存記憶</button>
+                </div>
+                <div id="tab-look" class="hidden">
+                    <h2>外觀設定</h2>
+                    <p>頭像/橫幅上傳測試</p>
+                    <input type="text" id="edit-ava" class="dark" placeholder="貼上圖片網址測試">
+                    <button class="btn" onclick="save()">更換頭像</button>
+                </div>
+                <div id="tab-acc" class="hidden">
+                    <h2>帳戶設定</h2>
+                    <button class="btn" style="background:#4e5058;">變更密碼</button>
+                    <button class="btn" style="background:var(--danger); margin-top:20px;">移除帳戶</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        function enterApp() {
-            document.getElementById('dev-gate').style.display = 'none';
-            document.getElementById('main-app').style.display = 'grid';
+        const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
+
+        // 模擬一個固定 ID，用來測試資料庫記憶功能
+        const TEST_UID = "dev-user-001";
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function tab(t) {
+            ['base','look','acc'].forEach(x => document.getElementById('tab-'+x).classList.add('hidden'));
+            document.getElementById('tab-'+t).classList.remove('hidden');
         }
-        function openSettings() {
-            document.getElementById('settings-page').style.display = 'block';
+
+        // 記憶功能：儲存到資料庫
+        async function save() {
+            const n = document.getElementById('edit-name').value;
+            const i = document.getElementById('edit-id').value;
+            const a = document.getElementById('edit-ava').value || "https://via.placeholder.com/32";
+            
+            const { error } = await _s.from('profiles').upsert({ id: TEST_UID, full_name: n, tacker_id: i, avatar_url: a });
+            if(!error) { alert("記憶成功！"); location.reload(); }
         }
-        function closeSettings() {
-            document.getElementById('settings-page').style.display = 'none';
+
+        // 載入記憶資料
+        async function load() {
+            const { data } = await _s.from('profiles').select('*').eq('id', TEST_UID).maybeSingle();
+            if(data) {
+                document.getElementById('my-name').innerText = data.full_name;
+                document.getElementById('my-id').innerText = "@" + data.tacker_id;
+                document.getElementById('my-ava').src = data.avatar_url;
+                document.getElementById('edit-name').value = data.full_name;
+                document.getElementById('edit-id').value = data.tacker_id;
+            }
+            
+            // 載入訊息
+            const { data: msgs } = await _s.from('messages').select('*').order('created_at');
+            if(msgs) msgs.forEach(render);
         }
+
+        async function send() {
+            const val = document.getElementById('m-in').value;
+            if(!val) return;
+            await _s.from('messages').insert([{ user_id: TEST_UID, user_name: document.getElementById('my-name').innerText, content: val }]);
+            document.getElementById('m-in').value = '';
+        }
+
+        function render(m) {
+            const flow = document.getElementById('msg-flow');
+            const div = document.createElement('div');
+            div.style.marginBottom = "15px";
+            div.innerHTML = `<b style="color:var(--brand)">${m.user_name}</b>: ${m.content}`;
+            flow.appendChild(div);
+            flow.scrollTop = flow.scrollHeight;
+        }
+
+        // 實時監聽
+        _s.channel('room').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => render(p.new)).subscribe();
+
+        window.onload = load;
     </script>
 </body>
 </html>
