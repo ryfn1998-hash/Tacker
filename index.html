@@ -3,180 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | Discord Style</title>
+    <title>Tacker | Neural Network</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --discord-bg: #313338;
-            --discord-card: #2b2d31;
+            --bg-main: #313338;
+            --bg-sidebar: #2b2d31;
+            --bg-user: #232428;
             --discord-blurple: #5865f2;
             --text-muted: #b5bac1;
             --online-green: #23a55a;
         }
-        body { margin: 0; background: var(--discord-bg); color: white; font-family: 'gg sans', 'Noto Sans TC', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg-main); color: white; font-family: 'gg sans', 'Noto Sans TC', sans-serif; }
 
-        /* 🎴 Discord 登入卡片 */
-        .login-container {
-            background: var(--discord-card);
-            padding: 32px;
-            border-radius: 8px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.24);
-            width: 90%;
-            max-width: 480px;
-            text-align: center;
-        }
-        h2 { margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: #fff; }
-        p.subtitle { color: var(--text-muted); margin-bottom: 20px; font-size: 16px; }
+        /* --- 登入畫面 (照紙稿：Gmail/Discord登入感) --- */
+        #login-screen { height: 100vh; display: flex; justify-content: center; align-items: center; background-image: url('https://github.com/ryfn1998-hash/Tacker/raw/main/bg.png'); background-size: cover; }
+        .login-card { background: var(--bg-sidebar); padding: 32px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); width: 480px; text-align: center; }
+        .btn-login { width: 100%; background: var(--discord-blurple); color: white; border: none; padding: 12px; border-radius: 3px; font-size: 16px; cursor: pointer; font-weight: 500; }
 
-        .btn-google {
-            width: 100%;
-            background: var(--discord-blurple);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 3px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .btn-google:hover { background: #4752c4; }
+        /* --- P1: 初始化個人檔案 (照紙稿：設定帳號ID) --- */
+        #registration-screen { display: none; height: 100vh; justify-content: center; align-items: center; }
+        .reg-input { width: 100%; background: #1e1f22; border: none; padding: 10px; color: white; border-radius: 3px; margin: 10px 0; }
 
-        /* 📋 P1 註冊介面樣式 */
-        #registration-screen { display: none; }
-        .input-group { text-align: left; margin-bottom: 20px; }
-        label { color: var(--text-muted); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        input { width: 100%; background: #1e1f22; border: none; padding: 10px; color: white; border-radius: 3px; font-size: 16px; box-sizing: border-box; }
-        input:focus { outline: 1px solid #00a8fc; }
+        /* --- P2: 主介面佈局 (完全照圖一、圖三排版) --- */
+        #main-app { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
+        
+        /* 左側邊欄 (圖一左側) */
+        .sidebar { background: var(--bg-sidebar); display: flex; flex-direction: column; position: relative; }
+        .friend-list { flex: 1; padding: 10px; }
+        .no-friends { color: var(--text-muted); text-align: center; margin-top: 20px; font-size: 14px; }
+        
+        /* 底部署名卡 (圖一左下角：頭像、顯示名稱、ID) */
+        .user-footer { background: var(--bg-user); padding: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .user-footer:hover { background: #3f4147; }
+        .avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: #555; }
+        .user-meta { font-size: 12px; line-height: 1.2; }
 
-        /* 🚀 主介面 (隱藏) */
-        #main-app { display: none; width: 100vw; height: 100vh; flex-direction: column; justify-content: center; align-items: center; }
+        /* 右側聊天區 (圖一、圖三右側) */
+        .chat-area { display: flex; flex-direction: column; position: relative; }
+        .chat-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); }
+        .chat-empty img { width: 200px; opacity: 0.3; margin-bottom: 20px; }
+        
+        /* 打字區 (圖三底部：[+] 打字區 發送) */
+        .input-bar { padding: 0 20px 24px; display: flex; align-items: center; gap: 10px; }
+        .input-box { flex: 1; background: #383a40; border-radius: 8px; padding: 11px; display: flex; align-items: center; }
+        .input-box input { background: transparent; border: none; color: white; width: 100%; outline: none; }
+        .btn-plus { color: var(--text-muted); font-size: 20px; cursor: pointer; }
 
-        /* 🌀 載入中 */
-        #loader { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; justify-content: center; align-items: center; font-size: 14px; letter-spacing: 2px; }
+        /* 彈出視窗 (圖二：新增好友) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--bg-sidebar); padding: 20px; border-radius: 8px; width: 400px; }
     </style>
 </head>
 <body>
 
-    <div id="loader">正在啟動 TACKER 系統...</div>
-
-    <div id="login-screen" class="login-container">
-        <h2>歡迎回來！</h2>
-        <p class="subtitle">我們很高興再次見到您！</p>
-        <button class="btn-google" onclick="signIn()">
-            <img src="https://www.google.com/favicon.ico" width="18"> 使用 Google 帳號登入
-        </button>
-        <p style="font-size: 12px; color: var(--text-muted); margin-top: 15px;">
-            需要帳號？ <span style="color: #00a8fc; cursor: pointer;">註冊</span>
-        </p>
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>歡迎回來！</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">很高興見到您！</p>
+            <button class="btn-login" onclick="signIn()">使用 Google 帳號登入</button>
+        </div>
     </div>
 
-    <div id="registration-screen" class="login-container">
-        <h2 style="color: #fff;">建立個人檔案</h2>
-        <p class="subtitle">請設定您的專屬 Tacker 識別碼</p>
-        <div class="input-group">
-            <label>Tacker ID (不可更改)</label>
-            <input type="text" id="tacker-id" placeholder="例如: Ryfn_1998">
+    <div id="registration-screen">
+        <div class="login-card">
+            <h2 style="color: var(--online-green);">設定身分</h2>
+            <p style="color: var(--text-muted);">帳號 ID (僅可用小寫英文和數字)</p>
+            <input type="text" id="reg-id" class="reg-input" placeholder="例如: ryfn01">
+            <button class="btn-login" style="background: var(--online-green);" onclick="completeRegistration()">完成註冊</button>
         </div>
-        <button class="btn-google" onclick="saveProfile()" style="background: var(--online-green);">完成並進入系統</button>
     </div>
 
     <div id="main-app">
-        <div class="login-container">
-            <h2 style="color: var(--online-green);">● 系統已授權</h2>
-            <p id="display-name" style="font-size: 20px; margin: 10px 0;"></p>
-            <p id="display-id" style="color: var(--text-muted); font-size: 14px;"></p>
-            <hr style="border: 0; border-top: 1px solid #3f4147; margin: 20px 0;">
-            <button onclick="signOut()" style="background:none; border: 1px solid #f23f43; color:#f23f43; padding: 8px 16px; border-radius: 3px; cursor:pointer;">登出 Tacker</button>
+        <div class="sidebar">
+            <div class="friend-list">
+                <div id="friend-container" class="no-friends">目前沒有好友 :)</div>
+                <button onclick="showAddFriend()" style="background:none; border:none; color:var(--online-green); cursor:pointer;">(圖一) ➕ 點擊找好友</button>
+            </div>
+            <div class="user-footer" onclick="openSettings()">
+                <img id="my-avatar" class="avatar-sm">
+                <div class="user-meta">
+                    <div id="my-name" style="font-weight: bold;"></div>
+                    <div id="my-id" style="color: var(--text-muted); font-size: 11px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-empty">
+                <div style="font-size: 50px; opacity: 0.2;">#</div>
+                <p>因為你沒有在任何頻道</p>
+            </div>
+            <div class="input-bar">
+                <div class="input-box">
+                    <span class="btn-plus" onclick="alert('上傳檔案(10MB以內)')">⊕</span>
+                    <input type="text" placeholder="傳送訊息到 Tacker">
+                    <span style="cursor:pointer;" onclick="alert('發送')">🚀</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-friend-modal" class="modal">
+        <div class="modal-content">
+            <h3>新增好友</h3>
+            <input type="text" id="target-id" class="reg-input" placeholder="打對方的帳戶 ID">
+            <div style="display:flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="closeAddFriend()" style="background:none; border:none; color:white;">取消</button>
+                <button onclick="confirmAddFriend()" style="background:var(--discord-blurple); border:none; color:white; padding:5px 15px; border-radius:3px;">確認 V</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // 初始化 Supabase
-        const _s = supabase.createClient(
-            'https://coyiifxxfopvabpjszis.supabase.co', 
-            'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH'
-        );
+        const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
-        // 登入功能
         async function signIn() {
-            await _s.auth.signInWithOAuth({
-                provider: 'google',
-                options: { 
-                    // 這裡已經修正為你的 GitHub Pages 官方路徑
-                    redirectTo: 'https://ryfn1998-hash.github.io/Tacker/' 
-                }
-            });
+            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
         }
 
-        async function signOut() {
-            await _s.auth.signOut();
+        async function checkStatus() {
+            const { data: { session } } = await _s.auth.getSession();
+            if (session) {
+                const { data: profile } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+                if (profile && profile.tacker_id) {
+                    showApp(session.user, profile);
+                } else {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('registration-screen').style.display = 'flex';
+                }
+            }
+        }
+
+        function showApp(user, profile) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('registration-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'grid';
+            document.getElementById('my-name').innerText = user.user_metadata.full_name;
+            document.getElementById('my-id').innerText = profile.tacker_id;
+            document.getElementById('my-avatar').src = user.user_metadata.avatar_url;
+        }
+
+        async function completeRegistration() {
+            const tid = document.getElementById('reg-id').value.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!tid) return alert('請輸入合法的 ID');
+            const { data: { user } } = await _s.auth.getUser();
+            await _s.from('profiles').upsert({ id: user.id, tacker_id: tid, full_name: user.user_metadata.full_name });
             location.reload();
         }
 
-        // 核心檢查邏輯
-        async function checkStatus() {
-            const { data: { session } } = await _s.auth.getSession();
-            const loader = document.getElementById('loader');
-            const login = document.getElementById('login-screen');
-            const reg = document.getElementById('registration-screen');
-            const app = document.getElementById('main-app');
-
-            if (session) {
-                // 檢查資料庫是否有 ID 資料
-                const { data: profile, error } = await _s
-                    .from('profiles')
-                    .select('tacker_id')
-                    .eq('id', session.user.id)
-                    .maybeSingle();
-
-                if (profile && profile.tacker_id) {
-                    // 已註冊：顯示主介面
-                    login.style.display = 'none';
-                    reg.style.display = 'none';
-                    app.style.display = 'flex';
-                    document.getElementById('display-name').innerText = session.user.user_metadata.full_name;
-                    document.getElementById('display-id').innerText = "@" + profile.tacker_id;
-                } else {
-                    // 未註冊：顯示 P1 介面
-                    login.style.display = 'none';
-                    reg.style.display = 'block';
-                    app.style.display = 'none';
-                }
-            } else {
-                // 未登入：顯示登入介面
-                login.style.display = 'block';
-                reg.style.display = 'none';
-                app.style.display = 'none';
-            }
-            loader.style.display = 'none';
-        }
-
-        // 儲存 P1 資料
-        async function saveProfile() {
-            const tackerId = document.getElementById('tacker-id').value.trim();
-            if (!tackerId) return alert('請輸入 Tacker ID');
-
-            const { data: { user } } = await _s.auth.getUser();
-            const { error } = await _s.from('profiles').upsert({
-                id: user.id,
-                tacker_id: tackerId,
-                full_name: user.user_metadata.full_name,
-                avatar_url: user.user_metadata.avatar_url,
-                updated_at: new Date()
-            });
-
-            if (error) {
-                alert('註冊失敗：' + error.message);
-            } else {
-                location.reload();
-            }
-        }
-
+        function showAddFriend() { document.getElementById('add-friend-modal').style.display = 'flex'; }
+        function closeAddFriend() { document.getElementById('add-friend-modal').style.display = 'none'; }
+        
         window.onload = checkStatus;
     </script>
 </body>
