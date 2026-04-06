@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker v2.0</title>
+    <title>Tacker v2.1 | FR Tech</title>
     <style>
-        :root { --p-green: #00ff41; --bg: #010409; --card: #161b22; --brd: #30363d; }
+        :root { --p-green: #00ff41; --bg: #010409; --card: #161b22; --brd: #30363d; --ds: #5865F2; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
         .login-box { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 360px; text-align: center; }
-        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; display: block; }
-        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; }
+        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; display: block; outline: none; }
+        input:focus { border-color: var(--p-green); }
+        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; transition: 0.2s; }
         .btn-main { background: var(--p-green); color: black; }
+        .btn-ds { background: var(--ds); color: white; margin-top: 8px; }
+        .btn:active { transform: scale(0.97); opacity: 0.9; }
         #app { display: none; position: fixed; inset: 0; background: #0d1117; z-index: 100; padding: 20px; }
     </style>
 </head>
@@ -19,22 +22,24 @@
 
     <div id="auth-page">
         <div class="login-box">
-            <h2 id="ui-title" style="color:var(--p-green)">TACKER 系統</h2>
-            <input type="email" id="email" placeholder="信箱">
+            <h2 id="ui-title" style="color:var(--p-green); margin-bottom: 20px;">TACKER 系統</h2>
+            <input type="email" id="email" placeholder="電子信箱">
             <input type="password" id="pass" placeholder="密碼">
+            
             <button class="btn btn-main" onclick="handleAuth()">進入系統</button>
+            <button class="btn btn-ds" onclick="handleDiscord()">使用 Discord 登入</button>
+            
             <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px; text-decoration: underline;">[ 沒有帳號？點此註冊 ]</p>
         </div>
     </div>
 
     <div id="app">
         <h2 style="color:var(--p-green)">連線成功</h2>
-        <p>歡迎回來，負責人。</p>
-        <button onclick="location.reload()" style="color:red; background:none; border:none; cursor:pointer;">[ 登出系統 ]</button>
+        <p id="user-info">載入使用者資訊中...</p>
+        <button onclick="logout()" style="color:red; background:none; border:none; cursor:pointer; margin-top: 20px; font-size: 16px;">[ 登出系統 ]</button>
     </div>
 
     <script>
-        // 設定 Supabase 資料
         const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
         const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
         let isSignUp = false;
@@ -45,44 +50,65 @@
             document.getElementById('ui-sw').innerText = isSignUp ? "[ 返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
         }
 
+        // 1. 原生 Email 登入/註冊
         async function handleAuth() {
-            // 點擊瞬間立刻跳出測試，確認按鈕沒死
-            console.log("按鈕已觸發");
-            
             const email = document.getElementById('email').value;
             const password = document.getElementById('pass').value;
+            if(!email || !password) return alert("請填寫完整資訊");
 
-            if(!email || !password) {
-                alert("請輸入帳密");
-                return;
-            }
-
-            // 使用原生 fetch 呼叫 Supabase API，不依賴 SDK
             const endpoint = isSignUp ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
             
             try {
                 const response = await fetch(S_URL + endpoint, {
                     method: 'POST',
-                    headers: {
-                        'apikey': S_KEY,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'apikey': S_KEY, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
 
                 const result = await response.json();
-
                 if (response.ok) {
-                    // 成功登入
-                    document.getElementById('auth-page').style.display = 'none';
-                    document.getElementById('app').style.display = 'block';
+                    localStorage.setItem('tacker_token', result.access_token);
+                    enterApp(result.user?.email || email);
                 } else {
-                    alert("連線失敗: " + (result.error_description || result.msg || "未知錯誤"));
+                    alert("錯誤: " + (result.error_description || result.msg || "連線失敗"));
                 }
-            } catch (err) {
-                alert("網路異常，請確認連線");
-            }
+            } catch (err) { alert("網路異常，請稍後再試"); }
         }
+
+        // 2. 原生 Discord 登入 (使用重定向)
+        function handleDiscord() {
+            // 直接跳轉到 Supabase 的 OAuth 網址，避開所有 SDK 載入問題
+            const discordUrl = `${S_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(window.location.href)}`;
+            window.location.href = discordUrl;
+        }
+
+        function enterApp(userEmail) {
+            document.getElementById('auth-page').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('user-info').innerText = "登入身份: " + userEmail;
+        }
+
+        function logout() {
+            localStorage.removeItem('tacker_token');
+            location.reload();
+        }
+
+        // 3. 頁面加載檢查 (處理 OAuth 回傳)
+        window.onload = () => {
+            // 檢查 URL 是否帶有 access_token (Discord 登入後會帶在 URL hash)
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token=')) {
+                const token = new URLSearchParams(hash.replace('#', '?')).get('access_token');
+                if (token) {
+                    localStorage.setItem('tacker_token', token);
+                    enterApp("Discord 用戶");
+                    // 清除網址上的 token 保持乾淨
+                    window.history.replaceState(null, null, window.location.pathname);
+                }
+            } else if (localStorage.getItem('tacker_token')) {
+                enterApp("已驗證用戶");
+            }
+        };
     </script>
 </body>
 </html>
