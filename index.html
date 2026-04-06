@@ -2,180 +2,107 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | Official</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tacker | Developer Preview</title>
     <style>
         :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --text: #dbdee1; --muted: #b5bac1; }
-        body { margin: 0; background: var(--bg-p); color: white; font-family: -apple-system, sans-serif; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: var(--bg-p); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         .hidden { display: none !important; }
-        .flex-center { display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 20px; box-sizing: border-box; }
-        .card { background: var(--bg-s); padding: 30px; border-radius: 12px; width: 100%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
-        input { width: 100%; background: #1e1f22; border: 1px solid transparent; padding: 14px; color: white; border-radius: 6px; margin: 12px 0; box-sizing: border-box; outline: none; font-size: 16px; }
-        input:focus { border-color: var(--brand); }
-        .btn { width: 100%; padding: 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; background: var(--brand); color: white; font-size: 16px; transition: 0.2s; }
-        .btn-google { background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* 主介面 (遵照手稿) */
-        #app-root { display: none; height: 100vh; grid-template-columns: 260px 1fr; }
-        .sidebar { background: var(--bg-s); border-right: 1px solid #1e1f22; position: relative; display: flex; flex-direction: column; }
-        .user-status { background: var(--bg-t); padding: 12px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; background: #444; object-fit: cover; }
-        .main-chat { display: flex; flex-direction: column; background: var(--bg-p); }
-        #msg-flow { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-        .input-bar { padding: 20px; background: var(--bg-p); }
-        .input-box { background: #383a40; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; }
+        /* 測試用登入頁 */
+        .dev-auth { height: 100vh; display: flex; justify-content: center; align-items: center; background: #1e1f22; flex-direction: column; }
+        .card { background: var(--bg-s); padding: 40px; border-radius: 8px; text-align: center; width: 300px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 
-        @media (max-width: 600px) { #app-root { grid-template-columns: 1fr; } .sidebar { display: none; } }
+        /* 主介面 (遵照 P1 手稿) */
+        #main-app { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
+        .sidebar { background: var(--bg-s); border-right: 1px solid #1e1f22; display: flex; flex-direction: column; position: relative; }
+        .user-status { background: var(--bg-t); padding: 10px; position: absolute; bottom: 0; width: 100%; display: flex; align-items: center; gap: 10px; border-top: 1px solid #1e1f22; cursor: pointer; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #5865f2; }
+
+        /* 聊天區域 */
+        .chat-view { display: flex; flex-direction: column; }
+        .msg-flow { flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.2; }
+        .input-area { padding: 20px; }
+        .input-box { background: #383a40; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; }
+
+        /* 設定頁面彈窗 (圖二內容) */
+        #settings-page { display: none; position: fixed; inset: 0; background: var(--bg-p); z-index: 100; padding: 40px; }
+        .set-item { margin-bottom: 20px; padding: 15px; background: var(--bg-s); border-radius: 8px; }
     </style>
 </head>
 <body>
 
-    <div id="boot-loader" class="flex-center" style="position:fixed; inset:0; z-index:1000; background:var(--bg-p);">
-        <div style="font-weight:bold; letter-spacing: 2px;">TACKER SYSTEM</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:10px;">正在同步雲端資料...</div>
-    </div>
-
-    <div id="auth-screen" class="flex-center hidden">
+    <div id="dev-gate" class="dev-auth">
         <div class="card">
-            <h2 id="view-title" style="margin-bottom: 25px;">Tacker</h2>
-            
-            <button class="btn btn-google" onclick="doGoogleLogin()">
-                <img src="https://www.google.com/favicon.ico" width="18"> Google 帳號驗證
-            </button>
-            
-            <div id="registration-form" class="hidden" style="margin-top:25px; border-top:1px solid #3f4147; padding-top:20px;">
-                <p style="font-size:12px; color:var(--brand); font-weight:bold;">驗證成功！請設定你的 Tacker ID</p>
-                <input type="text" id="t-id-input" placeholder="帳號 ID (僅限小寫英文與數字)">
-                <button class="btn" onclick="completeRegistration()">完成註冊並進入</button>
-            </div>
-            
-            <p id="toggle-tip" style="font-size:12px; color:var(--muted); margin-top:25px; cursor:pointer;" onclick="setReg()">
-                尚未擁有帳號？點此註冊
-            </p>
+            <h2>Tacker 預覽模式</h2>
+            <p style="font-size:12px; color:var(--muted);">跳過驗證，直接檢查 UI</p>
+            <button class="btn" style="background:var(--brand); color:white;" onclick="enterApp()">進入查看內部介面</button>
         </div>
     </div>
 
-    <div id="app-root">
+    <div id="main-app">
         <aside class="sidebar">
-            <div style="padding:20px; color:var(--muted); text-align:center; flex:1; font-size:14px;">
-                <div style="margin-bottom:10px; font-weight:bold;">好友列表</div>
-                <hr style="opacity:0.1;">
-                目前沒有進行中的對話
-            </div>
-            <div class="user-status">
-                <img id="u-ava" class="avatar">
-                <div style="font-size:12px; line-height:1.2;">
-                    <div id="u-name" style="font-weight:bold; color:white;"></div>
-                    <div id="u-tag" style="color:var(--muted);"></div>
+            <div style="padding:20px; color:var(--muted); text-align:center;">好友列表</div>
+            <div class="user-status" onclick="openSettings()">
+                <div class="avatar"></div>
+                <div style="font-size:12px;">
+                    <div style="font-weight:bold;">測試管理員</div>
+                    <div style="color:var(--muted);">@dev_admin</div>
                 </div>
             </div>
         </aside>
-        <main class="main-chat">
-            <div id="msg-flow">
-                <div style="margin:auto; text-align:center; opacity:0.1;">
-                    <div style="font-size:80px;">#</div>
-                    <p>尚未選擇對話</p>
-                </div>
+        <main class="chat-view">
+            <div class="msg-flow">
+                <div style="font-size:80px;">#</div>
+                <p>因為你沒有在任何頻道 :/</p>
             </div>
-            <div class="input-bar">
+            <div class="input-area">
                 <div class="input-box">
-                    <span style="color:var(--muted); font-size:20px; cursor:pointer;">⊕</span>
-                    <input type="text" id="m-in" placeholder="傳送訊息到 Tacker..." style="background:transparent; border:none; margin:0; flex:1; color:white;">
-                    <button onclick="handleSend()" style="background:none; border:none; color:var(--brand); font-weight:bold; cursor:pointer;">發送</button>
+                    <span style="color:var(--muted);">⊕</span>
+                    <input type="text" placeholder="鍵入訊息..." style="background:transparent; border:none; flex:1; color:white; outline:none;">
+                    <button style="background:none; border:none; color:var(--brand); font-weight:bold;">發送</button>
                 </div>
             </div>
         </main>
     </div>
 
+    <div id="settings-page">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <button onclick="closeSettings()" style="background:none; color:var(--brand); border:none; cursor:pointer; margin-bottom:20px;">← 返回對話</button>
+            <h1>使用者設定</h1>
+            
+            <div class="set-item">
+                <h3>基本資訊</h3>
+                <p style="color:var(--muted);">顯示名稱：測試管理員</p>
+                <p style="color:var(--muted);">帳號 ID：dev_admin</p>
+            </div>
+
+            <div class="set-item">
+                <h3>外觀設定</h3>
+                <button class="btn" style="width:auto; background:#4e5058; color:white;">更換頭像</button>
+                <button class="btn" style="width:auto; background:#4e5058; color:white; margin-left:10px;">更換橫幅</button>
+            </div>
+
+            <div class="set-item">
+                <h3>帳戶安全</h3>
+                <button class="btn" style="width:auto; background:#f23f43; color:white;">登出帳號</button>
+                <button class="btn" style="width:auto; background:none; border:1px solid #f23f43; color:#f23f43; margin-left:10px;">移除帳戶</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
-
-        function setReg() {
-            document.getElementById('view-title').innerText = "建立新帳號";
-            document.getElementById('toggle-tip').classList.add('hidden');
+        function enterApp() {
+            document.getElementById('dev-gate').style.display = 'none';
+            document.getElementById('main-app').style.display = 'grid';
         }
-
-        async function doGoogleLogin() {
-            // 關鍵修復：強制移除網址末端的斜線，避免 Google 400 錯誤
-            let redirectUrl = window.location.origin + window.location.pathname;
-            if (redirectUrl.endsWith('/')) redirectUrl = redirectUrl.slice(0, -1);
-            
-            await _s.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: redirectUrl }
-            });
+        function openSettings() {
+            document.getElementById('settings-page').style.display = 'block';
         }
-
-        async function initSystem() {
-            const { data: { session } } = await _s.auth.getSession();
-            
-            if (!session) {
-                showAuth();
-                return;
-            }
-
-            // 檢查資料庫是否有 Profile (對應你的手稿 P1)
-            const { data: p } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-
-            if (!p) {
-                showAuth();
-                document.getElementById('registration-form').classList.remove('hidden');
-                setReg();
-            } else {
-                runApp(p);
-            }
+        function closeSettings() {
+            document.getElementById('settings-page').style.display = 'none';
         }
-
-        async function completeRegistration() {
-            const rawId = document.getElementById('t-id-input').value;
-            const tid = rawId.toLowerCase().replace(/[^a-z0-9]/g, '');
-            if(tid.length < 3) return alert("ID 至少需要 3 個小寫英文字母或數字");
-            
-            const { data: { user } } = await _s.auth.getUser();
-            const { error } = await _s.from('profiles').upsert({
-                id: user.id, tacker_id: tid, full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url
-            });
-
-            if(!error) location.reload();
-            else alert("該 ID 已被佔用，請換一個試試");
-        }
-
-        function showAuth() {
-            document.getElementById('boot-loader').classList.add('hidden');
-            document.getElementById('auth-screen').classList.remove('hidden');
-        }
-
-        function runApp(profile) {
-            document.getElementById('boot-loader').classList.add('hidden');
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-root').style.display = 'grid';
-            
-            document.getElementById('u-name').innerText = profile.full_name;
-            document.getElementById('u-tag').innerText = "@" + profile.tacker_id;
-            document.getElementById('u-ava').src = profile.avatar_url;
-
-            _s.channel('room').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => render(p.new)).subscribe();
-            _s.from('messages').select('*').order('created_at').then(({data}) => data && data.forEach(render));
-        }
-
-        async function handleSend() {
-            const val = document.getElementById('m-in').value;
-            if(!val) return;
-            const { data: { user } } = await _s.auth.getUser();
-            await _s.from('messages').insert([{ user_id: user.id, user_name: user.user_metadata.full_name, content: val }]);
-            document.getElementById('m-in').value = '';
-        }
-
-        function render(m) {
-            const flow = document.getElementById('msg-flow');
-            const d = document.createElement('div');
-            d.innerHTML = `<div style="font-size:13px;"><b style="color:var(--brand)">${m.user_name}</b> <span style="color:gray; font-size:10px;">${new Date(m.created_at).toLocaleTimeString()}</span></div><div style="margin-top:4px;">${m.content}</div>`;
-            flow.appendChild(d);
-            flow.scrollTop = flow.scrollHeight;
-        }
-
-        window.onload = initSystem;
     </script>
 </body>
 </html>
