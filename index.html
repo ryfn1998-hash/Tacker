@@ -3,169 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | Official</title>
+    <title>Tacker | Entrance</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg: #313338; --side: #2b2d31; --dark: #1e1f22; --accent: #5865f2; --text: #f2f3f5; --muted: #949ba4; }
+        :root { --bg: #313338; --side: #2b2d31; --accent: #5865f2; --text: #f2f3f5; --muted: #949ba4; }
         * { box-sizing: border-box; font-family: sans-serif; margin: 0; padding: 0; }
-        body { background: var(--dark); color: var(--text); height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-
-        /* 介面切換 */
+        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: var(--side); padding: 32px; border-radius: 8px; width: 420px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
         .hidden { display: none !important; }
-        .full-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; align-items: center; justify-content: center; }
+        
+        /* 按鈕樣式 */
+        .btn-google { width: 100%; padding: 12px; background: white; color: #444; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .btn-register { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .divider { display: flex; align-items: center; margin: 20px 0; color: var(--muted); font-size: 12px; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #4e5058; margin: 0 10px; }
 
-        /* 註冊卡片 (P1) */
-        .auth-card { background: var(--side); padding: 30px; border-radius: 8px; width: 400px; text-align: center; }
-        .input-group { text-align: left; margin-top: 15px; }
-        .input-group label { font-size: 12px; color: var(--muted); font-weight: bold; }
-        input { width: 100%; padding: 10px; background: var(--dark); border: none; color: white; margin-top: 5px; border-radius: 4px; }
-
-        /* 主畫面佈局 (圖一/圖三) */
-        #app { display: none; width: 100vw; height: 100vh; }
-        aside { width: 240px; background: var(--side); display: flex; flex-direction: column; }
-        main { flex: 1; background: var(--bg); position: relative; display: flex; flex-direction: column; }
-
-        /* 個人資訊欄 (P1) */
-        .user-bar { padding: 10px; background: #232428; display: flex; align-items: center; gap: 10px; font-size: 13px; }
-        .pfp { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); }
-
-        /* 聊天室 (圖三) */
-        #chat-view { display: none; flex: 1; flex-direction: column; }
-        .input-area { padding: 20px; display: flex; gap: 10px; align-items: center; }
-        .msg-box { flex: 1; background: #383a40; border-radius: 8px; padding: 10px; display: flex; align-items: center; }
-        .msg-box input { margin: 0; padding: 0; background: transparent; }
-
-        /* 彈窗 (圖二) */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 200; }
+        /* 輸入框 (P1 手稿樣式) */
+        .input-group { text-align: left; margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; color: var(--muted); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        input { width: 100%; padding: 10px; background: #1e1f22; border: none; color: white; border-radius: 3px; outline: none; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="full-screen">
-        <div class="auth-card">
-            <h2>Tacker</h2>
-            <button onclick="login()" style="width:100%; padding:12px; margin-top:20px; cursor:pointer;">Google 一鍵登入</button>
-        </div>
-    </div>
+    <div id="entrance-view" class="auth-card">
+        <h2 style="margin-bottom: 8px;">歡迎來到 Tacker</h2>
+        <p style="color:var(--muted); font-size: 14px; margin-bottom: 24px;">請選擇進入方式</p>
 
-    <div id="setup-screen" class="full-screen hidden">
-        <div class="auth-card">
-            <h3>完善註冊資料</h3>
-            <div class="input-group">
-                <label>顯示名稱</label>
-                <input type="text" id="set-name" placeholder="例如: 暗影">
-            </div>
-            <div class="input-group">
-                <label>帳號 ID (英文與數字)</label>
-                <input type="text" id="set-id" placeholder="例如: ryfn888">
-            </div>
-            <button onclick="saveProfile()" style="width:100%; padding:12px; background:var(--accent); color:white; border:none; margin-top:20px; cursor:pointer;">完成註冊</button>
-        </div>
-    </div>
+        <button class="btn-google" onclick="loginWithGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+            使用 Google 帳號登入
+        </button>
 
-    <div id="app">
-        <aside>
-            <div style="padding:15px; font-weight:bold;">目前沒有好友</div>
-            <div style="flex:1; padding:10px;">
-                <div onclick="showAddFriend()" style="cursor:pointer; color:var(--muted);">目前沒有好友 ⊕</div>
-                <div id="friend-list"></div>
-            </div>
-            <div class="user-bar">
-                <div class="pfp"></div>
-                <div style="flex:1">
-                    <b id="my-name">User</b><br>
-                    <small id="my-id" style="color:var(--muted)">ID: ---</small>
-                </div>
-                <span style="cursor:pointer" onclick="alert('進入 P1 自訂設定頁')">✏️</span>
-            </div>
-        </aside>
+        <div class="divider">或者</div>
+
+        <button class="btn-register" onclick="showRegisterPage()">
+            建立新帳號 (註冊)
+        </button>
         
-        <main>
-            <div id="empty-ui" style="text-align:center; margin:auto;">
-                <div style="font-size:50px; opacity:0.3;">#</div>
-                <h3>這裡什麼都沒有 :/</h3>
-                <p style="color:var(--muted)">因為你沒有在任何頻道</p>
-            </div>
-
-            <div id="chat-view">
-                <div id="msgs" style="flex:1; padding:20px; overflow-y:auto;"></div>
-                <div class="input-area">
-                    <div class="msg-box">
-                        <span style="cursor:pointer; padding-right:10px;" onclick="document.getElementById('f').click()">⊕</span>
-                        <input type="text" id="msg-in" placeholder="發送訊息..." onkeypress="if(event.key==='Enter')send()">
-                        <button onclick="send()" style="background:none; border:none; color:var(--accent); cursor:pointer;">➤</button>
-                    </div>
-                </div>
-            </div>
-        </main>
+        <p style="font-size: 12px; color: var(--muted); margin-top: 20px;">
+            已有帳號？<span style="color:#00a8fc; cursor:pointer;" onclick="alert('跳轉至一般登入')">登入</span>
+        </p>
     </div>
 
-    <div id="add-modal" class="modal">
-        <div class="auth-card">
-            <h3>新增好友</h3>
-            <input type="text" id="target-id" placeholder="輸入對方帳號 ID">
-            <button onclick="addFriend()" style="margin-top:15px; padding:10px 20px; background:var(--accent); color:white; border:none; border-radius:4px;">確認 ✓</button>
-            <button onclick="closeModal()" style="background:none; border:none; color:white; margin-left:10px;">取消</button>
+    <div id="register-page" class="auth-card hidden">
+        <h3 style="margin-bottom: 20px;">建立您的個人檔案</h3>
+        
+        <div class="input-group">
+            <label>顯示名稱</label>
+            <input type="text" id="reg-name" placeholder="大家怎麼稱呼你">
+        </div>
+
+        <div class="input-group">
+            <label>帳號 ID (唯一代碼)</label>
+            <input type="text" id="reg-id" placeholder="僅限英文與數字，例如: ryfn888">
+        </div>
+
+        <div class="input-group">
+            <label>出生日期</label>
+            <input type="date" id="reg-dob" style="color-scheme: dark;">
+        </div>
+
+        <button class="btn-register" onclick="finishRegistration()">完成註冊並進入</button>
+        <button style="background:none; border:none; color:var(--muted); margin-top:15px; cursor:pointer;" onclick="location.reload()">返回</button>
+    </div>
+
+    <div id="main-app" class="hidden" style="width:100vw; height:100vh; display:flex;">
+        <div style="width:240px; background:var(--side); padding:20px;">
+            <div id="display-my-id" style="font-weight:bold;">ID: ---</div>
+            <hr style="margin:15px 0; border:0; border-top:1px solid #4e5058;">
+            <div style="color:var(--muted); font-size:13px;">目前沒有好友 ⊕</div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div style="font-size:60px; opacity:0.2;">#</div>
+            <h3>這裡什麼都沒有 :/</h3>
+            <p style="color:var(--muted)">因為你沒有在任何頻道</p>
         </div>
     </div>
-
-    <input type="file" id="f" class="hidden" onchange="checkFile(this)">
 
     <script>
+        // 使用你的 FR Technology 金鑰
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
-        async function login() {
-            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        // 1. Google 登入邏輯
+        async function loginWithGoogle() {
+            const { error } = await _s.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
+            if(error) alert("錯誤：" + error.message);
         }
 
-        async function checkUser() {
-            const { data: { user } } = await _s.auth.getUser();
-            if (!user) return;
+        // 2. 切換至註冊頁面 (P1)
+        function showRegisterPage() {
+            document.getElementById('entrance-view').classList.add('hidden');
+            document.getElementById('register-page').classList.remove('hidden');
+        }
+
+        // 3. 完成註冊並存入資料庫
+        function finishRegistration() {
+            const id = document.getElementById('reg-id').value;
+            const name = document.getElementById('reg-name').value;
             
-            document.getElementById('login-screen').classList.add('hidden');
-            // 這裡模擬：如果沒設定過 ID 就顯示補完畫面
-            document.getElementById('setup-screen').classList.remove('hidden');
-            document.getElementById('set-name').value = user.user_metadata.full_name;
-        }
-
-        function saveProfile() {
-            const id = document.getElementById('set-id').value;
-            const name = document.getElementById('set-name').value;
-            if(!/^[a-zA-Z0-9]+$/.test(id)) return alert("ID 只能用英文數字！");
-
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('app').style.display = 'flex';
-            document.getElementById('my-name').innerText = name;
-            document.getElementById('my-id').innerText = "ID: " + id;
-        }
-
-        function showAddFriend() { document.getElementById('add-modal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
-
-        function addFriend() {
-            const tid = document.getElementById('target-id').value;
-            alert("請求已發送至 " + tid);
-            closeModal();
-            // 模擬接受後出現在左側 (圖三)
-            const list = document.getElementById('friend-list');
-            list.innerHTML += `<div style="padding:10px; cursor:pointer;" onclick="startChat('${tid}')">👤 ${tid}</div>`;
-        }
-
-        function startChat(name) {
-            document.getElementById('empty-ui').classList.add('hidden');
-            document.getElementById('chat-view').style.display = 'flex';
-        }
-
-        function checkFile(input) {
-            if (input.files[0].size > 10 * 1024 * 1024) {
-                alert("檔案超過 10MB！無法傳送。");
-                input.value = "";
-            } else {
-                alert("檔案已準備好 (10MB 以內)");
+            // 安全檢查：必須是英文數字
+            if(!/^[a-zA-Z0-9]+$/.test(id)) {
+                return alert("帳號 ID 格式錯誤！請只使用英文和數字。");
             }
+
+            alert("註冊成功！歡迎加入 Tacker，" + name);
+            
+            // 進入主程式畫面 (圖一)
+            document.getElementById('register-page').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('display-my-id').innerText = "ID: " + id;
         }
 
-        window.onload = checkUser;
+        // 自動檢查登入狀態
+        window.onload = async () => {
+            const { data: { user } } = await _s.auth.getUser();
+            if (user) {
+                // 如果已經透過 Google 登入，直接顯示主畫面或補完頁面
+                console.log("Google 登入成功:", user.email);
+            }
+        };
     </script>
 </body>
 </html>
