@@ -3,167 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | Final Production v1.4</title>
+    <title>Tacker | Official v1.5.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg: #313338; --side: #2b2d31; --dark: #1e1f22; --accent: #5865f2; --text: #f2f3f5; --muted: #949ba4; --danger: #f23f42; --success: #23a559; }
+        :root { 
+            --bg: #313338; --side: #2b2d31; --dark: #1e1f22; --accent: #5865f2; 
+            --text: #f2f3f5; --muted: #949ba4; --online: #23a55a; --idle: #f0b232; --dnd: #f23f43; --offline: #80848e;
+        }
         * { box-sizing: border-box; font-family: 'gg sans', 'Noto Sans TC', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
         .hidden { display: none !important; }
 
-        /* 高級 Toast 提示 */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
-        .toast { background: var(--side); border-left: 4px solid var(--accent); padding: 16px 24px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); margin-bottom: 10px; transition: 0.3s; min-width: 250px; border: 1px solid #4e5058; }
-
-        /* 自定義彈窗 (圖二) */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-card { background: var(--side); padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #4e5058; }
-
-        /* 介面佈局 */
-        .auth-view { position: fixed; inset: 0; background: var(--bg); z-index: 1500; display: flex; align-items: center; justify-content: center; }
-        .card { background: var(--side); padding: 40px; border-radius: 8px; width: 440px; text-align: center; border: 1px solid #43444b; }
+        /* 個人資料卡 (Discord Style) */
+        .profile-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .profile-card { background: var(--dark); width: 340px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .profile-banner { height: 60px; background: var(--accent); }
+        .profile-content { padding: 16px; position: relative; padding-top: 45px; }
+        .profile-avatar-big { width: 80px; height: 80px; border-radius: 50%; border: 6px solid var(--dark); position: absolute; top: -40px; left: 16px; background: var(--accent); background-size: cover; }
+        .status-dot { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--dark); position: absolute; bottom: 5px; right: 5px; }
         
-        input { width: 100%; padding: 12px; background: var(--dark); border: 1px solid #1e1f22; color: white; border-radius: 4px; margin: 10px 0; outline: none; }
-        input:focus { border-color: var(--accent); }
-        
-        .btn-main { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-main:hover { filter: brightness(1.1); }
+        .info-box { background: var(--side); padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px; }
+        .info-label { font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
 
-        /* 主介面 (圖一/圖三) */
+        /* 主介面 footer 狀態顯示 */
+        .user-footer { background: #232428; padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; }
+        .user-footer:hover { background: #35373c; }
+        .avatar-wrap { position: relative; width: 32px; height: 32px; }
+        .pfp { width: 32px; height: 32px; border-radius: 50%; background-size: cover; }
+        .mini-status { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #232428; position: absolute; bottom: 0; right: 0; }
+
+        /* 介面框架 */
         #sidebar { width: 260px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #1e1f22; }
-        #chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
-        .user-tag { background: #232428; padding: 12px; display: flex; align-items: center; gap: 10px; }
-        .pfp { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); background-size: cover; }
-        
-        .friend-item { padding: 10px; margin: 2px 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .friend-item:hover { background: #3f4147; }
+        .btn-main { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        input, textarea { width: 100%; padding: 10px; background: var(--dark); border: none; color: white; border-radius: 4px; margin: 8px 0; outline: none; }
     </style>
 </head>
 <body>
 
-    <div id="toast-container"></div>
-
-    <div id="auth-layer" class="auth-view">
-        <div class="card" id="login-box">
-            <h1 style="margin-bottom:10px;">TACKER</h1>
-            <p style="color:var(--muted); font-size:14px; margin-bottom:30px;">Security Protocol v1.4</p>
-            <button class="btn-main" style="background:white; color:#1e1f22;" onclick="signIn()">使用 Google 登入驗證</button>
-        </div>
-
-        <div class="card hidden" id="setup-box" style="text-align:left;">
-            <div style="cursor:pointer; color:var(--muted); margin-bottom:15px;" onclick="logout()">← 返回</div>
-            <h3>初始化帳號</h3>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:20px;">Google 驗證成功，請設定您的 Tacker ID</p>
-            <label style="font-size:11px; font-weight:bold; color:var(--muted);">顯示名稱</label>
-            <input type="text" id="set-name" placeholder="大家的稱呼">
-            <label style="font-size:11px; font-weight:bold; color:var(--muted);">帳號 ID (限英數)</label>
-            <input type="text" id="set-id" placeholder="例如: ryfn888">
-            <button class="btn-main" onclick="confirmRegister()">完成並進入</button>
+    <div id="setup-layer" class="hidden" style="position:fixed; inset:0; background:var(--bg); z-index:2000; display:flex; align-items:center; justify-content:center;">
+        <div style="background:var(--side); padding:40px; border-radius:8px; width:400px; border:1px solid #4e5058;">
+            <h2 style="text-align:center; margin-bottom:20px;">初始化身分</h2>
+            <label class="info-label">帳號 ID</label>
+            <input type="text" id="reg-id" placeholder="例如: ryfn888">
+            <label class="info-label">出生日期</label>
+            <input type="date" id="reg-birth" style="color-scheme: dark;">
+            <label class="info-label">關於我</label>
+            <textarea id="reg-bio" placeholder="介紹一下你自己..." style="height:80px; resize:none;"></textarea>
+            <button class="btn-main" style="margin-top:20px;" onclick="saveProfile()">啟動協定</button>
         </div>
     </div>
 
-    <div id="app" class="hidden" style="width:100%; display:flex;">
-        <aside id="sidebar">
-            <div style="padding:16px; font-weight:bold; font-size:12px; color:var(--muted);">私人訊息</div>
-            <div style="flex:1; padding:8px;" id="friend-list">
-                <div style="color:var(--muted); cursor:pointer; padding:8px; font-size:14px;" onclick="openAddFriend()">目前沒有好友 ⊕</div>
-            </div>
-            <div class="user-tag">
-                <div class="pfp" id="my-pfp"></div>
-                <div style="flex:1; overflow:hidden;">
-                    <div id="my-name" style="font-weight:bold; font-size:13px;">---</div>
-                    <div id="my-id" style="font-size:10px; color:var(--muted);">ID: ---</div>
+    <div id="profile-modal" class="profile-modal" onclick="closeProfile()">
+        <div class="profile-card" onclick="event.stopPropagation()">
+            <div class="profile-banner"></div>
+            <div class="profile-content">
+                <div class="profile-avatar-big" id="card-avatar">
+                    <div class="status-dot" id="card-status-dot"></div>
                 </div>
-                <div style="cursor:pointer; opacity:0.5;" onclick="logout()">🚪</div>
+                <h3 id="card-display-name">---</h3>
+                <div style="font-size:14px; color:var(--muted); margin-bottom:15px;" id="card-id">@---</div>
+                
+                <div class="info-box">
+                    <div class="info-label">關於我</div>
+                    <div id="card-bio">這傢伙很懶，什麼都沒留下。</div>
+                    <div class="info-label" style="margin-top:12px;">TACKER 成員時間</div>
+                    <div id="card-join-date">2026年4月</div>
+                    <div class="info-label" style="margin-top:12px;">生日</div>
+                    <div id="card-birthday">未設定</div>
+                </div>
+                
+                <div style="margin-top:15px; display:flex; gap:10px;">
+                    <button class="btn-main" style="flex:1; background:#4e5058;" onclick="logout()">登出帳號</button>
+                    <button class="btn-main" style="flex:1;" onclick="closeProfile()">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" style="width:100%; display:flex;">
+        <aside id="sidebar">
+            <div style="padding:16px; font-weight:bold; color:var(--muted); font-size:12px;">頻道</div>
+            <div style="flex:1;"></div>
+            
+            <div class="user-footer" onclick="openProfile()">
+                <div class="avatar-wrap">
+                    <div class="pfp" id="mini-pfp"></div>
+                    <div class="mini-status" id="mini-status-dot"></div>
+                </div>
+                <div style="flex:1; overflow:hidden;">
+                    <div id="my-name" style="font-weight:bold; font-size:13px;">載入中...</div>
+                    <div style="font-size:11px; color:var(--muted);">線上</div>
+                </div>
+                <div style="opacity:0.5; font-size:12px;">⚙️</div>
             </div>
         </aside>
 
-        <main id="chat-area">
-            <div id="empty-ui" style="margin:auto; text-align:center;">
-                <div style="width:60px; height:60px; border:2px solid #4e5058; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:30px; color:#4e5058;">#</div>
-                <h3>歡迎來到 Tacker</h3>
-                <p style="color:var(--muted); font-size:13px;">點擊左側好友開始安全對話</p>
-            </div>
-            </main>
-    </div>
-
-    <div id="add-modal" class="modal-overlay">
-        <div class="modal-card">
-            <h3 style="margin-bottom:15px;">新增好友</h3>
-            <input type="text" id="target-id" placeholder="輸入對方 Tacker ID">
-            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
-                <button style="background:none; border:none; color:white; cursor:pointer;" onclick="closeAddFriend()">取消</button>
-                <button class="btn-main" style="width:auto; padding:8px 24px;" onclick="handleAddFriend()">發送請求</button>
-            </div>
-        </div>
+        <main style="flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; background:var(--bg);">
+            <h1 style="color:var(--muted); opacity:0.2; font-size:80px;">TACKER</h1>
+            <p style="color:var(--muted);">請從左側開啟對話</p>
+        </main>
     </div>
 
     <script>
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
+        let myData = null;
 
-        function toast(m) {
-            const c = document.getElementById('toast-container');
-            const t = document.createElement('div'); t.className = 'toast'; t.innerText = m;
-            c.appendChild(t); setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3000);
-        }
-
-        async function signIn() { await _s.auth.signInWithOAuth({ provider: 'google' }); }
-        async function logout() { await _s.auth.signOut(); location.reload(); }
-
-        // 核心修復：自動記憶與跳過註冊
-        async function checkUser() {
+        async function checkSession() {
             const { data: { user } } = await _s.auth.getUser();
-            if (!user) return;
+            if (!user) return window.location.href = "login.html"; // 假設你有個 login 頁面
 
-            const { data: profile } = await _s.from('profiles').select('*').eq('id', user.id).single();
+            const { data: p } = await _s.from('profiles').select('*').eq('id', user.id).single();
 
-            if (!profile || !profile.username) {
-                document.getElementById('login-box').classList.add('hidden');
-                document.getElementById('setup-box').classList.remove('hidden');
-                document.getElementById('set-name').value = user.user_metadata.full_name;
+            if (!p || !p.username) {
+                document.getElementById('setup-layer').classList.remove('hidden');
             } else {
-                launchApp(profile);
+                myData = p;
+                renderApp();
             }
         }
 
-        async function confirmRegister() {
-            const id = document.getElementById('set-id').value;
-            const name = document.getElementById('set-name').value;
+        async function saveProfile() {
+            const id = document.getElementById('reg-id').value;
+            const birth = document.getElementById('reg-birth').value;
+            const bio = document.getElementById('reg-bio').value;
             const { data: { user } } = await _s.auth.getUser();
 
-            if(!/^[a-zA-Z0-9]+$/.test(id)) return toast("錯誤：ID 僅限英文字母與數字！");
+            if(!/^[a-zA-Z0-9]+$/.test(id)) return alert("ID 格式不正確");
 
             const { error } = await _s.from('profiles').upsert({
-                id: user.id, username: id, display_name: name, avatar_url: user.user_metadata.avatar_url
+                id: user.id, username: id, display_name: user.user_metadata.full_name,
+                avatar_url: user.user_metadata.avatar_url, bio: bio, birthday: birth
             });
 
-            if (error) return toast("此 ID 已被佔用，請更換一個。");
-            toast("初始化成功！");
-            setTimeout(() => location.reload(), 1000);
+            if (error) return alert("ID 已被佔用！");
+            location.reload();
         }
 
-        function launchApp(p) {
-            document.getElementById('auth-layer').classList.add('hidden');
-            document.getElementById('app').classList.remove('hidden');
-            document.getElementById('my-name').innerText = p.display_name;
-            document.getElementById('my-id').innerText = "ID: " + p.username;
-            document.getElementById('my-pfp').style.backgroundImage = `url(${p.avatar_url})`;
+        function renderApp() {
+            document.getElementById('my-name').innerText = myData.display_name;
+            document.getElementById('mini-pfp').style.backgroundImage = `url(${myData.avatar_url})`;
+            document.getElementById('mini-status-dot').style.backgroundColor = 'var(--online)';
         }
 
-        function openAddFriend() { document.getElementById('add-modal').style.display='flex'; }
-        function closeAddFriend() { document.getElementById('add-modal').style.display='none'; }
-
-        async function handleAddFriend() {
-            const tid = document.getElementById('target-id').value;
-            // 真正去搜尋 ID
-            const { data } = await _s.from('profiles').select('username').eq('username', tid).single();
-            if(!data) return toast("找不到此 ID，請檢查拼字。");
-            
-            toast(`已發送好友請求給 ${tid}`);
-            closeAddFriend();
+        function openProfile() {
+            document.getElementById('card-display-name').innerText = myData.display_name;
+            document.getElementById('card-id').innerText = "@" + myData.username;
+            document.getElementById('card-avatar').style.backgroundImage = `url(${myData.avatar_url})`;
+            document.getElementById('card-bio').innerText = myData.bio || "這傢伙很懶...";
+            document.getElementById('card-birthday').innerText = myData.birthday || "未設定";
+            document.getElementById('card-status-dot').style.backgroundColor = 'var(--online)';
+            document.getElementById('profile-modal').style.display = 'flex';
         }
 
-        window.onload = checkUser;
+        function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
+        async function logout() { await _s.auth.signOut(); location.reload(); }
+
+        window.onload = checkSession;
     </script>
 </body>
 </html>
