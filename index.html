@@ -6,181 +6,221 @@
     <title>Tacker | FR Technology</title>
     <style>
         :root {
-            /* Discord 官方色系 */
-            --bg-guilds: #1e1f22;
-            --bg-sidebar: #2b2d31;
-            --bg-main: #313338;
-            --bg-user-bar: #232428;
-            --text-normal: #dbdee1;
-            --text-muted: #949ba4;
-            --p-green: #23a559;
-            --p-blue: #5865f2;
-            --glass: rgba(0, 0, 0, 0.3);
-            --border: rgba(255, 255, 255, 0.05);
+            /* 進階紫色系 */
+            --bg-deep: #0a0514;
+            --bg-side: #120a21;
+            --bg-main: #1a112e;
+            --accent-purple: #8a2be2;
+            --light-purple: #bf77ff;
+            --glass-purple: rgba(138, 43, 226, 0.15);
+            --text-main: #e0d5f5;
+            --text-dim: #9d8db5;
+            --border: rgba(191, 119, 255, 0.1);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; cursor: default; }
-        body { margin: 0; background: var(--bg-guilds); color: var(--text-normal); font-family: 'PingFang TC', sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', 'PingFang TC', sans-serif; cursor: default; }
+        body { margin: 0; background: var(--bg-deep); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
-        /* --- 左側：伺服器列表 --- */
-        .guild-nav { width: 72px; background: var(--bg-guilds); display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; }
-        .guild-item { width: 48px; height: 48px; background: var(--bg-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; }
-        .guild-item:hover { border-radius: 15px; background: var(--p-blue); color: white; }
-        .guild-item.active::before { content: ""; position: absolute; left: -12px; width: 4px; height: 40px; background: white; border-radius: 0 4px 4px 0; }
+        /* --- 左側：導覽列 --- */
+        .nav-rail { width: 72px; background: #07030d; display: flex; flex-direction: column; align-items: center; padding: 15px 0; gap: 12px; border-right: 1px solid var(--border); }
+        .nav-icon { width: 50px; height: 50px; background: var(--bg-side); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; border: 1px solid var(--border); }
+        .nav-icon:hover { background: var(--accent-purple); box-shadow: 0 0 15px var(--accent-purple); transform: translateY(-2px); }
 
-        /* --- 中間：頻道/好友列表 --- */
-        .sidebar { width: 240px; background: var(--bg-sidebar); display: flex; flex-direction: column; }
-        .sidebar-search { padding: 12px; border-bottom: 1px solid var(--border); }
-        .search-box { width: 100%; background: #1e1f22; border: none; padding: 6px 10px; border-radius: 4px; color: white; font-size: 14px; }
+        /* --- 中間：功能列 --- */
+        .sidebar { width: 260px; background: var(--bg-side); display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+        .sidebar-header { padding: 20px; font-weight: 800; font-size: 18px; letter-spacing: 1px; color: var(--light-purple); border-bottom: 1px solid var(--border); }
         
-        .nav-list { flex: 1; padding: 8px; overflow-y: auto; }
-        .nav-btn { padding: 8px 12px; border-radius: 4px; display: flex; align-items: center; gap: 12px; margin-bottom: 2px; color: var(--text-muted); }
-        .nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-normal); }
-        .nav-btn.active { background: rgba(255,255,255,0.1); color: white; }
+        .list-wrap { flex: 1; padding: 10px; overflow-y: auto; }
+        .item-btn { padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; color: var(--text-dim); transition: 0.2s; }
+        .item-btn:hover { background: var(--glass-purple); color: white; }
+        .item-btn.active { background: linear-gradient(90deg, var(--accent-purple), transparent); color: white; border-left: 3px solid var(--light-purple); }
 
-        /* --- 底部：使用者控制欄 (極高級感) --- */
-        .user-bar { background: var(--bg-user-bar); padding: 8px; display: flex; align-items: center; gap: 8px; }
-        .user-avatar-wrap { position: relative; width: 32px; height: 32px; cursor: pointer; }
-        .user-avatar { width: 100%; height: 100%; border-radius: 50%; background: var(--p-blue); }
-        .status-dot { position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%; background: var(--p-green); border: 3px solid var(--bg-user-bar); }
-        .user-info { flex: 1; font-size: 13px; line-height: 1.2; cursor: pointer; }
-        .user-tag { color: var(--text-muted); font-size: 11px; }
+        /* --- 左下角：個人資料雙重顯示 (核心要求) --- */
+        .user-section { background: rgba(0,0,0,0.2); padding: 10px; border-top: 1px solid var(--border); }
+        .user-pill { 
+            display: flex; align-items: center; gap: 12px; padding: 8px; 
+            border-radius: 12px; transition: 0.3s; cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .user-pill:hover { background: var(--glass-purple); border-color: var(--border); }
+        .avatar-box { position: relative; width: 40px; height: 40px; }
+        .pfp { width: 100%; height: 100%; border-radius: 12px; background: var(--accent-purple); object-fit: cover; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .status-badge { position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%; background: #00ff41; border: 2px solid var(--bg-side); }
+        .user-text { flex: 1; overflow: hidden; }
+        .u-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .u-id { font-size: 11px; color: var(--text-dim); }
 
-        /* --- 右側：主內容區 --- */
+        /* --- 右側：主介面 --- */
         main { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
-        
-        /* --- Discord 風格個人資料卡片 (浮動) --- */
-        #profile-modal {
-            position: fixed; left: 80px; bottom: 60px; width: 300px; 
-            background: #111214; border-radius: 8px; overflow: hidden;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5); display: none; z-index: 1000;
+        .top-bar { height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 25px; font-weight: bold; background: rgba(0,0,0,0.1); }
+
+        /* --- 高級感：個人資料設定卡片 --- */
+        #settings-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            display: none; z-index: 9999; align-items: center; justify-content: center;
         }
-        .profile-banner { height: 60px; background: var(--p-blue); }
-        .profile-pfp { width: 80px; height: 80px; border-radius: 50%; border: 6px solid #111214; margin-top: -40px; margin-left: 16px; background: #2b2d31; }
-        .profile-content { padding: 16px; background: #111214; }
-        .profile-name { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
-        .profile-username { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
-        .profile-section { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; font-size: 12px; }
-        .section-title { font-size: 11px; font-weight: bold; color: white; margin-bottom: 6px; text-transform: uppercase; }
+        .settings-card {
+            width: 800px; height: 550px; background: var(--bg-side); border-radius: 24px;
+            display: flex; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,1);
+        }
+        .settings-nav { width: 200px; background: rgba(0,0,0,0.2); padding: 30px 15px; border-right: 1px solid var(--border); }
+        .settings-content { flex: 1; padding: 40px; overflow-y: auto; }
+        
+        .input-group { margin-bottom: 25px; }
+        label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
+        input, textarea { 
+            width: 100%; background: #000; border: 1px solid var(--border); 
+            padding: 12px; color: white; border-radius: 10px; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: var(--light-purple); box-shadow: 0 0 10px var(--glass-purple); }
 
-        .input-dark { background: #1e1f22; border: none; width: 100%; padding: 8px; color: white; border-radius: 4px; margin-top: 4px; font-size: 13px; }
-        .btn-save { background: var(--p-green); color: white; border: none; padding: 8px 16px; border-radius: 3px; font-weight: bold; margin-top: 12px; width: 100%; cursor: pointer; }
+        .btn-action { background: var(--accent-purple); color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--glass-purple); }
+        .btn-danger { background: #ff4d4d; margin-top: 50px; }
 
-        /* 頁面隱藏/顯示 */
-        .page { display: none; height: 100%; flex-direction: column; }
-        .page.active { display: flex; }
+        /* 內容隱藏顯示 */
+        .view { display: none; height: 100%; }
+        .view.active { display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
 
-    <nav class="guild-nav">
-        <div class="guild-item active">🏠</div>
-        <div style="width: 32px; height: 2px; background: var(--border);"></div>
-        <div class="guild-item" title="伺服器 1">F</div>
-        <div class="guild-item" onclick="alert('創建伺服器')">➕</div>
+    <nav class="nav-rail">
+        <div class="nav-icon" style="background: var(--accent-purple);">T</div>
+        <div style="width: 30px; height: 1px; background: var(--border);"></div>
+        <div class="nav-icon">⭐</div>
+        <div class="nav-icon">🔮</div>
     </nav>
 
     <aside class="sidebar">
-        <div class="sidebar-search">
-            <input type="text" class="search-box" placeholder="尋找或開始對話">
-        </div>
-        <div class="nav-list">
-            <div class="nav-btn active">👤 好友</div>
-            <div class="nav-btn">🎲 Nitro</div>
-            <div class="nav-btn">💬 訊息請求</div>
-            <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted); font-weight: bold; padding: 0 10px;">直接訊息</div>
-            <div class="nav-btn">👤 Shadow</div>
+        <div class="sidebar-header">TACKER</div>
+        <div class="list-wrap">
+            <div class="item-btn active">👤 核心好友</div>
+            <div class="item-btn">📩 邀請請求</div>
+            <div style="margin: 20px 15px 10px; font-size: 11px; color: var(--text-dim); font-weight: bold;">私人群組</div>
+            <div class="item-btn">💎 FR 董事會</div>
         </div>
         
-        <div class="user-bar">
-            <div class="user-avatar-wrap" onclick="toggleProfile()">
-                <div class="user-avatar"></div>
-                <div class="status-dot"></div>
+        <div class="user-section">
+            <div class="user-pill" onclick="openSettings()">
+                <div class="avatar-box">
+                    <div class="pfp"></div>
+                    <div class="status-badge"></div>
+                </div>
+                <div class="user-text">
+                    <div class="u-name" id="display-name-label">新成員</div>
+                    <div class="u-id" id="username-label">@ryfn888</div>
+                </div>
+                <div style="color: var(--text-dim); font-size: 14px;">⚙️</div>
             </div>
-            <div class="user-info" onclick="toggleProfile()">
-                <div id="u-display">未設定名稱</div>
-                <div class="user-tag" id="u-tag">#ryfn888</div>
-            </div>
-            <div style="color: var(--text-muted); font-size: 18px;">⚙️</div>
         </div>
     </aside>
 
     <main>
-        <section id="page-home" class="page active">
-            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: bold;">好友</div>
-            <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+        <div id="view-friends" class="view active">
+            <div class="top-bar">好友列表</div>
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; opacity: 0.3;">
                 <div style="text-align: center;">
-                    <img src="https://discord.com/assets/d90667da672809f6b215.svg" width="200">
-                    <p>正在等待好友...</p>
+                    <span style="font-size: 80px;">💜</span>
+                    <p>正在搜尋雲端連線...</p>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
 
-    <div id="profile-modal">
-        <div class="profile-banner"></div>
-        <div class="profile-pfp"></div>
-        <div class="profile-content">
-            <div class="profile-name" id="p-display">New User</div>
-            <div class="profile-username" id="p-tag">@ryfn888</div>
-            
-            <div class="profile-section">
-                <div class="section-title">關於我</div>
-                <textarea id="p-bio" class="input-dark" rows="2" placeholder="編輯你的個人簡介..."></textarea>
+    <div id="settings-overlay">
+        <div class="settings-card">
+            <div class="settings-nav">
+                <div style="font-weight: bold; margin-bottom: 30px; color: var(--light-purple);">設定</div>
+                <div class="item-btn active">我的帳號</div>
+                <div class="item-btn" onclick="alert('開發中...')">隱私與安全</div>
+                <div class="item-btn" onclick="alert('開發中...')">外觀主題</div>
+                <button class="btn-action btn-danger" onclick="logout()">登出 Tacker</button>
             </div>
+            <div class="settings-content">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                    <h2 style="margin:0;">個人資料管理</h2>
+                    <span style="cursor:pointer; font-size: 24px;" onclick="closeSettings()">✕</span>
+                </div>
 
-            <div class="profile-section">
-                <div class="section-title">自訂顯示名稱</div>
-                <input type="text" id="p-edit-name" class="input-dark" placeholder="輸入名稱">
-                <button class="btn-save" onclick="updateProfile()">儲存個資變更</button>
-            </div>
-            
-            <div class="profile-section">
-                <button onclick="logout()" style="background:none; border:none; color: #f23f42; font-size: 11px; cursor: pointer;">登出 Tacker</button>
+                <div class="input-group">
+                    <label>顯示名稱 (Display Name)</label>
+                    <input type="text" id="in-display-name" placeholder="輸入要在群組顯示的名稱">
+                </div>
+
+                <div class="input-group">
+                    <label>個人代號 (Unique ID)</label>
+                    <input type="text" id="in-username" placeholder="例如: ryfn_official">
+                    <p style="font-size:11px; color:var(--text-dim); margin-top:5px;">這將作為他人搜尋你時的唯一憑據。</p>
+                </div>
+
+                <div class="input-group">
+                    <label>個人簡介</label>
+                    <textarea id="in-bio" rows="3" placeholder="介紹一下你自己..."></textarea>
+                </div>
+
+                <div style="background: var(--glass-purple); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+                    <p style="margin:0 0 15px 0; font-size: 13px;">想要更改密碼或電子信箱嗎？</p>
+                    <button class="btn-action" style="background: transparent; border: 1px solid var(--light-purple); color: var(--light-purple);" onclick="alert('重設郵件已發送')">發送密碼重設郵件</button>
+                </div>
+
+                <div style="margin-top: 40px; display: flex; justify-content: flex-end;">
+                    <button class="btn-action" onclick="saveData()">儲存所有變更</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 切換個資卡片顯示
-        function toggleProfile() {
-            const modal = document.getElementById('profile-modal');
-            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+        function openSettings() {
+            document.getElementById('settings-overlay').style.display = 'flex';
         }
 
-        // 更新個資邏輯
-        function updateProfile() {
-            const newName = document.getElementById('p-edit-name').value;
-            if(newName) {
-                document.getElementById('u-display').innerText = newName;
-                document.getElementById('p-display').innerText = newName;
-                localStorage.setItem('display_name', newName);
-                alert("個資更新成功！");
-                toggleProfile();
+        function closeSettings() {
+            document.getElementById('settings-overlay').style.display = 'none';
+        }
+
+        function saveData() {
+            const name = document.getElementById('in-display-name').value;
+            const tag = document.getElementById('in-username').value;
+            
+            if(name) {
+                document.getElementById('display-name-label').innerText = name;
+                localStorage.setItem('tacker_name', name);
             }
+            if(tag) {
+                document.getElementById('username-label').innerText = "@" + tag;
+                localStorage.setItem('tacker_tag', tag);
+            }
+            
+            alert("資料已同步至 FR 伺服器！");
+            closeSettings();
         }
 
         function logout() {
-            localStorage.clear();
-            location.reload();
+            if(confirm("確定要登出並斷開加密連線嗎？")) {
+                localStorage.clear();
+                location.reload();
+            }
         }
 
-        // 初始化檢查
         window.onload = () => {
-            const savedName = localStorage.getItem('display_name');
-            if(savedName) {
-                document.getElementById('u-display').innerText = savedName;
-                document.getElementById('p-display').innerText = savedName;
+            const n = localStorage.getItem('tacker_name');
+            const t = localStorage.getItem('tacker_tag');
+            if(n) {
+                document.getElementById('display-name-label').innerText = n;
+                document.getElementById('in-display-name').value = n;
+            }
+            if(t) {
+                document.getElementById('username-label').innerText = "@" + t;
+                document.getElementById('in-username').value = t;
             }
         };
 
-        // 點擊外面關閉個資卡
-        window.onclick = function(event) {
-            const modal = document.getElementById('profile-modal');
-            if (!event.target.closest('.user-bar') && !event.target.closest('#profile-modal')) {
-                modal.style.display = 'none';
-            }
-        }
+        // 點擊外面關閉
+        document.getElementById('settings-overlay').onclick = function(e) {
+            if(e.target === this) closeSettings();
+        };
     </script>
 </body>
 </html>
