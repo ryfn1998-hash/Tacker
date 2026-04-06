@@ -2,106 +2,161 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | Next-Gen Communication</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tacker | Discord Style v1.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main-green: #00ff88; --bg-black: #0a0a0a; }
-        body { margin: 0; background: var(--bg-black); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        
-        /* 登入卡片樣式 */
-        #login-screen { height: 100vh; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
-        .login-card { background: #111; padding: 40px; border-radius: 20px; border: 1px solid var(--main-green); text-align: center; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
-        .btn-google { background: white; color: black; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; border: none; transition: 0.3s; }
-        .btn-google:hover { transform: scale(1.05); box-shadow: 0 0 15px white; }
+        :root {
+            --discord-bg: #313338;
+            --discord-card: #2b2d31;
+            --discord-blurple: #5865f2;
+            --neon-green: #00ff88;
+            --text-muted: #b5bac1;
+        }
+        body { margin: 0; background: var(--discord-bg); color: white; font-family: 'gg sans', 'Noto Sans TC', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
 
-        /* 主程式樣式 (預設隱藏) */
-        #main-app { display: none; height: 100vh; grid-template-columns: 260px 1fr; }
-        .sidebar { background: #151515; border-right: 1px solid #222; padding: 20px; }
-        .content { padding: 40px; }
-        .status-online { color: var(--main-green); font-size: 14px; }
+        /* 🌌 背景裝飾 (微霓虹) */
+        .bg-glow { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,255,136,0.1) 0%, transparent 70%); z-index: -1; }
+
+        /* 🎴 Discord 登入卡片 */
+        .login-container {
+            background: var(--discord-card);
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.24);
+            width: 90%;
+            max-width: 480px;
+            text-align: center;
+        }
+        h2 { margin: 0 0 8px 0; font-size: 24px; font-weight: 600; }
+        p.subtitle { color: var(--text-muted); margin-bottom: 20px; font-size: 16px; }
+
+        .btn-google {
+            width: 100%;
+            background: var(--discord-blurple);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 3px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-google:hover { background: #4752c4; }
+
+        /* 📋 P1 註冊介面 (隱藏) */
+        #registration-screen { display: none; }
+        .input-group { text-align: left; margin-bottom: 20px; }
+        label { color: var(--text-muted); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        input { width: 100%; background: #1e1f22; border: none; padding: 10px; color: white; border-radius: 3px; font-size: 16px; }
         
-        /* 載入動畫 */
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        /* 🚀 主介面 (隱藏) */
+        #main-app { display: none; width: 100vw; height: 100vh; background: var(--discord-bg); }
+
+        /* 🌀 載入中 */
+        #loader { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; justify-content: center; align-items: center; color: var(--neon-green); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loader"><h1>TACKER LOADING...</h1></div>
+    <div id="loader">TACKER SYSTEM STARTING...</div>
+    <div class="bg-glow"></div>
 
-    <div id="login-screen">
-        <div class="login-card">
-            <h1 style="color: var(--main-green); letter-spacing: 5px;">TACKER</h1>
-            <p>請使用 Google 帳號啟動通訊系統</p>
-            <button class="btn-google" onclick="signInWithGoogle()">Login with Google</button>
+    <div id="login-screen" class="login-container">
+        <h2>歡迎回來！</h2>
+        <p class="subtitle">我們很高興再次見到您！</p>
+        <button class="btn-google" onclick="signIn()">
+            <img src="https://www.google.com/favicon.ico" width="18"> 使用 Google 帳號登入
+        </button>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 15px;">
+            需要帳號？ <span style="color: #00a8fc; cursor: pointer;">註冊</span>
+        </p>
+    </div>
+
+    <div id="registration-screen" class="login-container">
+        <h2 style="color: var(--neon-green);">初始化身分</h2>
+        <p class="subtitle">請設定您的專屬 Tacker 識別碼</p>
+        <div class="input-group">
+            <label>Tacker ID</label>
+            <input type="text" id="tacker-id" placeholder="例如: Ryfn_01">
         </div>
+        <button class="btn-google" onclick="saveProfile()" style="background: var(--neon-green); color: black;">完成註冊</button>
     </div>
 
     <div id="main-app">
-        <div class="sidebar">
-            <h2 style="color: var(--main-green);">Tacker</h2>
-            <div id="user-info">
-                <p id="user-name">載入中...</p>
-                <span class="status-online">● 系統在線</span>
-            </div>
-            <hr style="border: 0.5px solid #333; margin: 20px 0;">
-            <button onclick="signOut()" style="background:none; border:1px solid red; color:red; cursor:pointer;">登出系統</button>
-        </div>
-        <div class="content">
-            <h1>歡迎回來，負責人</h1>
-            <p>目前版本：v1.6.0 (穩定版)</p>
-            <div id="app-status" style="padding: 20px; border: 1px dashed var(--main-green);">
-                系統狀態：正常運行中
-            </div>
-        </div>
+        <h1 style="padding: 20px;">Tacker 控制中心 | 已授權</h1>
+        <button onclick="signOut()" style="margin: 20px;">登出</button>
     </div>
 
     <script>
-        // --- 初始化 Supabase ---
         const _s = supabase.createClient(
             'https://coyiifxxfopvabpjszis.supabase.co', 
-            '你的_SUPABASE_ANON_KEY' // 負責人，請把這裡換成你的金鑰！
+            'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH'
         );
 
-        // --- 登入邏輯 ---
-        async function signInWithGoogle() {
-            const { error } = await _s.auth.signInWithOAuth({
+        async function signIn() {
+            await _s.auth.signInWithOAuth({
                 provider: 'google',
-                options: {
-                    // 這裡一定要對齊你的 GitHub 網址！
-                    redirectTo: 'https://ryfn1998-hash.github.io/Tacker/'
-                }
+                options: { redirectTo: window.location.href }
             });
-            if (error) console.error('登入失敗:', error.message);
         }
 
-        // --- 登出邏輯 ---
         async function signOut() {
             await _s.auth.signOut();
             location.reload();
         }
 
-        // --- 狀態檢查 (核心邏輯) ---
         async function checkStatus() {
             const { data: { session } } = await _s.auth.getSession();
             const loader = document.getElementById('loader');
-            const loginScreen = document.getElementById('login-screen');
-            const mainApp = document.getElementById('main-app');
+            const login = document.getElementById('login-screen');
+            const reg = document.getElementById('registration-screen');
+            const app = document.getElementById('main-app');
 
             if (session) {
-                // 已登入：顯示主程式，隱藏登入頁
-                loginScreen.style.display = 'none';
-                mainApp.style.display = 'grid';
-                document.getElementById('user-name').innerText = session.user.user_metadata.full_name || '使用者';
+                // 檢查資料庫是否已有此用戶資料
+                const { data: profile } = await _s
+                    .from('profiles') // 假設你的表名叫 profiles
+                    .select('tacker_id')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (profile && profile.tacker_id) {
+                    login.style.display = 'none';
+                    reg.style.display = 'none';
+                    app.style.display = 'block';
+                } else {
+                    login.style.display = 'none';
+                    reg.style.display = 'block'; // 前往 P1 註冊 ID
+                }
             } else {
-                // 未登入：顯示登入頁，隱藏主程式
-                loginScreen.style.display = 'flex';
-                mainApp.style.display = 'none';
+                login.style.display = 'block';
+                reg.style.display = 'none';
+                app.style.display = 'none';
             }
-            loader.style.display = 'none'; // 關閉載入動畫
+            loader.style.display = 'none';
         }
 
-        // 網頁開啟後立刻執行檢查
+        async function saveProfile() {
+            const id = document.getElementById('tacker-id').value;
+            if (!id) return alert('請輸入 ID');
+            
+            const { data: { user } } = await _s.auth.getUser();
+            const { error } = await _s.from('profiles').upsert({
+                id: user.id,
+                tacker_id: id,
+                full_name: user.user_metadata.full_name
+            });
+
+            if (error) alert('儲存失敗: ' + error.message);
+            else location.reload();
+        }
+
         window.onload = checkStatus;
     </script>
 </body>
