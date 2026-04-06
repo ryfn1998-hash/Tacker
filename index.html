@@ -2,142 +2,137 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | 手稿 1:1 還原版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tacker | 1000% Operational</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --text: #dbdee1; --muted: #949ba4; --danger: #f23f43; }
-        body { margin: 0; background: var(--bg-p); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: var(--bg-p); color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
         .hidden { display: none !important; }
         
-        /* --- 登入介面 --- */
-        #login-page { display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
-        .login-card { background: var(--bg-s); padding: 40px; border-radius: 8px; text-align: center; width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-        .btn-google { width: 100%; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        /* --- 登入牆 --- */
+        #auth-wall { position: fixed; inset: 0; background: var(--bg-t); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .auth-box { background: var(--bg-s); padding: 40px; border-radius: 8px; text-align: center; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .g-btn { width: 100%; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; }
 
-        /* --- 主佈局 (圖一/圖三) --- */
-        #app-root { display: none; grid-template-columns: 240px 1fr; height: 100vh; }
+        /* --- 主佈局 --- */
+        #main-app { display: none; grid-template-columns: 240px 1fr; height: 100vh; }
         .sidebar { background: var(--bg-s); border-right: 1px solid #1e1f22; display: flex; flex-direction: column; position: relative; }
         
-        /* 訊息流 (P2 要求的頭像/名字點擊功能) */
-        #msg-flow { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-        .msg-item { display: flex; gap: 14px; }
-        .msg-ava { width: 40px; height: 40px; border-radius: 50%; background: #444; cursor: pointer; }
-        .msg-user { font-weight: bold; cursor: pointer; color: white; }
-        .msg-user:hover { text-decoration: underline; }
+        /* 左下角個資 (手稿 P1 圖一) */
+        .u-panel { background: #232428; padding: 8px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 8px; }
+        .u-ava { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); cursor: pointer; border: 2px solid transparent; }
+        .u-meta { flex: 1; overflow: hidden; font-size: 11px; }
+        .u-pencil { cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; transition: 0.2s; }
+        .u-pencil:hover { background: #3f4147; color: white; }
 
-        /* 左下角區塊 (圖一) */
-        .user-footer { background: var(--bg-t); padding: 8px 10px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 8px; }
-        .footer-ava { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; background: var(--brand); }
-        .footer-info { flex: 1; font-size: 11px; overflow: hidden; }
-        .pencil-icon { cursor: pointer; font-size: 16px; color: var(--muted); }
+        /* 聊天區 (手稿 P2 圖三) */
+        .chat-view { display: flex; flex-direction: column; flex: 1; }
+        #msg-list { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+        .msg { display: flex; gap: 14px; }
+        .m-ava { width: 40px; height: 40px; border-radius: 50%; background: #444; cursor: pointer; }
+        .m-name { font-weight: bold; font-size: 15px; cursor: pointer; margin-right: 8px; }
+        .m-time { color: var(--muted); font-size: 11px; }
+        .m-txt { color: var(--text); font-size: 14px; margin-top: 2px; }
 
-        /* --- 他人個資彈窗 (圖二) --- */
-        .pop-card { position: fixed; background: var(--bg-t); width: 280px; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 2000; display: none; }
-        .pop-banner { height: 60px; background: var(--brand); }
-        .pop-body { padding: 15px; padding-top: 40px; position: relative; }
-        .pop-ava { width: 64px; height: 64px; border-radius: 50%; border: 4px solid var(--bg-t); position: absolute; top: -32px; left: 15px; }
+        /* --- 他人個資彈窗 --- */
+        #user-card { position: fixed; width: 280px; background: var(--bg-t); border-radius: 8px; overflow: hidden; display: none; z-index: 5000; box-shadow: 0 8px 24px rgba(0,0,0,0.8); }
+        .c-banner { height: 60px; background: var(--brand); }
+        .c-body { padding: 15px; padding-top: 40px; position: relative; }
+        .c-ava { width: 64px; height: 64px; border-radius: 50%; border: 4px solid var(--bg-t); position: absolute; top: -32px; left: 15px; background: #333; }
 
-        /* --- 詳細設定大視窗 (圖二詳細功能) --- */
-        .settings-overlay { position: fixed; inset: 0; background: var(--bg-p); z-index: 3000; display: none; }
-        .settings-grid { display: grid; grid-template-columns: 200px 1fr; height: 100vh; }
-        .settings-side { background: var(--bg-s); padding: 60px 20px; text-align: right; }
-        .settings-main { padding: 60px 40px; max-width: 600px; position: relative; }
-        .tab-btn { padding: 10px; color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 14px; margin-bottom: 2px; }
-        .tab-btn.active, .tab-btn:hover { background: #3f4147; color: white; }
-        .close-btn { position: absolute; top: 60px; right: -50px; cursor: pointer; width: 30px; height: 30px; border: 2px solid var(--muted); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        /* --- 設定中心 (手稿 P1 詳細功能) --- */
+        #set-modal { position: fixed; inset: 0; background: var(--bg-p); z-index: 6000; display: none; }
+        .set-layout { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+        .set-nav { background: var(--bg-s); padding: 60px 20px 20px 40px; }
+        .set-content { padding: 60px 40px; max-width: 600px; position: relative; }
+        .tab-x { padding: 8px 12px; color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 14px; margin-bottom: 2px; }
+        .tab-x.active { background: #3f4147; color: white; }
+        .close-x { position: absolute; top: 40px; right: 40px; cursor: pointer; font-size: 24px; color: var(--muted); }
 
-        /* 輸入組件 */
-        input.dark, textarea.dark { width: 100%; background: #1e1f22; border: none; padding: 12px; color: white; border-radius: 4px; margin: 10px 0; box-sizing: border-box; }
-        .btn-save { background: var(--brand); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        input.dark, textarea.dark { width: 100%; background: #1e1f22; border: none; padding: 12px; color: white; border-radius: 4px; margin: 8px 0; outline: none; }
+        .btn-act { background: var(--brand); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="login-page">
-        <div class="login-card">
-            <h1>Tacker</h1>
-            <button class="btn-google" onclick="login()">
-                <img src="https://www.google.com/favicon.ico" width="18"> Google 登入
-            </button>
+    <div id="auth-wall">
+        <div class="auth-box">
+            <h1 style="margin:0 0 10px;">Tacker</h1>
+            <div style="font-size:13px; color:var(--muted);">尚未擁有帳號？點此註冊</div>
+            <button class="g-btn" onclick="signIn()"><img src="https://www.google.com/favicon.ico" width="16"> Google 登入</button>
         </div>
     </div>
 
-    <div id="app-root">
+    <div id="main-app">
         <aside class="sidebar">
-            <div style="padding:15px; font-weight:bold;">好友列表 <span onclick="alert('新增好友彈窗')" style="cursor:pointer; color:var(--brand); margin-left:10px;">⊕</span></div>
-            <div class="user-footer">
-                <img id="my-footer-ava" class="footer-ava" onclick="openSettings()">
-                <div class="footer-info">
-                    <div id="my-footer-name" style="font-weight:bold;">載入中...</div>
-                    <div id="my-footer-id" style="color:var(--muted);">@ID</div>
+            <div style="padding:15px; font-weight:bold; color:var(--muted);">目前聊天</div>
+            <div class="u-panel">
+                <img id="my-ava" class="u-ava" onclick="showSet()">
+                <div class="u-meta">
+                    <div id="my-name" style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</div>
+                    <div id="my-id" style="color:var(--muted);">@ID</div>
                 </div>
-                <div class="pencil-icon" onclick="openSettings()">✎</div>
+                <div class="u-pencil" onclick="showSet()">✎</div>
             </div>
         </aside>
 
-        <main style="display:flex; flex-direction:column;">
-            <div id="msg-flow"></div>
-            <div style="padding: 0 20px 24px;">
-                <div style="background:#383a40; border-radius:8px; padding:12px; display:flex; gap:12px;">
-                    <input type="text" id="m-in" placeholder="打字區" style="background:transparent; border:none; flex:1; color:white; outline:none;">
+        <main class="chat-view">
+            <div id="msg-list"></div>
+            <div style="padding: 24px;">
+                <div style="background:#383a40; border-radius:8px; display:flex; padding:12px; gap:12px;">
+                    <input type="text" id="m-input" placeholder="打字區..." style="background:transparent; border:none; flex:1; color:white; outline:none;">
                     <button onclick="send()" style="background:none; border:none; color:var(--brand); font-weight:bold; cursor:pointer;">發送</button>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="pop-card" class="pop-card">
-        <div class="pop-banner" id="pop-banner"></div>
-        <div class="pop-body">
-            <img class="pop-ava" id="pop-ava-img">
-            <h3 id="pop-name" style="margin:0;"></h3>
-            <div id="pop-tag" style="color:var(--muted); font-size:13px; margin-bottom:10px;"></div>
+    <div id="user-card">
+        <div class="c-banner" id="c-banner"></div>
+        <div class="c-body">
+            <img class="c-ava" id="c-ava">
+            <h3 id="c-name" style="margin:0;"></h3>
+            <div id="c-id" style="color:var(--muted); font-size:13px; margin-bottom:12px;"></div>
             <div style="font-size:12px; border-top:1px solid #444; padding-top:10px;">
-                <b>自我介紹</b>
-                <p id="pop-bio" style="margin-top:5px;"></p>
+                <b style="color:var(--muted); font-size:10px;">自我介紹</b>
+                <p id="c-bio" style="margin-top:6px; line-height:1.4;"></p>
             </div>
         </div>
     </div>
 
-    <div id="settings-ui" class="settings-overlay">
-        <div class="settings-grid">
-            <div class="settings-side">
+    <div id="set-modal">
+        <div class="set-layout">
+            <div class="set-nav">
                 <div style="font-size:11px; font-weight:bold; color:var(--muted); margin-bottom:10px;">使用者設定</div>
-                <div class="tab-btn active" onclick="switchTab('base')">基本資訊</div>
-                <div class="tab-btn" onclick="switchTab('look')">外觀</div>
-                <div class="tab-btn" onclick="switchTab('acc')">帳戶</div>
-                <hr style="opacity:0.05; margin:15px 0;">
-                <div class="tab-btn" style="color:var(--danger);" onclick="logout()">登出帳號</div>
+                <div class="tab-x active" onclick="goTab('base')">基本資訊</div>
+                <div class="tab-x" onclick="goTab('look')">外觀</div>
+                <div class="tab-x" onclick="goTab('acc')">帳戶</div>
+                <div class="tab-x" style="color:var(--danger); margin-top:20px;" onclick="signOut()">登出</div>
             </div>
-            <div class="settings-main">
-                <div class="close-btn" onclick="closeSettings()">✕</div>
-                
-                <div id="tab-base">
+            <div class="set-content">
+                <div class="close-x" onclick="hideSet()">✕</div>
+                <div id="t-base">
                     <h2>基本資訊</h2>
-                    <label>顯示名稱</label>
-                    <input type="text" id="edit-name" class="dark">
-                    <label>帳號 ID (更改需密碼認證)</label>
-                    <input type="text" id="edit-id" class="dark">
-                    <button class="btn-save" onclick="save()">儲存記憶</button>
+                    <label style="font-size:12px; color:var(--muted);">顯示名稱</label>
+                    <input type="text" id="e-name" class="dark">
+                    <label style="font-size:12px; color:var(--muted);">帳號 ID (僅限英數)</label>
+                    <input type="text" id="e-id" class="dark">
+                    <button class="btn-act" onclick="save()">儲存變更</button>
                 </div>
-
-                <div id="tab-look" class="hidden">
-                    <h2>外觀設定</h2>
-                    <p>頭像與橫幅 (貼上網址)</p>
-                    <input type="text" id="edit-ava" class="dark" placeholder="頭像網址">
-                    <input type="text" id="edit-banner" class="dark" placeholder="橫幅顏色或網址">
-                    <p>自我介紹</p>
-                    <textarea id="edit-bio" class="dark" rows="3"></textarea>
-                    <button class="btn-save" onclick="save()">更新外觀</button>
+                <div id="t-look" class="hidden">
+                    <h2>外觀</h2>
+                    <input type="text" id="e-ava" class="dark" placeholder="頭像圖片連結">
+                    <input type="text" id="e-banner" class="dark" placeholder="橫幅背景 (色碼或連結)">
+                    <textarea id="e-bio" class="dark" rows="4" placeholder="我的自我介紹..."></textarea>
+                    <button class="btn-act" onclick="save()">更新外觀</button>
                 </div>
-
-                <div id="tab-acc" class="hidden">
-                    <h2>帳戶設定</h2>
-                    <button class="btn-save" style="background:#4e5058;">變更密碼</button>
-                    <div style="margin-top:50px; border-top:1px solid #444; padding-top:20px;">
-                        <button class="btn-save" style="background:var(--danger);">移除帳戶 (需 Gmail 驗證)</button>
-                    </div>
+                <div id="t-acc" class="hidden">
+                    <h2>帳戶</h2>
+                    <button class="btn-act" style="background:#4e5058;">重設密碼</button>
+                    <p style="margin-top:40px; border-top:1px solid #444; padding-top:20px;">
+                        <button class="btn-act" style="background:var(--danger);">移除帳戶 (需驗證)</button>
+                    </p>
                 </div>
             </div>
         </div>
@@ -146,96 +141,86 @@
     <script>
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
-        // 1. Google 登入
-        async function login() {
-            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        // 登入邏輯：直接導向
+        async function signIn() { 
+            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); 
         }
+        async function signOut() { await _s.auth.signOut(); location.reload(); }
 
-        async function logout() { await _s.auth.signOut(); location.reload(); }
-
-        function openSettings() { document.getElementById('settings-ui').style.display = 'block'; }
-        function closeSettings() { document.getElementById('settings-ui').style.display = 'none'; }
-        
-        function switchTab(t) {
-            ['base','look','acc'].forEach(x => document.getElementById('tab-'+x).classList.add('hidden'));
-            document.getElementById('tab-'+t).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        function showSet() { document.getElementById('set-modal').style.display = 'block'; }
+        function hideSet() { document.getElementById('set-modal').style.display = 'none'; }
+        function goTab(t) {
+            ['base','look','acc'].forEach(x => {
+                document.getElementById('t-'+x).classList.add('hidden');
+                document.querySelectorAll('.tab-x').forEach(b => b.classList.remove('active'));
+            });
+            document.getElementById('t-'+t).classList.remove('hidden');
             event.currentTarget.classList.add('active');
         }
 
-        // 2. 查看他人個資邏輯 (手稿 P2)
-        async function showUserCard(uid, e) {
+        // 查看他人個資 (手稿 P2 重要功能)
+        async function popUser(uid, e) {
             e.stopPropagation();
-            const { data } = await _s.from('profiles').select('*').eq('id', uid).maybeSingle();
-            if(!data) return;
-            const pop = document.getElementById('pop-card');
-            document.getElementById('pop-name').innerText = data.full_name;
-            document.getElementById('pop-tag').innerText = "@" + data.tacker_id;
-            document.getElementById('pop-ava-img').src = data.avatar_url;
-            document.getElementById('pop-bio').innerText = data.bio || "沒自介。";
-            document.getElementById('pop-banner').style.background = data.banner_color || "var(--brand)";
-            pop.style.display = 'block';
-            pop.style.left = e.clientX + 'px';
-            pop.style.top = (e.clientY > window.innerHeight - 300 ? e.clientY - 300 : e.clientY) + 'px';
+            const { data: p } = await _s.from('profiles').select('*').eq('id', uid).maybeSingle();
+            if(!p) return;
+            const card = document.getElementById('user-card');
+            document.getElementById('c-name').innerText = p.full_name;
+            document.getElementById('c-id').innerText = "@" + p.tacker_id;
+            document.getElementById('c-ava').src = p.avatar_url || "https://via.placeholder.com/64";
+            document.getElementById('c-bio').innerText = p.bio || "無自介";
+            document.getElementById('c-banner').style.background = p.banner_color || "var(--brand)";
+            card.style.display = 'block';
+            card.style.left = e.clientX + 'px';
+            card.style.top = (e.clientY > window.innerHeight - 300 ? e.clientY - 300 : e.clientY) + 'px';
         }
+        document.addEventListener('click', () => document.getElementById('user-card').style.display = 'none');
 
-        document.addEventListener('click', () => document.getElementById('pop-card').style.display = 'none');
-
-        // 3. 儲存與記憶功能
         async function save() {
             const { data: { user } } = await _s.auth.getUser();
             await _s.from('profiles').upsert({
-                id: user.id,
-                full_name: document.getElementById('edit-name').value,
-                tacker_id: document.getElementById('edit-id').value,
-                avatar_url: document.getElementById('edit-ava').value,
-                bio: document.getElementById('edit-bio').value,
-                banner_color: document.getElementById('edit-banner').value
+                id: user.id, full_name: document.getElementById('e-name').value, tacker_id: document.getElementById('e-id').value,
+                avatar_url: document.getElementById('e-ava').value, bio: document.getElementById('e-bio').value, banner_color: document.getElementById('e-banner').value
             });
             location.reload();
         }
 
         async function send() {
-            const val = document.getElementById('m-in').value;
+            const val = document.getElementById('m-input').value;
             const { data: { user } } = await _s.auth.getUser();
-            if(!val) return;
-            await _s.from('messages').insert([{ user_id: user.id, user_name: document.getElementById('my-footer-name').innerText, content: val }]);
-            document.getElementById('m-in').value = '';
+            if(!val || !user) return;
+            await _s.from('messages').insert([{ user_id: user.id, user_name: document.getElementById('my-name').innerText, content: val }]);
+            document.getElementById('m-input').value = '';
         }
 
         function render(m) {
-            const flow = document.getElementById('msg-flow');
+            const list = document.getElementById('msg-list');
             const div = document.createElement('div');
-            div.className = "msg-item";
+            div.className = "msg";
             div.innerHTML = `
-                <img class="msg-ava" src="https://via.placeholder.com/40" onclick="showUserCard('${m.user_id}', event)">
+                <img class="m-ava" src="https://via.placeholder.com/40" onclick="popUser('${m.user_id}', event)">
                 <div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <span class="msg-user" onclick="showUserCard('${m.user_id}', event)">${m.user_name}</span>
-                        <span style="font-size:10px; color:var(--muted);">${new Date(m.created_at).toLocaleTimeString()}</span>
-                    </div>
-                    <div style="font-size:14px; margin-top:4px;">${m.content}</div>
+                    <div><span class="m-name" onclick="popUser('${m.user_id}', event)">${m.user_name}</span><span class="m-time">${new Date(m.created_at).toLocaleTimeString()}</span></div>
+                    <div class="m-txt">${m.content}</div>
                 </div>
             `;
-            flow.appendChild(div);
-            flow.scrollTop = flow.scrollHeight;
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
         }
 
         async function init() {
             const { data: { session } } = await _s.auth.getSession();
-            if (session) {
-                document.getElementById('login-page').style.display = 'none';
-                document.getElementById('app-root').style.display = 'grid';
-                
-                const { data: profile } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-                if(profile) {
-                    document.getElementById('my-footer-name').innerText = profile.full_name;
-                    document.getElementById('my-footer-id').innerText = "@" + profile.tacker_id;
-                    document.getElementById('my-footer-ava').src = profile.avatar_url;
-                    document.getElementById('edit-name').value = profile.full_name;
-                    document.getElementById('edit-id').value = profile.tacker_id;
-                    document.getElementById('edit-ava').value = profile.avatar_url;
-                    document.getElementById('edit-bio').value = profile.bio;
+            if(session) {
+                document.getElementById('auth-wall').classList.add('hidden');
+                document.getElementById('main-app').style.display = 'grid';
+                const { data: p } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+                if(p) {
+                    document.getElementById('my-name').innerText = p.full_name;
+                    document.getElementById('my-id').innerText = "@" + p.tacker_id;
+                    document.getElementById('my-ava').src = p.avatar_url || "";
+                    document.getElementById('e-name').value = p.full_name;
+                    document.getElementById('e-id').value = p.tacker_id;
+                    document.getElementById('e-ava').value = p.avatar_url || "";
+                    document.getElementById('e-bio').value = p.bio || "";
                 }
                 const { data: msgs } = await _s.from('messages').select('*').order('created_at');
                 if(msgs) msgs.forEach(render);
