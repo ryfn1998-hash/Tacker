@@ -3,40 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker v2.1 | FR Tech</title>
+    <title>Tacker v2.2 | FR Tech</title>
     <style>
-        :root { --p-green: #00ff41; --bg: #010409; --card: #161b22; --brd: #30363d; --ds: #5865F2; }
+        :root { 
+            --p-green: #00ff41; 
+            --bg-dark: #010409; 
+            --bg-panel: #0d1117; 
+            --bg-side: #161b22; 
+            --border: #30363d; 
+            --discord-blue: #5865F2; 
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .login-box { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 360px; text-align: center; }
-        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; display: block; outline: none; }
-        input:focus { border-color: var(--p-green); }
-        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; display: block; transition: 0.2s; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
+
+        /* --- 登入頁面 --- */
+        #auth-page { 
+            display: flex; align-items: center; justify-content: center; height: 100vh; 
+        }
+        .login-card { 
+            background: var(--bg-side); padding: 30px; border-radius: 12px; border: 1px solid var(--border); 
+            width: 90%; max-width: 360px; text-align: center; 
+        }
+        input { 
+            width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--border); 
+            color: white; border-radius: 6px; font-size: 16px; outline: none; 
+        }
+        .btn { 
+            width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; 
+            margin-top: 10px; font-size: 16px; transition: 0.2s; 
+        }
         .btn-main { background: var(--p-green); color: black; }
-        .btn-ds { background: var(--ds); color: white; margin-top: 8px; }
-        .btn:active { transform: scale(0.97); opacity: 0.9; }
-        #app { display: none; position: fixed; inset: 0; background: #0d1117; z-index: 100; padding: 20px; }
+        .btn-ds { background: var(--discord-blue); color: white; }
+
+        /* --- 主程式介面 --- */
+        #app { 
+            display: none; height: 100vh; width: 100%; 
+        }
+        .sidebar { 
+            width: 280px; background: var(--bg-side); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; 
+        }
+        .sidebar-h { 
+            padding: 20px; font-weight: bold; color: var(--p-green); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between;
+        }
+        .list-item { 
+            padding: 15px 20px; border-bottom: 1px solid #21262d; cursor: pointer; 
+        }
+        .list-item:hover { background: #1c2128; }
+
+        .chat-window { 
+            flex: 1; display: flex; flex-direction: column; background: var(--bg-panel); 
+        }
+        .chat-header { 
+            height: 60px; padding: 0 20px; display: flex; align-items: center; 
+            border-bottom: 1px solid var(--border); font-weight: bold; 
+        }
+        .msgs { 
+            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; 
+        }
+        .msg-b { 
+            background: #21262d; padding: 10px 15px; border-radius: 8px; max-width: 80%; width: fit-content; 
+        }
+        .input-area { 
+            padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; 
+        }
+        #m-input { 
+            flex: 1; background: #000; border: 1px solid var(--border); color: white; 
+            padding: 12px; border-radius: 6px; 
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; }
+            .chat-window { display: none; } /* 手機版點擊好友後切換 */
+        }
     </style>
 </head>
 <body>
 
     <div id="auth-page">
-        <div class="login-box">
-            <h2 id="ui-title" style="color:var(--p-green); margin-bottom: 20px;">TACKER 系統</h2>
-            <input type="email" id="email" placeholder="電子信箱">
+        <div class="login-card">
+            <h2 id="ui-title" style="color:var(--p-green)">TACKER PRIVATE</h2>
+            <input type="email" id="email" placeholder="信箱">
             <input type="password" id="pass" placeholder="密碼">
-            
             <button class="btn btn-main" onclick="handleAuth()">進入系統</button>
-            <button class="btn btn-ds" onclick="handleDiscord()">使用 Discord 登入</button>
-            
-            <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px; text-decoration: underline;">[ 沒有帳號？點此註冊 ]</p>
+            <button class="btn btn-ds" onclick="handleDiscord()">Discord 登入</button>
+            <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px;">[ 沒有帳號？點此註冊 ]</p>
         </div>
     </div>
 
     <div id="app">
-        <h2 style="color:var(--p-green)">連線成功</h2>
-        <p id="user-info">載入使用者資訊中...</p>
-        <button onclick="logout()" style="color:red; background:none; border:none; cursor:pointer; margin-top: 20px; font-size: 16px;">[ 登出系統 ]</button>
+        <aside class="sidebar" id="side-panel">
+            <div class="sidebar-h">
+                <span>FR TECH | TACKER</span>
+                <span onclick="logout()" style="cursor:pointer;">🚪</span>
+            </div>
+            <div id="contact-list">
+                <div class="list-item" onclick="startChat('Shadow (Admin)')">👤 Shadow (管理員)</div>
+                <div class="list-item" onclick="startChat('FR 核心群組')">🔒 FR 核心群組</div>
+            </div>
+        </aside>
+
+        <main class="chat-window" id="chat-panel">
+            <div class="chat-header" id="chat-title"># 系統大廳</div>
+            <div class="msgs" id="msg-box">
+                <div class="msg-b" style="color:var(--p-green)">系統：加密隧道連線成功。</div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="m-input" placeholder="撰寫訊息..." onkeypress="if(event.key==='Enter')send()">
+                <button onclick="send()" style="background:none; border:none; color:var(--p-green); font-weight:bold; cursor:pointer;">發送</button>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -46,46 +124,56 @@
 
         function toggleMode() {
             isSignUp = !isSignUp;
-            document.getElementById('ui-title').innerText = isSignUp ? "建立帳號" : "TACKER 系統";
+            document.getElementById('ui-title').innerText = isSignUp ? "建立帳號" : "TACKER PRIVATE";
             document.getElementById('ui-sw').innerText = isSignUp ? "[ 返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
         }
 
-        // 1. 原生 Email 登入/註冊
         async function handleAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('pass').value;
             if(!email || !password) return alert("請填寫完整資訊");
 
             const endpoint = isSignUp ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
-            
             try {
                 const response = await fetch(S_URL + endpoint, {
                     method: 'POST',
                     headers: { 'apikey': S_KEY, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-
                 const result = await response.json();
                 if (response.ok) {
                     localStorage.setItem('tacker_token', result.access_token);
-                    enterApp(result.user?.email || email);
+                    showApp();
                 } else {
                     alert("錯誤: " + (result.error_description || result.msg || "連線失敗"));
                 }
-            } catch (err) { alert("網路異常，請稍後再試"); }
+            } catch (err) { alert("網路異常"); }
         }
 
-        // 2. 原生 Discord 登入 (使用重定向)
         function handleDiscord() {
-            // 直接跳轉到 Supabase 的 OAuth 網址，避開所有 SDK 載入問題
-            const discordUrl = `${S_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(window.location.href)}`;
-            window.location.href = discordUrl;
+            window.location.href = `${S_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(window.location.href)}`;
         }
 
-        function enterApp(userEmail) {
+        function showApp() {
             document.getElementById('auth-page').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            document.getElementById('user-info').innerText = "登入身份: " + userEmail;
+            document.getElementById('app').style.display = 'flex';
+        }
+
+        function startChat(name) {
+            document.getElementById('chat-title').innerText = "# " + name;
+            if (window.innerWidth <= 768) {
+                document.getElementById('side-panel').style.display = 'none';
+                document.getElementById('chat-panel').style.display = 'flex';
+            }
+        }
+
+        function send() {
+            const input = document.getElementById('m-input');
+            if(!input.value) return;
+            const box = document.getElementById('msg-box');
+            box.innerHTML += `<div class="msg-b" style="align-self:flex-end; background:var(--p-green); color:black;">${input.value}</div>`;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
         }
 
         function logout() {
@@ -93,20 +181,15 @@
             location.reload();
         }
 
-        // 3. 頁面加載檢查 (處理 OAuth 回傳)
         window.onload = () => {
-            // 檢查 URL 是否帶有 access_token (Discord 登入後會帶在 URL hash)
             const hash = window.location.hash;
-            if (hash && hash.includes('access_token=')) {
+            if (hash.includes('access_token=')) {
                 const token = new URLSearchParams(hash.replace('#', '?')).get('access_token');
-                if (token) {
-                    localStorage.setItem('tacker_token', token);
-                    enterApp("Discord 用戶");
-                    // 清除網址上的 token 保持乾淨
-                    window.history.replaceState(null, null, window.location.pathname);
-                }
+                localStorage.setItem('tacker_token', token);
+                window.history.replaceState(null, null, window.location.pathname);
+                showApp();
             } else if (localStorage.getItem('tacker_token')) {
-                enterApp("已驗證用戶");
+                showApp();
             }
         };
     </script>
