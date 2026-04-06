@@ -3,159 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker v1.4.0 | Official</title>
+    <title>Tacker | Secure Communication Network</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --db: #313338; --dc: #2b2d31; --du: #232428; --blue: #5865f2; --green: #23a55a; --text: #dbdee1; --muted: #b5bac1; }
-        body { margin: 0; background: var(--db); color: white; font-family: 'gg sans', sans-serif; height: 100vh; overflow: hidden; }
-        input { width: 100%; background: #1e1f22; border: none; padding: 10px; color: white; border-radius: 3px; margin-bottom: 15px; outline: none; }
-        .btn { width: 100%; padding: 12px; border-radius: 3px; border: none; cursor: pointer; font-weight: 500; transition: 0.2s; }
-        .btn-google { background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .auth-card { background: var(--dc); padding: 32px; border-radius: 8px; width: 480px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
-        .screen { height: 100vh; display: none; justify-content: center; align-items: center; background: #1e1f22; }
-        .active { display: flex; }
+        :root { --bg-primary: #313338; --bg-secondary: #2b2d31; --bg-tertiary: #232428; --brand: #5865f2; --success: #23a55a; --text-normal: #dbdee1; --text-muted: #b5bac1; }
+        body { margin: 0; background: var(--bg-primary); color: white; font-family: 'gg sans', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; }
+        input { width: 100%; background: #1e1f22; border: none; padding: 12px; color: white; border-radius: 4px; margin-bottom: 15px; outline: none; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        .btn-google { background: white; color: #000; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* P2 佈局 */
-        #main-app { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
-        .sidebar { background: var(--dc); position: relative; border-right: 1px solid #1e1f22; }
-        .user-card { background: var(--du); padding: 8px 12px; display: flex; align-items: center; gap: 8px; position: absolute; bottom: 0; width: 100%; cursor: pointer; }
+        .auth-container { height: 100vh; display: none; justify-content: center; align-items: center; background: #1e1f22; }
+        .auth-card { background: var(--bg-secondary); padding: 40px; border-radius: 8px; width: 100%; max-width: 420px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+        .active { display: flex ! grandparent; }
+
+        /* App Layout */
+        #app-root { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
+        .nav-sidebar { background: var(--bg-secondary); position: relative; border-right: 1px solid rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+        .user-settings-bar { background: var(--bg-tertiary); padding: 8px 12px; display: flex; align-items: center; gap: 8px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; cursor: pointer; }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #4e5058; overflow: hidden; }
+        
+        .content-view { display: flex; flex-direction: column; background: var(--bg-primary); }
+        .empty-state { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.15; pointer-events: none; }
+        .message-input-container { padding: 0 20px 24px; }
+        .input-wrapper { background: #383a40; border-radius: 8px; padding: 11px 15px; display: flex; align-items: center; gap: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="screen active">
+    <div id="view-login" class="auth-container active">
         <div class="auth-card">
-            <h2 style="text-align:center; margin-bottom:24px;">歡迎回來</h2>
-            <button class="btn btn-google" onclick="handleLogin()">
-                <img src="https://www.google.com/favicon.ico" width="18"> 使用 Google 登入
+            <h2 style="text-align:center; margin-bottom:28px;">Tacker</h2>
+            <button class="btn btn-google" onclick="triggerOAuth(false)">
+                <img src="https://www.google.com/favicon.ico" width="18"> Continue with Google
             </button>
-            <p style="text-align:center; margin-top:20px; font-size:14px; color:var(--muted);">
-                還沒有帳號？ <span style="color:#00a8fc; cursor:pointer;" onclick="showScreen('reg-screen')">按此註冊</span>
-            </p>
+            <div style="text-align:center; margin-top:24px; font-size:14px; color:var(--text-muted);">
+                New here? <span style="color:#00a8fc; cursor:pointer;" onclick="switchAuthView('view-register')">Register Account</span>
+            </div>
         </div>
     </div>
 
-    <div id="reg-screen" class="screen">
+    <div id="view-register" class="auth-container">
         <div class="auth-card">
-            <h2 style="text-align:center; margin-bottom:24px;">加入 Tacker</h2>
-            <button class="btn btn-google" id="reg-google-btn" onclick="handleRegGoogle()">
-                <img src="https://www.google.com/favicon.ico" width="18"> 1. 使用 Google 註冊帳戶
+            <h2 style="text-align:center; margin-bottom:8px;">Create Account</h2>
+            <p style="text-align:center; color:var(--text-muted); font-size:14px; margin-bottom:24px;">Join the Tacker network</p>
+            
+            <button class="btn btn-google" id="reg-oauth-trigger" onclick="triggerOAuth(true)">
+                <img src="https://www.google.com/favicon.ico" width="18"> 1. Verify Google Identity
             </button>
             
-            <div id="reg-form" style="margin-top:30px; display:none; border-top:1px solid #3f4147; pt:20px;">
-                <p style="color:var(--green); font-size:12px; margin-bottom:15px;">✓ Google 驗證成功，請填寫剩餘資料：</p>
-                <label style="font-size:12px; font-weight:bold; color:var(--muted);">帳號 ID (小寫英文、數字)</label>
-                <input type="text" id="reg-id" placeholder="例如: ryfn1998">
-                <label style="font-size:12px; font-weight:bold; color:var(--muted);">出生日期</label>
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <input type="number" placeholder="年" id="b-y">
-                    <input type="number" placeholder="月" id="b-m">
-                    <input type="number" placeholder="日" id="b-d">
+            <div id="extended-profile-fields" style="display:none; margin-top:24px; border-top:1px solid #3f4147; padding-top:20px;">
+                <label style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Account ID</label>
+                <input type="text" id="field-tacker-id" placeholder="lowercase letters and numbers">
+                
+                <label style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Date of Birth</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="number" placeholder="YYYY" id="dob-y">
+                    <input type="number" placeholder="MM" id="dob-m">
+                    <input type="number" placeholder="DD" id="dob-d">
                 </div>
-                <label style="font-size:12px; font-weight:bold; color:var(--muted);">設定密碼</label>
-                <input type="password" id="reg-pw">
-                <button class="btn" style="background:var(--blue); color:white;" onclick="completeReg()">完成註冊並進入</button>
+                
+                <button class="btn" style="background:var(--brand); color:white; margin-top:10px;" onclick="finalizeRegistration()">Complete Setup</button>
             </div>
-            
-            <p style="text-align:center; margin-top:20px; font-size:14px; color:var(--muted);">
-                已有帳號？ <span style="color:#00a8fc; cursor:pointer;" onclick="showScreen('login-screen')">返回登入</span>
-            </p>
         </div>
     </div>
 
-    <div id="main-app">
-        <div class="sidebar">
-            <div style="padding:20px; text-align:center; color:var(--muted); font-size:14px;">目前沒有好友 (圖一)</div>
-            <div class="user-card" onclick="alert('開啟紙稿下半部設定選單')">
-                <div style="width:32px; height:32px; border-radius:50%; background:#555; overflow:hidden;"><img id="my-avatar" style="width:100%;"></div>
-                <div style="font-size:12px;">
-                    <div id="my-name" style="font-weight:bold;"></div>
-                    <div id="my-id" style="color:var(--muted);"></div>
+    <div id="app-root">
+        <nav class="nav-sidebar">
+            <div style="flex:1; padding:20px; font-size:14px; color:var(--text-muted); text-align:center;">
+                No active conversations
+            </div>
+            <div class="user-settings-bar" onclick="toggleSettings(true)">
+                <div class="user-avatar"><img id="display-avatar" style="width:100%; height:100%; object-fit:cover;"></div>
+                <div style="font-size:12px; line-height:1.2;">
+                    <div id="display-name" style="font-weight:700; white-space:nowrap;"></div>
+                    <div id="display-id" style="color:var(--text-muted);"></div>
                 </div>
             </div>
-        </div>
-        <div style="display:flex; flex-direction:column;">
-            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0.15;">
-                <div style="font-size:100px; font-weight:bold;">#</div>
-                <p>因為你沒有在任何頻道 (圖一)</p>
+        </nav>
+        
+        <main class="content-view">
+            <div class="empty-state">
+                <div style="font-size:120px; font-weight:800;">#</div>
+                <p style="font-size:18px;">No channel selected</p>
             </div>
-            <div style="padding:0 20px 24px;">
-                <div style="background:#383a40; border-radius:8px; padding:11px 15px; display:flex; align-items:center; gap:12px;">
-                    <span style="color:var(--muted); cursor:pointer; font-size:20px;" onclick="alert('10MB 限制')">⊕</span>
-                    <input type="text" style="margin:0; background:transparent;" placeholder="傳送訊息到 Tacker">
-                    <span>🚀</span>
+            <div class="message-input-container">
+                <div class="input-wrapper">
+                    <span style="color:var(--text-muted); cursor:pointer; font-size:20px;" onclick="console.log('File upload limit: 10MB')">⊕</span>
+                    <input type="text" style="background:transparent; flex:1; color:white;" placeholder="Message Tacker">
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
+        const supabaseUrl = 'https://coyiifxxfopvabpjszis.supabase.co';
+        const supabaseKey = 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
+        const _s = supabase.createClient(supabaseUrl, supabaseKey);
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        function switchAuthView(viewId) {
+            document.querySelectorAll('.auth-container').forEach(c => c.style.display = 'none');
+            document.getElementById(viewId).style.display = 'flex';
         }
 
-        // 登入邏輯
-        async function handleLogin() {
-            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        async function triggerOAuth(isRegistration) {
+            if(isRegistration) localStorage.setItem('flow_type', 'registration');
+            else localStorage.removeItem('flow_type');
+
+            const redirectTarget = window.location.origin + window.location.pathname;
+            const { error } = await _s.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: redirectTarget }
+            });
+            if(error) console.error('Auth Error:', error.message);
         }
 
-        // 註冊時的 Google 驗證
-        async function handleRegGoogle() {
-            // 先標記現在是註冊流程
-            localStorage.setItem('is_registering', 'true');
-            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-        }
-
-        async function checkSession() {
+        async function syncSessionStatus() {
             const { data: { session } } = await _s.auth.getSession();
             if (session) {
                 const { data: profile } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
                 
-                // 如果是註冊流程且沒資料，顯示填寫表單
-                if (localStorage.getItem('is_registering') === 'true' && !profile) {
-                    showScreen('reg-screen');
-                    document.getElementById('reg-google-btn').style.display = 'none';
-                    document.getElementById('reg-form').style.display = 'block';
+                if (localStorage.getItem('flow_type') === 'registration' && !profile) {
+                    switchAuthView('view-register');
+                    document.getElementById('reg-oauth-trigger').style.display = 'none';
+                    document.getElementById('extended-profile-fields').style.display = 'block';
                 } else if (profile) {
-                    // 已有資料，直接進主頁
-                    showApp(session.user, profile);
+                    initAppInstance(profile);
                 } else {
-                    // 沒資料也沒標記註冊，回登入頁
-                    showScreen('login-screen');
+                    switchAuthView('view-login');
                 }
             }
         }
 
-        async function completeReg() {
-            const tid = document.getElementById('reg-id').value;
-            if(!tid) return alert('請輸入帳號 ID');
+        async function finalizeRegistration() {
+            const tackerId = document.getElementById('field-tacker-id').value.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if(!tackerId || tackerId.length < 3) return alert('Invalid Account ID');
             
             const { data: { user } } = await _s.auth.getUser();
             const { error } = await _s.from('profiles').upsert({
                 id: user.id,
-                tacker_id: tid,
+                tacker_id: tackerId,
                 full_name: user.user_metadata.full_name,
                 avatar_url: user.user_metadata.avatar_url
             });
 
             if(!error) {
-                localStorage.removeItem('is_registering');
+                localStorage.removeItem('flow_type');
                 location.reload();
             }
         }
 
-        function showApp(user, profile) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('main-app').style.display = 'grid';
-            document.getElementById('my-name').innerText = profile.full_name;
-            document.getElementById('my-id').innerText = "@" + profile.tacker_id;
-            document.getElementById('my-avatar').src = profile.avatar_url;
+        function initAppInstance(profile) {
+            document.querySelectorAll('.auth-container').forEach(c => c.style.display = 'none');
+            document.getElementById('app-root').style.display = 'grid';
+            document.getElementById('display-name').innerText = profile.full_name;
+            document.getElementById('display-id').innerText = `@${profile.tacker_id}`;
+            document.getElementById('display-avatar').src = profile.avatar_url;
         }
 
-        window.onload = checkSession;
+        window.onload = syncSessionStatus;
     </script>
 </body>
 </html>
