@@ -3,75 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker v2.1.0 | Official</title>
+    <title>Tacker | 系統管理存取</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --text: #dbdee1; --muted: #b5bac1; }
-        body { margin: 0; background: var(--bg-p); color: white; font-family: 'gg sans', sans-serif; height: 100vh; overflow: hidden; }
-        
-        /* 全域樣式 */
+        :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --text: #dbdee1; }
+        body { margin: 0; background: var(--bg-p); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         .hidden { display: none !important; }
-        .flex-center { display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .card { background: var(--bg-s); padding: 40px; border-radius: 8px; width: 400px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
-        input { width: 100%; background: #1e1f22; border: none; padding: 12px; color: white; border-radius: 4px; margin: 10px 0; outline: none; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; }
+        .flex-center { display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
+        .card { background: var(--bg-s); padding: 40px; border-radius: 8px; width: 350px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        input { width: 100%; background: #1e1f22; border: none; padding: 12px; color: white; border-radius: 4px; margin: 10px 0; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; background: var(--brand); color: white; margin-top: 10px; }
         
-        /* 主介面佈局 */
-        #main-layout { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
-        .side-nav { background: var(--bg-s); display: flex; flex-direction: column; border-right: 1px solid #1e1f22; position: relative; }
-        .user-footer { background: var(--bg-t); padding: 8px 12px; display: flex; align-items: center; gap: 8px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; }
-        
-        .chat-container { display: flex; flex-direction: column; }
-        #message-flow { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-        .msg-unit { border-radius: 4px; }
-        .msg-unit b { color: var(--brand); font-size: 14px; margin-right: 8px; }
-        .msg-unit i { color: var(--muted); font-size: 11px; font-style: normal; }
-        .msg-text { margin-top: 4px; line-height: 1.4; color: #e0e0e0; }
+        /* 偵錯標籤 */
+        #debug-log { position: fixed; top: 10px; left: 10px; font-size: 10px; color: #555; z-index: 1000; pointer-events: none; }
 
-        .input-zone { padding: 0 20px 24px; }
-        .input-bar { background: #383a40; border-radius: 8px; padding: 11px 15px; display: flex; align-items: center; gap: 12px; }
+        /* 主佈局 */
+        #main-layout { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
+        .side { background: var(--bg-s); position: relative; border-right: 1px solid #1e1f22; }
+        .user-tab { background: var(--bg-t); padding: 10px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 10px; }
+        .chat { display: flex; flex-direction: column; }
+        #msg-flow { flex: 1; padding: 20px; overflow-y: auto; }
+        .input-bar { padding: 20px; }
+        .input-wrap { background: #383a40; border-radius: 8px; padding: 10px; display: flex; }
     </style>
 </head>
 <body>
 
-    <div id="auth-overlay" class="flex-center">
-        <div class="card" id="login-box">
-            <h2 style="text-align:center;">Tacker</h2>
-            <button class="btn" style="background:white; color:black;" onclick="doAuth(false)">Google 登入</button>
-            <p style="text-align:center; font-size:13px; color:var(--muted); margin-top:20px;">
-                沒有帳號？ <span style="color:#00a8fc; cursor:pointer;" onclick="toggleAuth(true)">註冊新帳號</span>
-            </p>
-        </div>
-        <div class="card hidden" id="reg-box">
-            <h2 style="text-align:center;">建立 Tacker 帳號</h2>
-            <button class="btn" id="reg-google-trigger" style="background:white; color:black;" onclick="doAuth(true)">1. 驗證 Google</button>
-            <div id="reg-info" class="hidden">
-                <input type="text" id="reg-t-id" placeholder="設定你的 Tacker ID">
-                <input type="number" id="reg-year" placeholder="出生年份">
-                <button class="btn" style="background:var(--brand); color:white;" onclick="finishReg()">完成註冊</button>
+    <div id="debug-log">系統狀態: 初始化...</div>
+
+    <div id="st-loading" class="flex-center">
+        <div class="spinner">系統載入中...</div>
+    </div>
+
+    <div id="st-auth" class="flex-center hidden">
+        <div class="card">
+            <h2 id="auth-title" style="text-align:center;">Tacker</h2>
+            <button class="btn" style="background:white; color:black;" onclick="handleLogin()">Google 驗證</button>
+            
+            <div id="reg-fields" class="hidden">
+                <hr style="opacity:0.1; margin:20px 0;">
+                <p style="font-size:12px; color:var(--brand);">請設定 Tacker 身分資料：</p>
+                <input type="text" id="t-id" placeholder="帳號 ID (英文數字)">
+                <button class="btn" onclick="finalize()">完成註冊並登入</button>
             </div>
+            
+            <p id="toggle-text" style="text-align:center; font-size:12px; margin-top:20px; color:gray; cursor:pointer;" onclick="setMode('reg')">
+                尚未擁有帳號？點此註冊
+            </p>
         </div>
     </div>
 
-    <div id="main-layout" class="hidden">
-        <aside class="side-nav">
-            <div style="padding:20px; color:var(--muted); text-align:center; flex:1;">好友列表目前為空</div>
-            <div class="user-footer">
-                <img id="my-avatar" style="width:32px; height:32px; border-radius:50%; background:#444;">
-                <div style="font-size:12px; overflow:hidden;">
-                    <div id="my-name" style="font-weight:bold; white-space:nowrap;">載入中...</div>
-                    <div id="my-id" style="color:var(--muted);">@id</div>
+    <div id="main-layout">
+        <aside class="side">
+            <div style="padding:20px; opacity:0.3; text-align:center;">好友列表 (雙人模式)</div>
+            <div class="user-tab">
+                <img id="my-ava" style="width:32px; height:32px; border-radius:50%;">
+                <div style="font-size:12px;">
+                    <div id="my-n" style="font-weight:bold;"></div>
+                    <div id="my-i" style="color:gray;"></div>
                 </div>
             </div>
         </aside>
-        <main class="chat-container">
-            <div id="message-flow">
-                </div>
-            <div class="input-zone">
-                <div class="input-bar">
-                    <span style="color:var(--muted); cursor:pointer;">⊕</span>
-                    <input type="text" id="chat-input" placeholder="傳送訊息..." style="margin:0; background:transparent;">
-                    <button onclick="postMsg()" style="background:none; border:none; color:var(--brand); cursor:pointer; font-weight:bold;">發送</button>
+        <main class="chat">
+            <div id="msg-flow"></div>
+            <div class="input-bar">
+                <div class="input-wrap">
+                    <input type="text" id="m-in" placeholder="輸入訊息..." style="background:transparent; flex:1;">
+                    <button onclick="send()" style="background:none; border:none; color:var(--brand); cursor:pointer;">發送</button>
                 </div>
             </div>
         </main>
@@ -79,71 +77,94 @@
 
     <script>
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
-        let sessionUser = null;
+        let userProfile = null;
 
-        function toggleAuth(isReg) {
-            document.getElementById('login-box').classList.toggle('hidden', isReg);
-            document.getElementById('reg-box').classList.toggle('hidden', !isReg);
-        }
+        function log(t) { document.getElementById('debug-log').innerText = "系統狀態: " + t; }
 
-        async function doAuth(isReg) {
-            if(isReg) localStorage.setItem('reg_active', '1');
-            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-        }
-
-        async function checkSession() {
-            const { data: { session } } = await _s.auth.getSession();
-            if (session) {
-                const { data: profile } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-                if (localStorage.getItem('reg_active') && !profile) {
-                    toggleAuth(true);
-                    document.getElementById('reg-google-trigger').classList.add('hidden');
-                    document.getElementById('reg-info').classList.remove('hidden');
-                } else if (profile) {
-                    sessionUser = profile;
-                    launchApp();
-                }
+        function setMode(mode) {
+            if(mode === 'reg') {
+                document.getElementById('auth-title').innerText = "建立帳號";
+                document.getElementById('toggle-text').classList.add('hidden');
             }
         }
 
-        async function finishReg() {
-            const tid = document.getElementById('reg-t-id').value;
+        async function handleLogin() {
+            log("跳轉 Google...");
+            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        }
+
+        async function check() {
+            log("正在檢查 Session...");
+            const { data: { session } } = await _s.auth.getSession();
+            
+            if (!session) {
+                log("未登入");
+                document.getElementById('st-loading').classList.add('hidden');
+                document.getElementById('st-auth').classList.remove('hidden');
+                return;
+            }
+
+            log("已取得 Google 身分，查詢資料庫...");
+            const { data: p } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+
+            if (!p) {
+                log("無 Tacker 資料，顯示註冊表單");
+                document.getElementById('st-loading').classList.add('hidden');
+                document.getElementById('st-auth').classList.remove('hidden');
+                document.getElementById('reg-fields').classList.remove('hidden');
+                setMode('reg');
+            } else {
+                log("資料完整，進入主程式");
+                userProfile = p;
+                launch();
+            }
+        }
+
+        async function finalize() {
+            const tid = document.getElementById('t-id').value;
+            if(!tid) return alert("請輸入 ID");
             const { data: { user } } = await _s.auth.getUser();
-            await _s.from('profiles').upsert({ id: user.id, tacker_id: tid, full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url });
-            localStorage.removeItem('reg_active');
-            location.reload();
+            
+            log("寫入資料庫...");
+            const { error } = await _s.from('profiles').upsert({
+                id: user.id, tacker_id: tid, full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url
+            });
+            if(!error) location.reload();
+            else alert("ID 可能已被佔用");
         }
 
-        function launchApp() {
-            document.getElementById('auth-overlay').classList.add('hidden');
-            document.getElementById('main-layout').classList.remove('hidden');
-            document.getElementById('my-name').innerText = sessionUser.full_name;
-            document.getElementById('my-id').innerText = "@" + sessionUser.tacker_id;
-            document.getElementById('my-avatar').src = sessionUser.avatar_url;
+        function launch() {
+            document.getElementById('st-loading').classList.add('hidden');
+            document.getElementById('st-auth').classList.add('hidden');
+            document.getElementById('main-layout').style.display = 'grid';
+            
+            document.getElementById('my-n').innerText = userProfile.full_name;
+            document.getElementById('my-i').innerText = "@" + userProfile.tacker_id;
+            document.getElementById('my-ava').src = userProfile.avatar_url;
 
-            // 實時監聽
-            _s.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => pushMsg(p.new)).subscribe();
-            // 載入歷史
-            _s.from('messages').select('*').order('created_at').then(({data}) => data && data.forEach(pushMsg));
+            // 實時對話監聽
+            _s.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => render(p.new)).subscribe();
+            _s.from('messages').select('*').order('created_at').then(({data}) => data && data.forEach(render));
         }
 
-        async function postMsg() {
-            const val = document.getElementById('chat-input').value;
+        async function send() {
+            const val = document.getElementById('m-in').value;
             if(!val) return;
-            await _s.from('messages').insert([{ user_id: sessionUser.id, user_name: sessionUser.full_name, content: val }]);
-            document.getElementById('chat-input').value = '';
+            const { data: { user: u } } = await _s.auth.getUser();
+            await _s.from('messages').insert([{ user_id: u.id, user_name: userProfile.full_name, content: val }]);
+            document.getElementById('m-in').value = '';
         }
 
-        function pushMsg(m) {
-            const flow = document.getElementById('message-flow');
+        function render(m) {
+            const flow = document.getElementById('msg-flow');
             const div = document.createElement('div');
-            div.className = 'msg-unit';
-            div.innerHTML = `<b>${m.user_name}</b><i>${new Date(m.created_at).toLocaleTimeString()}</i><div class="msg-text">${m.content}</div>`;
+            div.style.marginBottom = "15px";
+            div.innerHTML = `<b style="color:var(--brand)">${m.user_name}</b><br>${m.content}`;
             flow.appendChild(div);
             flow.scrollTop = flow.scrollHeight;
         }
 
-        window.onload = checkSession;
+        window.onload = check;
     </script>
 </body>
 </html>
