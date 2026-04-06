@@ -3,40 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker | No-Loop Edition</title>
+    <title>Tacker | Google Direct</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --text: #dbdee1; --muted: #949ba4; --danger: #f23f43; }
         body { margin: 0; background: var(--bg-t); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         .hidden { display: none !important; }
         
-        /* 登入牆 */
-        #auth-wall { position: fixed; inset: 0; background: var(--bg-t); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .auth-box { background: var(--bg-s); padding: 40px; border-radius: 8px; text-align: center; width: 300px; }
-        .g-btn { width: 100%; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; }
+        /* 登入牆 & 載入中 */
+        #loading-screen { position: fixed; inset: 0; background: var(--bg-t); z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        #auth-wall { position: fixed; inset: 0; background: var(--bg-t); z-index: 9999; display: none; justify-content: center; align-items: center; }
+        .auth-box { background: var(--bg-s); padding: 40px; border-radius: 8px; text-align: center; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .g-btn { width: 100%; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; font-size: 16px; }
 
         /* 主佈局 */
         #main-app { display: none; grid-template-columns: 240px 1fr; height: 100vh; background: var(--bg-p); }
         .sidebar { background: var(--bg-s); border-right: 1px solid #1e1f22; position: relative; }
         
-        /* 左下角個資區 (手稿 P1) */
+        /* 左下角個資 (手稿 P1) */
         .u-panel { background: #232428; padding: 8px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 8px; }
         .u-ava { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); cursor: pointer; object-fit: cover; }
-        .u-meta { flex: 1; overflow: hidden; font-size: 11px; }
-        .u-pencil { cursor: pointer; color: var(--muted); font-size: 14px; padding: 4px; }
+        .u-meta { flex: 1; overflow: hidden; font-size: 11px; line-height: 1.2; }
+        .u-pencil { cursor: pointer; color: var(--muted); font-size: 14px; padding: 4px; border-radius: 4px; }
+        .u-pencil:hover { background: #3f4147; color: white; }
 
-        /* 聊天與個資卡 (手稿 P2) */
+        /* 聊天內容 (手稿 P2) */
         #msg-list { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
         .msg { display: flex; gap: 14px; }
-        .m-ava { width: 40px; height: 40px; border-radius: 50%; background: #444; cursor: pointer; }
-        .m-name { font-weight: bold; cursor: pointer; margin-right: 8px; }
+        .m-ava { width: 40px; height: 40px; border-radius: 50%; background: #444; cursor: pointer; object-fit: cover; }
+        .m-name { font-weight: bold; cursor: pointer; color: white; font-size: 15px; }
 
-        #user-card { position: fixed; width: 270px; background: var(--bg-t); border-radius: 8px; overflow: hidden; display: none; z-index: 5000; border: 1px solid #444; }
+        /* 他人個資小卡 (點擊頭像) */
+        #user-card { position: fixed; width: 270px; background: var(--bg-t); border-radius: 8px; overflow: hidden; display: none; z-index: 5000; border: 1px solid #444; box-shadow: 0 8px 24px rgba(0,0,0,0.7); }
         .c-banner { height: 60px; background: var(--brand); }
         .c-body { padding: 15px; padding-top: 40px; position: relative; }
-        .c-ava { width: 64px; height: 64px; border-radius: 50%; border: 4px solid var(--bg-t); position: absolute; top: -32px; left: 15px; background: #333; }
+        .c-ava { width: 64px; height: 64px; border-radius: 50%; border: 4px solid var(--bg-t); position: absolute; top: -32px; left: 15px; background: #333; object-fit: cover; }
 
-        /* 設定中心 (手稿 P1 分頁) */
+        /* 設定中心 (手稿 P1 詳細功能) */
         #set-modal { position: fixed; inset: 0; background: var(--bg-p); z-index: 6000; display: none; }
         .set-layout { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
         .set-nav { background: var(--bg-s); padding: 60px 20px 20px 40px; }
@@ -49,21 +52,29 @@
 </head>
 <body>
 
+    <div id="loading-screen">
+        <h2>Tacker</h2>
+        <p style="color:var(--muted)">正在驗證身份...</p>
+    </div>
+
     <div id="auth-wall">
         <div class="auth-box">
             <h1 style="margin:0;">Tacker</h1>
-            <p style="font-size:13px; color:var(--muted);">使用 Google 帳戶即刻加入</p>
-            <button class="g-btn" onclick="signIn()">Google 驗證登入</button>
+            <p style="font-size:13px; color:var(--muted); margin-top:8px;">15歲學生的專屬社群平台</p>
+            <button class="g-btn" onclick="signIn()">
+                <img src="https://www.google.com/favicon.ico" width="18"> Google 一鍵登入
+            </button>
         </div>
     </div>
 
     <div id="main-app">
         <aside class="sidebar">
-            <div style="padding:15px; font-size:12px; color:var(--muted); font-weight:bold;">私人對話</div>
+            <div style="padding:15px; font-size:12px; color:var(--muted); font-weight:bold; letter-spacing:1px;">好友交流</div>
+            
             <div class="u-panel">
                 <img id="my-ava" class="u-ava" onclick="showSet()">
                 <div class="u-meta">
-                    <div id="my-name" style="font-weight:bold;">User</div>
+                    <div id="my-name" style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</div>
                     <div id="my-id" style="color:var(--muted);">@ID</div>
                 </div>
                 <div class="u-pencil" onclick="showSet()">✎</div>
@@ -73,8 +84,9 @@
         <main style="display:flex; flex-direction:column; flex:1;">
             <div id="msg-list"></div>
             <div style="padding: 24px;">
-                <div style="background:#383a40; border-radius:8px; display:flex; padding:12px; gap:12px;">
-                    <input type="text" id="m-input" placeholder="傳送訊息..." style="background:transparent; border:none; flex:1; color:white; outline:none;">
+                <div style="background:#383a40; border-radius:8px; display:flex; padding:12px; gap:12px; align-items:center;">
+                    <span style="color:var(--muted); cursor:pointer; font-size:20px;">⊕</span>
+                    <input type="text" id="m-input" placeholder="說點什麼吧..." style="background:transparent; border:none; flex:1; color:white; outline:none; font-size:15px;">
                     <button onclick="send()" style="background:none; border:none; color:var(--brand); font-weight:bold; cursor:pointer;">發送</button>
                 </div>
             </div>
@@ -87,38 +99,48 @@
             <img class="c-ava" id="c-ava">
             <h3 id="c-name" style="margin:0;"></h3>
             <div id="c-id" style="color:var(--muted); font-size:12px;"></div>
-            <p id="c-bio" style="font-size:12px; margin-top:15px; border-top:1px solid #444; padding-top:10px;"></p>
+            <div id="c-bio" style="font-size:12px; margin-top:12px; border-top:1px solid #444; padding-top:10px; line-height:1.5;"></div>
         </div>
     </div>
 
     <div id="set-modal">
         <div class="set-layout">
             <div class="set-nav">
-                <div style="font-size:11px; font-weight:bold; color:var(--muted); margin-bottom:15px;">使用者設定</div>
+                <div style="font-size:11px; font-weight:bold; color:var(--muted); margin-bottom:15px; padding-left:12px;">使用者設定</div>
                 <div class="tab-x active" onclick="goTab('base')">基本資訊</div>
                 <div class="tab-x" onclick="goTab('look')">外觀</div>
                 <div class="tab-x" onclick="goTab('acc')">帳戶</div>
-                <div class="tab-x" style="color:var(--danger); margin-top:20px;" onclick="signOut()">登出</div>
+                <div class="tab-x" style="color:var(--danger); margin-top:30px;" onclick="signOut()">登出帳號</div>
             </div>
-            <div style="padding:60px 40px; position:relative;">
-                <div style="position:absolute; top:40px; right:40px; cursor:pointer;" onclick="hideSet()">✕</div>
+            <div style="padding:60px 40px; position:relative; overflow-y:auto;">
+                <div style="position:absolute; top:40px; right:40px; cursor:pointer; font-size:20px;" onclick="hideSet()">✕</div>
+                
                 <div id="t-base">
                     <h2>基本資訊</h2>
-                    <input type="text" id="e-name" class="dark" placeholder="顯示名稱">
-                    <input type="text" id="e-id" class="dark" placeholder="帳號 ID">
-                    <button class="btn-act" onclick="save()">儲存</button>
+                    <label style="font-size:12px; color:var(--muted); font-weight:bold;">顯示名稱</label>
+                    <input type="text" id="e-name" class="dark">
+                    <label style="font-size:12px; color:var(--muted); font-weight:bold;">帳號 ID</label>
+                    <input type="text" id="e-id" class="dark">
+                    <button class="btn-act" onclick="save()">儲存變更</button>
                 </div>
+
                 <div id="t-look" class="hidden">
                     <h2>外觀設定</h2>
-                    <input type="text" id="e-ava" class="dark" placeholder="頭像圖片網址">
-                    <input type="text" id="e-banner" class="dark" placeholder="橫幅色碼 (例如 #5865f2)">
-                    <textarea id="e-bio" class="dark" rows="3" placeholder="自我介紹..."></textarea>
-                    <button class="btn-act" onclick="save()">儲存</button>
+                    <label style="font-size:12px; color:var(--muted); font-weight:bold;">頭像網址</label>
+                    <input type="text" id="e-ava" class="dark" placeholder="貼上圖片 URL">
+                    <label style="font-size:12px; color:var(--muted); font-weight:bold;">橫幅底色</label>
+                    <input type="text" id="e-banner" class="dark" placeholder="#5865f2">
+                    <label style="font-size:12px; color:var(--muted); font-weight:bold;">自我介紹</label>
+                    <textarea id="e-bio" class="dark" rows="4" placeholder="寫點關於自己的事..."></textarea>
+                    <button class="btn-act" onclick="save()">更新外觀</button>
                 </div>
+
                 <div id="t-acc" class="hidden">
                     <h2>帳戶</h2>
                     <button class="btn-act" style="background:#4e5058;">重設密碼</button>
-                    <button class="btn-act" style="background:var(--danger); margin-top:20px;">移除帳戶</button>
+                    <div style="margin-top:50px; border-top:1px solid #444; padding-top:20px;">
+                        <button class="btn-act" style="background:var(--danger);">移除帳戶 (需驗證)</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -127,30 +149,34 @@
     <script>
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
-        // 終結死循環的關鍵：監聽 Auth 狀態改變
+        // 強力監聽：一旦有 Session 就解鎖，無 Session 就開登入牆
         _s.auth.onAuthStateChange((event, session) => {
+            document.getElementById('loading-screen').classList.add('hidden');
             if (session) {
-                document.getElementById('auth-wall').classList.add('hidden');
+                document.getElementById('auth-wall').style.display = 'none';
                 document.getElementById('main-app').style.display = 'grid';
-                loadUserData(session.user.id);
+                loadUserData(session.user);
             } else {
-                document.getElementById('auth-wall').classList.remove('hidden');
+                document.getElementById('auth-wall').style.display = 'flex';
                 document.getElementById('main-app').style.display = 'none';
             }
         });
 
         async function signIn() { 
-            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); 
+            await _s.auth.signInWithOAuth({ 
+                provider: 'google', 
+                options: { redirectTo: window.location.origin + window.location.pathname } 
+            }); 
         }
-        async function signOut() { await _s.auth.signOut(); }
+
+        async function signOut() { await _s.auth.signOut(); location.reload(); }
 
         function showSet() { document.getElementById('set-modal').style.display = 'block'; }
         function hideSet() { document.getElementById('set-modal').style.display = 'none'; }
+        
         function goTab(t) {
-            ['base','look','acc'].forEach(x => {
-                document.getElementById('t-'+x).classList.add('hidden');
-                document.querySelectorAll('.tab-x').forEach(b => b.classList.remove('active'));
-            });
+            ['base','look','acc'].forEach(x => document.getElementById('t-'+x).classList.add('hidden'));
+            document.querySelectorAll('.tab-x').forEach(b => b.classList.remove('active'));
             document.getElementById('t-'+t).classList.remove('hidden');
             event.currentTarget.classList.add('active');
         }
@@ -162,22 +188,27 @@
             const card = document.getElementById('user-card');
             document.getElementById('c-name').innerText = p.full_name;
             document.getElementById('c-id').innerText = "@" + p.tacker_id;
-            document.getElementById('c-ava').src = p.avatar_url || "";
-            document.getElementById('c-bio').innerText = p.bio || "無自介";
+            document.getElementById('c-ava').src = p.avatar_url || "https://via.placeholder.com/64";
+            document.getElementById('c-bio').innerText = p.bio || "這傢伙很懶，什麼都沒寫。";
             document.getElementById('c-banner').style.background = p.banner_color || "var(--brand)";
             card.style.display = 'block';
-            card.style.left = e.clientX + 'px';
-            card.style.top = (e.clientY > window.innerHeight - 300 ? e.clientY - 300 : e.clientY) + 'px';
+            card.style.left = Math.min(e.clientX, window.innerWidth - 280) + 'px';
+            card.style.top = Math.min(e.clientY, window.innerHeight - 300) + 'px';
         }
         document.addEventListener('click', () => document.getElementById('user-card').style.display = 'none');
 
         async function save() {
             const { data: { user } } = await _s.auth.getUser();
-            await _s.from('profiles').upsert({
-                id: user.id, full_name: document.getElementById('e-name').value, tacker_id: document.getElementById('e-id').value,
-                avatar_url: document.getElementById('e-ava').value, bio: document.getElementById('e-bio').value, banner_color: document.getElementById('e-banner').value
-            });
-            alert("已記憶設定！");
+            const payload = {
+                id: user.id,
+                full_name: document.getElementById('e-name').value,
+                tacker_id: document.getElementById('e-id').value,
+                avatar_url: document.getElementById('e-ava').value,
+                bio: document.getElementById('e-bio').value,
+                banner_color: document.getElementById('e-banner').value
+            };
+            await _s.from('profiles').upsert(payload);
+            alert("記憶成功！");
             location.reload();
         }
 
@@ -185,7 +216,11 @@
             const val = document.getElementById('m-input').value;
             const { data: { user } } = await _s.auth.getUser();
             if(!val || !user) return;
-            await _s.from('messages').insert([{ user_id: user.id, user_name: document.getElementById('my-name').innerText, content: val }]);
+            await _s.from('messages').insert([{ 
+                user_id: user.id, 
+                user_name: document.getElementById('my-name').innerText, 
+                content: val 
+            }]);
             document.getElementById('m-input').value = '';
         }
 
@@ -193,24 +228,38 @@
             const list = document.getElementById('msg-list');
             const div = document.createElement('div');
             div.className = "msg";
-            div.innerHTML = `<img class="m-ava" src="https://via.placeholder.com/40" onclick="popUser('${m.user_id}', event)">
-                <div><span class="m-name" onclick="popUser('${m.user_id}', event)">${m.user_name}</span><span style="font-size:10px; color:var(--muted);">${new Date(m.created_at).toLocaleTimeString()}</span>
-                <div style="font-size:14px; margin-top:4px;">${m.content}</div></div>`;
+            div.innerHTML = `
+                <img class="m-ava" src="https://via.placeholder.com/40" onclick="popUser('${m.user_id}', event)">
+                <div style="flex:1;">
+                    <div style="display:flex; align-items:center;">
+                        <span class="m-name" onclick="popUser('${m.user_id}', event)">${m.user_name}</span>
+                        <span style="font-size:10px; color:var(--muted);">${new Date(m.created_at).toLocaleTimeString()}</span>
+                    </div>
+                    <div style="font-size:14px; margin-top:4px; color:var(--text); line-height:1.4;">${m.content}</div>
+                </div>
+            `;
             list.appendChild(div);
             list.scrollTop = list.scrollHeight;
         }
 
-        async function loadUserData(uid) {
-            const { data: p } = await _s.from('profiles').select('*').eq('id', uid).maybeSingle();
-            if(p) {
-                document.getElementById('my-name').innerText = p.full_name;
-                document.getElementById('my-id').innerText = "@" + p.tacker_id;
-                document.getElementById('my-ava').src = p.avatar_url || "";
-                document.getElementById('e-name').value = p.full_name;
-                document.getElementById('e-id').value = p.tacker_id;
-                document.getElementById('e-ava').value = p.avatar_url || "";
-                document.getElementById('e-bio').value = p.bio || "";
+        async function loadUserData(user) {
+            const { data: p } = await _s.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            // 如果是第一次登入，自動建立 profile
+            if(!p) {
+                const initData = { id: user.id, full_name: user.user_metadata.full_name || "新用戶", tacker_id: user.id.slice(0,5), avatar_url: user.user_metadata.avatar_url };
+                await _s.from('profiles').insert([initData]);
+                location.reload();
+                return;
             }
+            document.getElementById('my-name').innerText = p.full_name;
+            document.getElementById('my-id').innerText = "@" + p.tacker_id;
+            document.getElementById('my-ava').src = p.avatar_url || user.user_metadata.avatar_url;
+            document.getElementById('e-name').value = p.full_name;
+            document.getElementById('e-id').value = p.tacker_id;
+            document.getElementById('e-ava').value = p.avatar_url || "";
+            document.getElementById('e-bio').value = p.bio || "";
+            document.getElementById('e-banner').value = p.banner_color || "";
+
             const { data: msgs } = await _s.from('messages').select('*').order('created_at');
             if(msgs) { document.getElementById('msg-list').innerHTML = ''; msgs.forEach(render); }
         }
