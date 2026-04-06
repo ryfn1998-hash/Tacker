@@ -3,32 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker Official | Production</title>
+    <title>Tacker | Login & Register</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg-auth: #313338; --bg-input: #1e1f22; --accent: #5865f2; --text: #f2f3f5; --text-muted: #b5bac1; }
-        * { box-sizing: border-box; font-family: 'gg sans', sans-serif; margin: 0; padding: 0; }
+        * { box-sizing: border-box; font-family: 'gg sans', 'Noto Sans TC', sans-serif; margin: 0; padding: 0; }
         body { background: #5865f2 url('https://discord.com/assets/7c01f740da893444036e.png') center/cover; height: 100vh; display: flex; align-items: center; justify-content: center; }
         .auth-card { background: var(--bg-auth); width: 480px; padding: 32px; border-radius: 8px; color: var(--text); box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+        h2 { text-align: center; margin-bottom: 8px; font-size: 24px; }
+        .sub-text { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
         .input-group { margin-bottom: 20px; }
         .input-group label { display: block; color: var(--text-muted); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
-        input, select { width: 100%; padding: 10px; background: var(--bg-input); border: none; border-radius: 3px; color: white; outline: none; }
+        input, select { width: 100%; padding: 10px; background: var(--bg-input); border: none; border-radius: 3px; color: white; outline: none; font-size: 16px; }
         .dob-wrap { display: flex; gap: 10px; }
-        .btn-primary { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-primary { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .link-text { color: #00a8fc; font-size: 14px; cursor: pointer; margin-top: 12px; display: inline-block; }
+        .link-text:hover { text-decoration: underline; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="register-view" class="auth-card">
-        <h2 style="text-align:center; margin-bottom:20px;">建立帳號</h2>
+    <div id="login-view" class="auth-card">
+        <h2>歡迎回來！</h2>
+        <p class="sub-text">很高興再次見到你！</p>
         <div class="input-group">
             <label>電子郵件</label>
-            <input type="email" id="reg-email" placeholder="你的 Gmail">
+            <input type="email" id="login-email">
+        </div>
+        <div class="input-group">
+            <label>密碼</label>
+            <input type="password" id="login-pass">
+        </div>
+        <button class="btn-primary" id="login-btn" onclick="realLogin()">登入</button>
+        <div style="margin-top:12px;">
+            <span style="color:var(--text-muted)">需要帳號？</span>
+            <span class="link-text" onclick="switchView('register')">註冊</span>
+        </div>
+    </div>
+
+    <div id="register-view" class="auth-card hidden">
+        <h2>建立帳號</h2>
+        <div class="input-group">
+            <label>電子郵件</label>
+            <input type="email" id="reg-email">
         </div>
         <div class="input-group">
             <label>使用者名稱 (帳號代碼)</label>
-            <input type="text" id="reg-id" placeholder="英文與數字">
+            <input type="text" id="reg-id" placeholder="僅限英文與數字">
         </div>
         <div class="input-group">
             <label>密碼</label>
@@ -43,24 +66,19 @@
             </div>
         </div>
         <button class="btn-primary" id="reg-btn" onclick="realSignUp()">繼續</button>
-    </div>
-
-    <div id="verify-view" class="auth-card hidden">
-        <h2 style="text-align:center;">請檢查您的 Gmail</h2>
-        <p style="text-align:center; color:var(--text-muted); margin: 20px 0;" id="verify-msg"></p>
-        <div style="background:#2b2d31; padding:15px; border-radius:5px; text-align:center; color:#23a55a; font-weight:bold;">
-            信件已發送！請點擊信中連結完成驗證。
-        </div>
-        <button class="btn-primary" style="background:#4e5058; margin-top:20px;" onclick="location.reload()">返回登入</button>
+        <div class="link-text" onclick="switchView('login')">已經有帳號了？</div>
     </div>
 
     <script>
-        // 1. 初始化 Supabase (使用 FR Technology 金鑰)
-        const supabaseUrl = 'https://coyiifxxfopvabpjszis.supabase.co';
-        const supabaseKey = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        // 初始化 Supabase
+        const _supabase = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
-        // 2. 初始化日期選擇器
+        function switchView(view) {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('register-view').classList.add('hidden');
+            document.getElementById(view + '-view').classList.remove('hidden');
+        }
+
         (function initDate() {
             const y = document.getElementById('birth-year');
             const m = document.getElementById('birth-month');
@@ -71,7 +89,7 @@
             y.value = "2010";
         })();
 
-        // 3. 實戰註冊邏輯 (真的會發信)
+        // 真正的註冊邏輯
         async function realSignUp() {
             const btn = document.getElementById('reg-btn');
             const email = document.getElementById('reg-email').value;
@@ -79,33 +97,29 @@
             const username = document.getElementById('reg-id').value;
 
             if(!email || !password || !username) return alert("請填寫完整資訊！");
-            if(!/^[a-zA-Z0-9]+$/.test(username)) return alert("帳號代碼僅限英文與數字！");
-
-            btn.innerText = "正在處理...";
             btn.disabled = true;
+            btn.innerText = "發送中...";
 
-            // 呼叫 Supabase Auth 發信
             const { data, error } = await _supabase.auth.signUp({
-                email: email,
-                password: password,
-                options: {
-                    data: {
-                        username: username,
-                        birthday: `${document.getElementById('birth-year').value}-${document.getElementById('birth-month').value}-${document.getElementById('birth-day').value}`
-                    }
-                }
+                email: email, password: password,
+                options: { data: { username: username, birthday: `${document.getElementById('birth-year').value}` } }
             });
 
             if (error) {
                 alert("錯誤：" + error.message);
-                btn.innerText = "繼續";
-                btn.disabled = false;
+                btn.disabled = false; btn.innerText = "繼續";
             } else {
-                // 成功後切換至驗證畫面
-                document.getElementById('verify-msg').innerText = `我們已向 ${email} 發送了驗證連結，請前往確認。`;
-                document.getElementById('register-view').classList.add('hidden');
-                document.getElementById('verify-view').classList.remove('hidden');
+                alert("信件已發送至 " + email + "！請去檢查垃圾郵件或收件匣。");
             }
+        }
+
+        // 真正的登入邏輯
+        async function realLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const { data, error } = await _supabase.auth.signInWithPassword({ email: email, password: pass });
+            if (error) alert("登入失敗：" + error.message);
+            else alert("登入成功！歡迎進入 Tacker。");
         }
     </script>
 </body>
