@@ -10,168 +10,165 @@
             --text-main: #f4f4f5; --text-muted: #a1a1aa;
             --accent: #8b5cf6; --border: #27272a;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', system-ui, sans-serif; }
-        body { margin: 0; background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
+        body { margin: 0; background: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; }
 
-        /* 左側導航 (隱藏伺服器，改為功能導航) */
+        /* --- 登入頁面 (主畫面) --- */
+        #auth-page { 
+            display: flex; align-items: center; justify-content: center; height: 100vh; background: var(--bg-dark); 
+        }
+        .login-card { 
+            background: var(--bg-side); padding: 40px; border-radius: 16px; border: 1px solid var(--border); 
+            width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .login-card input { 
+            width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border); 
+            color: white; border-radius: 8px; outline: none; 
+        }
+        .btn-main { 
+            width: 100%; padding: 12px; background: var(--accent); color: white; border: none; 
+            border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-main:hover { opacity: 0.9; }
+
+        /* --- 主程式介面 --- */
+        #app { display: none; height: 100vh; width: 100%; }
+        
         .rail { width: 64px; background: #000; display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid var(--border); gap: 15px; }
-        .rail-btn { width: 44px; height: 44px; border-radius: 12px; background: var(--bg-side); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
-        .rail-btn:hover { background: var(--border); }
+        .rail-btn { width: 44px; height: 44px; border-radius: 12px; background: var(--bg-side); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid transparent; }
         .rail-btn.active { border-color: var(--accent); color: var(--accent); }
 
-        /* 側邊列表 */
         .sidebar { width: 260px; background: var(--bg-side); display: flex; flex-direction: column; border-right: 1px solid var(--border); }
-        .side-head { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .side-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .side-head { padding: 20px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
         
-        .list-container { flex: 1; padding: 10px; overflow-y: auto; }
-        .chat-item { padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 12px; margin-bottom: 4px; cursor: pointer; transition: 0.1s; }
-        .chat-item:hover { background: var(--bg-card); }
-        .pfp-sm { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
-
-        /* 左下角個人資料 (Discord 雙重顯示風格) */
         .user-panel { padding: 10px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); }
         .user-pill { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .user-pill:hover { background: var(--border); }
-        .u-info { flex: 1; line-height: 1.2; overflow: hidden; }
-        .u-name { font-size: 13px; font-weight: 600; display: block; }
-        .u-tag { font-size: 11px; color: var(--text-muted); }
 
-        /* 主畫面 */
-        main { flex: 1; background: var(--bg-dark); display: flex; flex-direction: column; position: relative; }
-        .welcome { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg-dark); z-index: 10; }
-        
-        /* Discord 風格設定牆 (全屏) */
+        main { flex: 1; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+
+        /* --- 設定牆 --- */
         #settings-ui { position: fixed; inset: 0; background: var(--bg-dark); z-index: 1000; display: none; }
-        .settings-container { display: flex; height: 100%; width: 100%; max-width: 1200px; margin: 0 auto; }
-        .settings-nav { width: 280px; background: var(--bg-side); padding: 60px 20px 20px 40px; }
-        .settings-content { flex: 1; padding: 60px 40px; overflow-y: auto; position: relative; }
-        .close-btn { position: absolute; right: 40px; top: 40px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
-        /* 個人資料編輯卡片 (核心還原) */
-        .profile-edit-card { background: var(--bg-side); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; max-width: 660px; margin-top: 20px; }
-        .edit-banner { height: 100px; background: var(--accent); position: relative; }
-        .edit-pfp-area { padding: 0 20px; margin-top: -45px; display: flex; align-items: flex-end; justify-content: space-between; }
-        .edit-pfp { width: 90px; height: 90px; border-radius: 50%; border: 6px solid var(--bg-side); background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
-        .edit-info-box { padding: 20px; background: var(--bg-card); margin: 20px; border-radius: 8px; }
-        
-        label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
-        input, textarea { width: 100%; background: var(--bg-dark); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 6px; outline: none; margin-bottom: 20px; }
-        .save-btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .settings-win { display: flex; height: 100%; width: 100%; max-width: 1200px; margin: 0 auto; }
+        .set-side { width: 280px; background: var(--bg-side); padding: 60px 40px; border-right: 1px solid var(--border); }
+        .set-main { flex: 1; padding: 60px 40px; overflow-y: auto; position: relative; }
+        .close-x { position: absolute; right: 40px; top: 40px; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <nav class="rail">
-        <div class="rail-btn active">💬</div>
-        <div class="rail-btn">👥</div>
-    </nav>
-
-    <aside class="sidebar">
-        <div class="side-head">
-            <div class="side-title">訊息</div>
-            <div style="cursor:pointer; color:var(--text-muted);" onclick="addFriend()">＋</div>
+    <div id="auth-page">
+        <div class="login-card">
+            <h1 style="color:var(--accent); margin-bottom: 30px;">TACKER</h1>
+            <input type="email" id="email" placeholder="電子信箱">
+            <input type="password" id="pass" placeholder="密碼">
+            <button class="btn-main" onclick="mockLogin()">登入系統</button>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:20px;">FR Technology 安全加密連線</p>
         </div>
-        <div class="list-container" id="chat-list">
-            <div style="padding:20px; color:var(--text-muted); font-size:13px; text-align:center;">目前沒有對話</div>
-        </div>
+    </div>
 
-        <div class="user-panel">
-            <div class="user-pill" onclick="openSettings()">
-                <div class="pfp-sm" id="nav-pfp" style="width:32px; height:32px;">U</div>
-                <div class="u-info">
-                    <span class="u-name" id="nav-name">未設定名稱</span>
-                    <span class="u-tag" id="nav-tag">@tacker_user</span>
+    <div id="app">
+        <nav class="rail">
+            <div class="rail-btn active">💬</div>
+            <div class="rail-btn">👥</div>
+        </nav>
+
+        <aside class="sidebar">
+            <div class="side-head">訊息 <span onclick="alert('加好友功能開發中')">＋</span></div>
+            <div style="flex:1; padding:20px; font-size:13px; color:var(--text-muted); text-align:center;">目前沒有對話</div>
+            <div class="user-panel">
+                <div class="user-pill" onclick="openSettings()">
+                    <div style="width:32px; height:32px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+                    <div style="flex:1;">
+                        <b style="font-size:13px; display:block;" id="nav-name">未設定名稱</b>
+                        <span style="font-size:11px; color:var(--text-muted);" id="nav-tag">@tacker_user</span>
+                    </div>
+                    <span>⚙️</span>
                 </div>
-                <span style="font-size:14px; color:var(--text-muted)">⚙️</span>
             </div>
-        </div>
-    </aside>
+        </aside>
 
-    <main>
-        <div class="welcome" id="empty-view">
-            <h1 style="color:var(--accent)">TACKER</h1>
-            <p style="color:var(--text-muted)">安全且精簡的通訊空間</p>
-        </div>
-    </main>
+        <main>
+            <div style="text-align:center;">
+                <h2 style="color:var(--accent)">歡迎回來</h2>
+                <p>選擇一個對話開始加密連線</p>
+            </div>
+        </main>
+    </div>
 
     <div id="settings-ui">
-        <div class="settings-container">
-            <div class="settings-nav">
-                <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:20px;">使用者設定</div>
-                <div style="padding:10px; background:var(--border); border-radius:6px; color:white; margin-bottom:8px;">個人檔案</div>
-                <div style="padding:10px; color:var(--text-muted); cursor:pointer;" onclick="logout()">登出</div>
+        <div class="settings-win">
+            <div class="set-side">
+                <div style="font-weight:800; color:var(--text-muted); margin-bottom:30px;">使用者設定</div>
+                <div style="padding:10px; background:var(--border); border-radius:8px; margin-bottom:10px;">個人檔案</div>
+                <div style="padding:10px; color:#ff4d4d; cursor:pointer;" onclick="logout()">登出</div>
             </div>
-            
-            <div class="settings-content">
-                <div class="close-btn" onclick="closeSettings()">✕</div>
-                <h2 style="margin:0;">個人檔案</h2>
-                
-                <div class="profile-edit-card">
-                    <div class="edit-banner"></div>
-                    <div class="edit-pfp-area">
-                        <div class="edit-pfp" id="edit-pfp-icon">U</div>
-                    </div>
+            <div class="set-main">
+                <div class="close-x" onclick="closeSettings()">✕</div>
+                <h2>個人檔案設定</h2>
+                <div style="margin-top:30px; background:var(--bg-side); padding:30px; border-radius:12px; border:1px solid var(--border);">
+                    <label style="color:var(--text-muted); font-size:12px;">顯示名稱</label>
+                    <input type="text" id="set-n" style="width:100%; background:#000; border:1px solid var(--border); color:white; padding:12px; border-radius:8px; margin-bottom:20px;">
                     
-                    <div class="edit-info-box">
-                        <label>顯示名稱 (Display Name)</label>
-                        <input type="text" id="in-display" placeholder="大家看到的稱呼">
-                        
-                        <label>個人簡介 (About Me)</label>
-                        <textarea id="in-bio" rows="3" placeholder="介紹你自己..."></textarea>
-                        
-                        <label>帳號代號 (User ID)</label>
-                        <input type="text" id="in-tag" placeholder="例如: ryfn888">
-                        
-                        <button class="save-btn" onclick="saveProfile()">儲存變更</button>
-                    </div>
+                    <label style="color:var(--text-muted); font-size:12px;">帳號代碼</label>
+                    <input type="text" id="set-t" style="width:100%; background:#000; border:1px solid var(--border); color:white; padding:12px; border-radius:8px; margin-bottom:30px;">
+                    
+                    <button class="btn-main" onclick="saveProfile()">儲存變更</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // 核心跳轉邏輯
+        function checkAuth() {
+            const token = localStorage.getItem('tacker_token');
+            if (token) {
+                document.getElementById('auth-page').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                loadProfile();
+            } else {
+                document.getElementById('auth-page').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+            }
+        }
+
+        function mockLogin() {
+            // 這裡之後接 Supabase 真登入
+            localStorage.setItem('tacker_token', 'dummy_token');
+            checkAuth();
+        }
+
+        function logout() {
+            localStorage.removeItem('tacker_token');
+            closeSettings(); // 先關閉設定窗
+            checkAuth();     // 觸發 UI 切換回到登入頁
+        }
+
+        // 個資控制
         function openSettings() { document.getElementById('settings-ui').style.display = 'block'; }
         function closeSettings() { document.getElementById('settings-ui').style.display = 'none'; }
 
         function saveProfile() {
-            const name = document.getElementById('in-display').value;
-            const tag = document.getElementById('in-tag').value;
-            
-            if(name) {
-                document.getElementById('nav-name').innerText = name;
-                document.getElementById('nav-pfp').innerText = name[0].toUpperCase();
-                document.getElementById('edit-pfp-icon').innerText = name[0].toUpperCase();
-                localStorage.setItem('t_name', name);
-            }
-            if(tag) {
-                document.getElementById('nav-tag').innerText = "@" + tag;
-                localStorage.setItem('t_tag', tag);
-            }
-            closeSettings();
+            const n = document.getElementById('set-n').value;
+            const t = document.getElementById('set-t').value;
+            if(n) localStorage.setItem('t_name', n);
+            if(t) localStorage.setItem('t_tag', t);
+            loadProfile();
+            alert("個資已更新");
         }
 
-        function addFriend() {
-            const id = prompt("輸入對方 ID 加入好友:");
-            if(id) alert("已發送申請給 " + id);
+        function loadProfile() {
+            const n = localStorage.getItem('t_name') || "新成員";
+            const t = localStorage.getItem('t_tag') || "tacker_user";
+            document.getElementById('nav-name').innerText = n;
+            document.getElementById('nav-tag').innerText = "@" + t;
+            document.getElementById('set-n').value = n;
+            document.getElementById('set-t').value = t;
         }
 
-        function logout() { localStorage.clear(); location.reload(); }
-
-        window.onload = () => {
-            const n = localStorage.getItem('t_name');
-            const t = localStorage.getItem('t_tag');
-            if(n) {
-                document.getElementById('nav-name').innerText = n;
-                document.getElementById('in-display').value = n;
-                document.getElementById('nav-pfp').innerText = n[0].toUpperCase();
-                document.getElementById('edit-pfp-icon').innerText = n[0].toUpperCase();
-            }
-            if(t) {
-                document.getElementById('nav-tag').innerText = "@" + t;
-                document.getElementById('in-tag').value = t;
-            }
-        }
+        // 初始化
+        window.onload = checkAuth;
     </script>
 </body>
 </html>
