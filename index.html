@@ -7,138 +7,217 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #313338; --side: #2b2d31; --dark: #1e1f22; --accent: #5865f2; --text: #f2f3f5; --muted: #949ba4; }
-        * { box-sizing: border-box; font-family: 'gg sans', sans-serif; margin: 0; padding: 0; }
+        * { box-sizing: border-box; font-family: 'gg sans', 'Noto Sans TC', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
         .hidden { display: none !important; }
 
-        /* P1: 登入與註冊補完頁面 */
-        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .card { background: var(--side); padding: 32px; border-radius: 8px; width: 400px; text-align: center; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
-        input { width: 100%; padding: 12px; background: var(--dark); border: none; color: white; border-radius: 4px; margin: 10px 0; outline: none; }
-        .btn-google { width: 100%; padding: 12px; background: white; color: #444; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-confirm { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        /* 登入與註冊補完層 (P1) */
+        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .card { background: var(--side); padding: 40px; border-radius: 8px; width: 450px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        h2 { margin-bottom: 20px; letter-spacing: 1px; }
+        input { width: 100%; padding: 12px; background: var(--dark); border: 1px solid #1e1f22; color: white; border-radius: 4px; margin: 8px 0; outline: none; }
+        input:focus { border-color: var(--accent); }
+        .btn-google { width: 100%; padding: 14px; background: white; color: #444; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .btn-main { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main:hover { background: #4752c4; }
 
-        /* 主介面 (圖一/圖三) */
+        /* 主程式佈局 */
         #sidebar { width: 260px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #1e1f22; }
-        #main { flex: 1; position: relative; display: flex; flex-direction: column; }
-        .user-tag { background: #232428; padding: 10px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
-        .pfp { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); }
+        #main-content { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+
+        /* 好友列表 (P2) */
+        .sidebar-header { padding: 16px; font-size: 12px; font-weight: bold; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid #232428; }
+        .friend-list { flex: 1; padding: 10px; overflow-y: auto; }
+        .add-friend-btn { color: var(--muted); cursor: pointer; padding: 8px; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .add-friend-btn:hover { color: white; background: #35373c; border-radius: 4px; }
+        .friend-item { padding: 10px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+        .friend-item:hover { background: #3f4147; }
+
+        /* 個人資訊欄位 (P1 自訂) */
+        .user-footer { background: #232428; padding: 10px; display: flex; align-items: center; gap: 10px; }
+        .pfp { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); background-size: cover; }
+        .edit-icon { cursor: pointer; opacity: 0.5; transition: 0.3s; }
+        .edit-icon:hover { opacity: 1; transform: rotate(15deg); }
 
         /* 聊天室 (圖三) */
-        #chat-window { flex: 1; display: flex; flex-direction: column; }
-        .msg-area { flex: 1; padding: 20px; overflow-y: auto; }
-        .input-wrap { padding: 20px; }
-        .chat-bar { background: #383a40; border-radius: 8px; display: flex; align-items: center; padding: 0 12px; }
-        .chat-bar input { background: transparent; flex: 1; padding: 12px 0; margin: 0; }
+        #chat-view { flex: 1; display: flex; flex-direction: column; height: 100%; }
+        .msg-display { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .chat-input-wrap { padding: 0 20px 20px; }
+        .chat-bar { background: #383a40; border-radius: 8px; display: flex; align-items: center; padding: 0 15px; }
+        .chat-bar input { background: transparent; border: none; margin: 0; padding: 15px 0; }
+        .plus-icon { cursor: pointer; margin-right: 15px; color: var(--muted); font-size: 20px; }
+        .plus-icon:hover { color: white; }
+
+        /* 加好友彈窗 (圖二) */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        
+        /* 空白狀態 (圖一) */
+        .empty-state { margin: auto; text-align: center; }
+        .hash-circle { width: 80px; height: 80px; border: 4px solid #4e5058; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #4e5058; }
     </style>
 </head>
 <body>
 
     <div id="login-layer" class="overlay">
         <div class="card">
-            <h2>Tacker</h2>
-            <p style="color:var(--muted); margin: 10px 0 24px;">使用 Google 驗證身分</p>
-            <button class="btn-google" onclick="signIn()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Google 登入
+            <h2>TACKER</h2>
+            <button class="btn-google" onclick="handleSignIn()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> 使用 Google 登入
             </button>
+            <div style="color:var(--muted); font-size:12px; margin: 10px 0;">或是</div>
+            <button class="btn-main" style="background:#4e5058" onclick="alert('請優先使用 Google 登入以驗證身分')">註冊新帳號</button>
         </div>
     </div>
 
     <div id="setup-layer" class="overlay hidden">
-        <div class="card">
-            <h3>完善 Tacker 資料</h3>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:10px;">Google 驗證成功！請設定您的帳號 ID</p>
-            <input type="text" id="set-name" placeholder="顯示名稱 (例如: 暗影)">
-            <input type="text" id="set-id" placeholder="帳號 ID (僅限英文與數字)">
-            <button class="btn-confirm" onclick="completeSetup()">進入 Tacker</button>
+        <div class="card" style="text-align:left;">
+            <h3 style="text-align:center; margin-bottom:20px;">完善您的個人檔案</h3>
+            <label style="font-size:12px; font-weight:bold; color:var(--muted);">顯示名稱</label>
+            <input type="text" id="setup-name" placeholder="例如: 暗影 Shadow">
+            <label style="font-size:12px; font-weight:bold; color:var(--muted);">帳號 ID (僅限英數，設定後不可更改)</label>
+            <input type="text" id="setup-id" placeholder="例如: ryfn888">
+            <label style="font-size:12px; font-weight:bold; color:var(--muted);">出生日期</label>
+            <input type="date" style="color-scheme: dark;">
+            <button class="btn-main" style="margin-top:20px;" onclick="saveFinalProfile()">完成註冊並進入</button>
         </div>
     </div>
 
     <div id="app" class="hidden" style="width:100%; display:flex;">
         <aside id="sidebar">
-            <div style="padding:16px; font-weight:bold;">好友列表</div>
-            <div style="flex:1; padding:10px;" id="friend-list">
-                <div style="color:var(--muted); cursor:pointer;" onclick="alert('開啟圖二加好友視窗')">目前沒有好友 ⊕</div>
+            <div class="sidebar-header">私人訊息</div>
+            <div class="friend-list">
+                <div class="add-friend-btn" onclick="toggleModal(true)">目前沒有好友 ⊕</div>
+                <div id="active-friends"></div>
             </div>
-            <div class="user-tag">
-                <div class="pfp"></div>
-                <div style="flex:1">
-                    <div id="my-display">---</div>
-                    <div id="my-uid" style="color:var(--muted); font-size:11px;">ID: ---</div>
+            <div class="user-footer">
+                <div class="pfp" id="my-avatar"></div>
+                <div style="flex:1; overflow:hidden;">
+                    <div id="my-display-name" style="font-weight:bold; font-size:14px;">---</div>
+                    <div id="my-username" style="font-size:11px; color:var(--muted);">ID: ---</div>
                 </div>
-                <div style="cursor:pointer" onclick="alert('P1 自訂設定頁')">✏️</div>
+                <div class="edit-icon" onclick="alert('進入自訂設定：修改密碼/更換頭像')">✏️</div>
             </div>
         </aside>
 
-        <main id="main">
-            <div id="empty-ui" style="margin:auto; text-align:center;">
-                <div style="font-size:60px; opacity:0.2;">#</div>
+        <main id="main-content">
+            <div id="empty-ui" class="empty-state">
+                <div class="hash-circle">#</div>
                 <h3>這裡什麼都沒有 :/</h3>
+                <p style="color:var(--muted); font-size:14px;">點擊左側好友開始聊天</p>
             </div>
 
-            <div id="chat-window" class="hidden">
-                <div class="msg-area" id="msg-flow"></div>
-                <div class="input-wrap">
+            <div id="chat-view" class="hidden">
+                <div class="msg-display" id="chat-msgs"></div>
+                <div class="chat-input-wrap">
                     <div class="chat-bar">
-                        <span style="cursor:pointer; margin-right:12px;" onclick="document.getElementById('f').click()">⊕</span>
-                        <input type="text" id="chat-in" placeholder="發送訊息..." onkeypress="if(event.key==='Enter')send()">
+                        <span class="plus-icon" onclick="document.getElementById('file-upload').click()">⊕</span>
+                        <input type="text" id="msg-input" placeholder="發送訊息..." onkeypress="if(event.key==='Enter')sendChatMessage()">
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <input type="file" id="f" class="hidden" onchange="checkFile(this)">
+    <div id="friend-modal" class="modal" onclick="toggleModal(false)">
+        <div class="card" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:15px;">新增好友</h3>
+            <input type="text" id="search-id" placeholder="輸入對方帳號 ID">
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button onclick="toggleModal(false)" style="background:none; border:none; color:white; cursor:pointer;">取消</button>
+                <button class="btn-main" style="width:auto; padding:8px 20px;" onclick="searchAndAddFriend()">確認 ✓</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="file-upload" class="hidden" onchange="handleFile(this)">
 
     <script>
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
         // 1. Google 登入
-        async function signIn() {
-            await _s.auth.signInWithOAuth({ 
-                provider: 'google',
-                options: { redirectTo: window.location.href }
-            });
+        async function handleSignIn() {
+            await _s.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
         }
 
-        // 2. 登入後狀態檢查
-        async function checkStatus() {
+        // 2. 登入後判斷流程
+        async function checkSession() {
             const { data: { user } } = await _s.auth.getUser();
             if (!user) return;
 
             document.getElementById('login-layer').classList.add('hidden');
             
-            // 這裡模擬：如果資料庫還沒有這個 ID，就顯示 P1 補完頁面
-            // 正式版建議在此處增加資料庫查詢邏輯
-            document.getElementById('setup-layer').classList.remove('hidden');
-            document.getElementById('set-name').value = user.user_metadata.full_name;
-        }
+            // 檢查資料庫是否有此用戶 (P1 邏輯)
+            const { data: profile } = await _s.from('profiles').select('*').eq('id', user.id).single();
 
-        // 3. 完成 P1 補完 (ID 限制)
-        function completeSetup() {
-            const id = document.getElementById('set-id').value;
-            const name = document.getElementById('set-name').value;
-
-            if(!/^[a-zA-Z0-9]+$/.test(id)) return alert("帳號 ID 格式錯誤！");
-
-            document.getElementById('setup-layer').classList.add('hidden');
-            document.getElementById('app').classList.remove('hidden');
-            document.getElementById('my-display').innerText = name;
-            document.getElementById('my-uid').innerText = "ID: " + id;
-        }
-
-        // 4. 檔案檢查 (10MB 限制)
-        function checkFile(input) {
-            const file = input.files[0];
-            if (file.size > 10 * 1024 * 1024) {
-                alert("檔案過大！請限制在 10MB 以內。");
-                input.value = "";
+            if (!profile || !profile.username) {
+                document.getElementById('setup-layer').classList.remove('hidden');
+                document.getElementById('setup-name').value = user.user_metadata.full_name;
             } else {
-                alert("已選擇檔案: " + file.name + " (符合 10MB 規範)");
+                enterApp(profile);
             }
         }
 
-        window.onload = checkStatus;
+        // 3. P1: 儲存最終註冊資料
+        async function saveFinalProfile() {
+            const id = document.getElementById('setup-id').value;
+            const name = document.getElementById('setup-name').value;
+            const { data: { user } } = await _s.auth.getUser();
+
+            if(!/^[a-zA-Z0-9]+$/.test(id)) return alert("帳號 ID 僅限英文與數字！");
+
+            const { error } = await _s.from('profiles').upsert({
+                id: user.id, username: id, display_name: name, avatar_url: user.user_metadata.avatar_url
+            });
+
+            if (error) return alert("此 ID 已被佔用！");
+            location.reload();
+        }
+
+        // 4. 進入主介面
+        function enterApp(profile) {
+            document.getElementById('setup-layer').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('my-display-name').innerText = profile.display_name;
+            document.getElementById('my-username').innerText = "ID: " + profile.username;
+            document.getElementById('my-avatar').style.backgroundImage = `url(${profile.avatar_url})`;
+        }
+
+        // 5. 圖二：加好友邏輯
+        function toggleModal(show) { document.getElementById('friend-modal').style.display = show ? 'flex' : 'none'; }
+        
+        async function searchAndAddFriend() {
+            const tid = document.getElementById('search-id').value;
+            alert(`請求已發送給 ${tid}\n對方接受後會出現在左側。`);
+            toggleModal(false);
+            // 模擬好友出現 (圖三入口)
+            const list = document.getElementById('active-friends');
+            list.innerHTML += `<div class="friend-item" onclick="openChat('${tid}')"><div class="pfp" style="width:24px; height:24px;"></div>${tid}</div>`;
+        }
+
+        // 6. 圖三：聊天與檔案 (10MB)
+        function openChat(name) {
+            document.getElementById('empty-ui').classList.add('hidden');
+            document.getElementById('chat-view').classList.remove('hidden');
+            document.getElementById('chat-msgs').innerHTML = `<div style="color:var(--muted); font-size:12px; text-align:center;">這是你與 ${name} 對話的開始</div>`;
+        }
+
+        function handleFile(input) {
+            if (input.files[0].size > 10 * 1024 * 1024) {
+                alert("檔案過大！上限為 10MB。");
+                input.value = "";
+            } else {
+                alert("檔案已就緒，準備傳輸中...");
+            }
+        }
+
+        function sendChatMessage() {
+            const val = document.getElementById('msg-input').value;
+            if(!val) return;
+            document.getElementById('chat-msgs').innerHTML += `<div style="margin-bottom:10px;"><b>你:</b> ${val}</div>`;
+            document.getElementById('msg-input').value = "";
+        }
+
+        window.onload = checkSession;
     </script>
 </body>
 </html>
