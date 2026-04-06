@@ -1,1 +1,91 @@
-<button onclick="alert('按鈕測試成功！')">點我測試</button>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tacker v2.0</title>
+    <style>
+        :root { --p-green: #00ff41; --bg: #010409; --card: #161b22; --brd: #30363d; --ds: #5865F2; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .login-box { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--brd); width: 90%; max-width: 360px; text-align: center; }
+        input { width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--brd); color: white; border-radius: 6px; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; font-size: 16px; }
+        .btn-main { background: var(--p-green); color: black; }
+        #app { display: none; position: fixed; inset: 0; background: #0d1117; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-page">
+        <div class="login-box">
+            <h2 id="ui-title" style="color:var(--p-green)">TACKER 系統</h2>
+            <input type="email" id="email" placeholder="輸入信箱">
+            <input type="password" id="pass" placeholder="輸入密碼">
+            <button class="btn btn-main" onclick="startAuth()">登入系統</button>
+            <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px;">[ 沒有帳號？點此註冊 ]</p>
+        </div>
+    </div>
+
+    <div id="app">
+        <div style="padding:20px;">
+            <h2 style="color:var(--p-green)">連線成功</h2>
+            <button onclick="location.reload()" style="color:red; background:none; border:none;">登出</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
+        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
+        let supabase;
+        let isSign = false;
+
+        // 初始化資料庫
+        try {
+            supabase = window.supabase.createClient(S_URL, S_KEY);
+        } catch(e) {
+            console.log("資料庫加載中...");
+        }
+
+        function toggleMode() {
+            isSign = !isSign;
+            document.getElementById('ui-title').innerText = isSign ? "建立帳號" : "TACKER 系統";
+            document.getElementById('ui-sw').innerText = isSign ? "[ 返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
+        }
+
+        async function startAuth() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+
+            if(!email || !pass) return alert("請輸入完整資料");
+            if(!supabase) return alert("系統載入中，請稍候 3 秒後再試");
+
+            try {
+                const { error } = isSign 
+                    ? await supabase.auth.signUp({ email, password: pass })
+                    : await supabase.auth.signInWithPassword({ email, password: pass });
+                
+                if(error) alert("連線錯誤: " + error.message);
+                else {
+                    document.getElementById('auth-page').style.display = 'none';
+                    document.getElementById('app').style.display = 'block';
+                }
+            } catch(e) {
+                alert("網路異常，請確認 4G 訊號");
+            }
+        }
+
+        // 自動檢查登入狀態
+        window.onload = async () => {
+            if(supabase) {
+                const { data } = await supabase.auth.getSession();
+                if (data?.session) {
+                    document.getElementById('auth-page').style.display = 'none';
+                    document.getElementById('app').style.display = 'block';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
