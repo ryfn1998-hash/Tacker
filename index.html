@@ -3,230 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker Official</title>
+    <title>Tacker | Official Production</title>
     <style>
         :root {
-            --bg-server: #1e1f22; --bg-side: #2b2d31; --bg-main: #313338;
-            --accent: #5865f2; --text: #dbdee1; --text-muted: #949ba4; --border: #1e1f22;
-            --popout-bg: #111214; --danger: #f23f43;
+            --bg-side: #2b2d31; --bg-main: #313338; --bg-dark: #1e1f22;
+            --accent: #5865f2; --text: #dbdee1; --text-muted: #949ba4;
+            --popout: #111214; --danger: #f23f43;
         }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { margin: 0; background: #000; color: var(--text); height: 100vh; overflow: hidden; display: flex; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        body { background: #000; color: var(--text); height: 100vh; overflow: hidden; display: flex; }
 
-        /* --- 登入介面 --- */
-        #auth-overlay { 
-            position: fixed; inset: 0; background: #5865f2 url('https://discord.com/assets/7c01f740da893444036e.png') center/cover; 
-            z-index: 10000; display: flex; align-items: center; justify-content: center; 
+        /* --- 左側好友欄 (圖一) --- */
+        #friend-sidebar { width: 260px; background: var(--bg-side); display: flex; flex-direction: column; border-right: 1px solid rgba(0,0,0,0.2); }
+        .side-header { height: 48px; padding: 0 16px; display: flex; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); font-weight: bold; }
+        .friend-list { flex: 1; padding: 10px; overflow-y: auto; }
+        .no-friend-text { color: var(--text-muted); font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .no-friend-text:hover { color: white; }
+
+        /* --- 左下角個資區 (圖一左下) --- */
+        .user-footer { height: 52px; background: #232428; padding: 0 8px; display: flex; align-items: center; gap: 8px; }
+        .footer-pfp { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
+        .footer-info { flex: 1; line-height: 1.2; overflow: hidden; }
+        .footer-name { font-size: 13px; font-weight: bold; color: white; }
+        .footer-id { font-size: 11px; color: var(--text-muted); }
+        .edit-btn { cursor: pointer; opacity: 0.7; transition: 0.2s; }
+        .edit-btn:hover { opacity: 1; }
+
+        /* --- 右側主區域 (圖一右) --- */
+        #main-view { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .empty-state { text-align: center; opacity: 0.5; }
+        .empty-icon { font-size: 80px; margin-bottom: 16px; filter: grayscale(1); }
+
+        /* --- 新增好友彈窗 (圖二) --- */
+        #add-friend-modal { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; 
+            display: none; align-items: center; justify-content: center; 
         }
-        .auth-card { background: #313338; width: 450px; padding: 32px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); text-align: center; }
-        .input-group { text-align: left; margin-bottom: 16px; }
-        .input-group label { color: #b5bac1; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .input-group input { width: 100%; padding: 10px; background: #1e1f22; border: none; border-radius: 3px; color: white; margin-top: 8px; outline: none; }
-        .auth-btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .secondary-btn { width: 100%; padding: 10px; background: #4e5058; color: white; border: none; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
+        .modal-card { background: var(--bg-main); width: 360px; border-radius: 8px; padding: 20px; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; right: 15px; top: 15px; cursor: pointer; color: var(--text-muted); }
+        .modal-card h3 { margin-bottom: 15px; font-size: 18px; }
+        .id-input { width: 100%; padding: 10px; background: var(--bg-dark); border: none; border-radius: 4px; color: white; margin-bottom: 15px; outline: none; }
+        .confirm-btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* --- 主架構 --- */
-        #app-root { display: none; width: 100%; height: 100vh; flex-direction: row; }
-        #guild-rail { width: 72px; background: var(--bg-server); display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; flex-shrink: 0; }
-        .server-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-main); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-weight: bold; position: relative; }
-        .server-icon.active, .server-icon:hover { border-radius: 16px; background: var(--accent); color: white; }
-        .badge-official { position: absolute; bottom: 0; right: 0; width: 16px; height: 16px; background: #23a55a; border-radius: 50%; border: 3px solid var(--bg-server); }
-
-        #sidebar { width: 240px; background: var(--bg-side); display: flex; flex-direction: column; }
-        .side-title { padding: 15px; font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.2); }
-        .channel-item { padding: 8px 12px; margin: 2px 8px; border-radius: 4px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 10px; }
-        .channel-item.active { background: #3f4147; color: white; }
-
-        /* --- 聊天區域 --- */
-        #chat-window { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
-        .messages { flex: 1; overflow-y: auto; padding: 20px 0; }
-        .msg-row { display: flex; padding: 4px 16px; margin-top: 15px; }
-        .msg-row:hover { background: rgba(0,0,0,0.05); }
-        .msg-pfp { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); margin-right: 16px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .msg-name { font-weight: bold; color: white; cursor: pointer; margin-right: 8px; }
-        .msg-text { color: var(--text); line-height: 1.4; margin-top: 2px; }
-
-        /* --- 底部輸入框與唯讀狀態 --- */
-        .input-wrap { padding: 0 16px 24px; position: relative; }
-        .input-box { width: 100%; background: #383a40; border: none; padding: 12px 16px; border-radius: 8px; color: white; outline: none; }
-        .input-box:disabled { cursor: not-allowed; background: #2b2d31; color: var(--text-muted); }
-        .readonly-notice { font-size: 13px; color: var(--text-muted); padding: 10px; text-align: center; background: #2b2d31; border-radius: 8px; border: 1px dashed #4e5058; }
-
-        /* --- 個資彈窗 (User Popout) --- */
-        #popout { 
-            position: absolute; width: 300px; background: var(--popout-bg); border-radius: 8px; display: none; 
-            z-index: 20000; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        /* --- 設定全屏頁 (P1 詳細細節) --- */
+        #settings-page { 
+            position: fixed; inset: 0; background: var(--bg-main); z-index: 2000; 
+            display: none; flex-direction: row; 
         }
-        .pop-banner { height: 60px; background: var(--accent); }
-        .pop-body { padding: 0 16px 16px; margin-top: -30px; }
-        .pop-pfp-large { width: 80px; height: 80px; border-radius: 50%; border: 6px solid var(--popout-bg); background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
-        .pop-name { font-size: 20px; font-weight: bold; color: white; margin-top: 10px; }
+        .settings-nav { width: 240px; background: var(--bg-side); padding: 60px 20px; display: flex; flex-direction: column; gap: 4px; }
+        .nav-label { font-size: 12px; font-weight: bold; color: var(--text-muted); margin-bottom: 8px; padding-left: 10px; }
+        .nav-item { padding: 8px 10px; border-radius: 4px; cursor: pointer; font-size: 15px; color: var(--text-muted); }
+        .nav-item.active { background: #3f4147; color: white; }
+        .nav-item.danger { color: var(--danger); }
+        .settings-content { flex: 1; padding: 60px 40px; overflow-y: auto; max-width: 800px; }
+        .settings-section { margin-bottom: 40px; }
+        .settings-section h2 { margin-bottom: 20px; font-size: 20px; }
+        
+        .banner-upload { height: 100px; background: var(--accent); border-radius: 8px; position: relative; margin-bottom: 40px; cursor: pointer; }
+        .pfp-large { width: 80px; height: 80px; border-radius: 50%; border: 6px solid var(--bg-main); position: absolute; left: 20px; bottom: -30px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
+        
+        .field-group { margin-bottom: 20px; background: var(--bg-dark); padding: 15px; border-radius: 8px; }
+        .field-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+        .field-value { margin-top: 5px; font-size: 16px; color: white; display: flex; justify-content: space-between; }
+        .field-btn { color: #00a8fc; font-size: 13px; cursor: pointer; }
+
     </style>
 </head>
 <body>
 
-    <div id="auth-overlay">
-        <div class="auth-card">
-            <h2>Tacker | 核心系統</h2>
-            <div class="input-group"><label>Email / 帳號</label><input type="text" id="email-in"></div>
-            <div class="input-group"><label>密碼</label><input type="password" id="pass-in"></div>
-            <button class="auth-btn" onclick="login()">登入</button>
-            <button class="secondary-btn" onclick="login('discord')">
-                <img src="https://assets-global.website-files.com/6257adef93867e3d0394e36a/6257d0f461ce200926d16f86_Discord-Logo-Color.svg" width="18">
-                使用 Discord 帳號登入
-            </button>
-            <p style="font-size:12px; color:var(--text-muted); margin-top:15px;">測試: admin / 1234 (自動進入官方群組)</p>
+    <aside id="friend-sidebar">
+        <div class="side-header">好友列表</div>
+        <div class="friend-list" id="f-list">
+            <div class="no-friend-text" onclick="toggleModal('add', true)">目前沒有好友 <span style="font-size:20px;">⊕</span></div>
+        </div>
+        
+        <div class="user-footer">
+            <div class="footer-pfp" id="f-pfp">A</div>
+            <div class="footer-info">
+                <div class="footer-name" id="f-name">Admin</div>
+                <div class="footer-id" id="f-id">ABC1234</div>
+            </div>
+            <div class="edit-btn" onclick="toggleSettings(true)">✏️</div>
+        </div>
+    </aside>
+
+    <main id="main-view">
+        <div class="empty-state" id="empty-ui">
+            <div class="empty-icon">#</div>
+            <p>這裡什麼都沒有 :/</p>
+            <p style="font-size: 13px; margin-top: 8px;">因為你沒有在任何頻道</p>
+        </div>
+    </main>
+
+    <div id="add-friend-modal" onclick="toggleModal('add', false)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-close" onclick="toggleModal('add', false)">✕</div>
+            <h3>新增好友</h3>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">請輸入對方的帳號 ID 以發送好友請求。</p>
+            <input type="text" class="id-input" id="target-id" placeholder="例如：ryfn888">
+            <button class="confirm-btn" onclick="sendFriendRequest()">確認</button>
         </div>
     </div>
 
-    <div id="app-root">
-        <nav id="guild-rail">
-            <div class="server-icon active" id="g-home" onclick="switchG('home')">🏠</div>
-            <div style="width:32px; height:2px; background:#35363c;"></div>
-            <div class="server-icon" id="g-official" onclick="switchG('official')">
-                FR
-                <div class="badge-official"></div>
-            </div>
-        </nav>
-
-        <aside id="sidebar">
-            <div class="side-title" id="sidebar-title">首頁</div>
-            <div style="flex:1; padding-top:8px;" id="channel-list"></div>
-            <div style="padding:10px; background:#232428; display:flex; align-items:center; gap:10px;">
-                <div id="nav-pfp" style="width:32px; height:32px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:bold; cursor:pointer;" onclick="showUser('Admin', '1337', 'FR 創辦人')">A</div>
-                <div style="flex:1; font-size:13px; font-weight:bold;" id="nav-name">...</div>
-                <div style="cursor:pointer;" onclick="location.reload()">🚪</div>
-            </div>
-        </aside>
-
-        <main id="chat-window" onclick="hidePopout()">
-            <div style="height:48px; border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; font-weight:bold;" id="chat-header"># 頻道</div>
-            <div class="messages" id="msg-box"></div>
-            
-            <div class="input-wrap" id="input-container">
+    <div id="settings-page">
+        <div class="settings-nav">
+            <div class="nav-label">用戶設定</div>
+            <div class="nav-item active">個人檔案</div>
+            <div class="nav-item">隱私與安全</div>
+            <div class="nav-label">帳號管理</div>
+            <div class="nav-item">更改密碼</div>
+            <div class="nav-item danger" onclick="alert('需前往 Gmail 驗證移除帳戶')">移除帳戶</div>
+            <div class="nav-item" style="margin-top:20px;" onclick="location.reload()">登出</div>
+            <div class="nav-item" onclick="toggleSettings(false)">← 返回</div>
+        </div>
+        <div class="settings-content">
+            <div class="settings-section">
+                <h2>外觀與個資</h2>
+                <div class="banner-upload" onclick="alert('上傳橫幅圖片 (10MB以內)')">
+                    <div class="pfp-large" id="set-pfp">A</div>
                 </div>
-
-            <div id="popout">
-                <div class="pop-banner"></div>
-                <div class="pop-body">
-                    <div class="pop-pfp-large" id="p-pfp">U</div>
-                    <div class="pop-name" id="p-name">Username</div>
-                    <div style="color:var(--text-muted); font-size:14px; margin-bottom:10px;" id="p-tag">#0000</div>
-                    <div style="border-top:1px solid var(--border); padding-top:10px;">
-                        <div style="font-size:12px; font-weight:bold; color:white; text-transform:uppercase;">關於我</div>
-                        <div id="p-bio" style="font-size:14px; margin-top:5px;">...</div>
-                    </div>
+                
+                <div class="field-group">
+                    <div class="field-label">顯示名稱</div>
+                    <div class="field-value"><span id="set-name-val">Admin</span> <span class="field-btn">編輯</span></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">帳號 ID (僅限英文/數字)</div>
+                    <div class="field-value"><span id="set-id-val">ABC1234</span> <span class="field-btn">編輯</span></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">自介 (文字)</div>
+                    <div class="field-value"><span style="font-size:14px; color:var(--text-muted);">尚未設定自介...</span> <span class="field-btn">編輯</span></div>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('tacker_v8_db')) || {
-            users: { "admin": { name: "Admin", tag: "1337", bio: "FR Technology 創辦人", pass: "1234" } },
-            msgs: {
-                "official_announcement": [
-                    {user: "Tacker 系統", text: "歡迎來到 Tacker 官方群組。此頻道僅供發佈重要公告。", time: "系統"},
-                    {user: "Admin", text: "本平台已正式啟動，請關注後續開發進度。", time: "12:00"}
-                ],
-                "home_direct": [{user: "Shadow", text: "你好，負責人。今天有什麼需要幫忙的？", time: "現在"}]
-            }
-        };
-        let user = null;
-        let curG = 'home', curC = 'direct';
-
-        function login(type) {
-            if(type === 'discord') {
-                user = "admin"; // 模擬快速進入
-            } else {
-                const u = document.getElementById('email-in').value;
-                const p = document.getElementById('pass-in').value;
-                if(db.users[u] && db.users[u].pass === p) { user = u; }
-                else { return alert("驗證失敗"); }
-            }
-            document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('app-root').style.display = 'flex';
-            document.getElementById('nav-name').innerText = db.users[user].name;
-            document.getElementById('nav-pfp').innerText = db.users[user].name[0];
-            switchG('official'); // 登入後直奔官方群組
+        // 核心邏輯
+        let currentUser = { name: "Admin", id: "ABC1234", pfp: "A" };
+        
+        function toggleModal(type, show) {
+            document.getElementById(type + '-friend-modal').style.display = show ? 'flex' : 'none';
         }
 
-        function switchG(g) {
-            curG = g;
-            document.querySelectorAll('.server-icon').forEach(e => e.classList.remove('active'));
-            document.getElementById('g-'+g).classList.add('active');
-            const list = document.getElementById('channel-list');
+        function toggleSettings(show) {
+            document.getElementById('settings-page').style.display = show ? 'flex' : 'none';
+        }
+
+        function sendFriendRequest() {
+            const id = document.getElementById('target-id').value;
+            if(!id) return alert("請輸入 ID");
+            if(!/^[a-zA-Z0-9]+$/.test(id)) return alert("ID 僅限英文與數字！");
             
-            if(g === 'home') {
-                document.getElementById('sidebar-title').innerText = "首頁";
-                list.innerHTML = `<div class="channel-item active" onclick="switchC('direct')">👤 系統小助手</div>`;
-                switchC('direct');
-            } else {
-                document.getElementById('sidebar-title').innerText = "FR 官方";
-                list.innerHTML = `<div class="channel-item active" onclick="switchC('announcement')"># 📢 官方公告</div>`;
-                switchC('announcement');
-            }
+            alert(`好友請求已發送給 ${id}！\n等待對方接受後，將顯示在左側。`);
+            toggleModal('add', false);
+            document.getElementById('target-id').value = '';
         }
 
-        function switchC(c) {
-            curC = c;
-            document.getElementById('chat-header').innerText = (curG === 'home' ? "@ " : "# ") + c;
-            
-            const inputContainer = document.getElementById('input-container');
-            if(curG === 'official') {
-                inputContainer.innerHTML = `<div class="readonly-notice">你沒有權限在此頻道發送訊息。</div>`;
-            } else {
-                inputContainer.innerHTML = `<input type="text" class="input-box" id="msg-in" placeholder="發送訊息給系統..." onkeypress="if(event.key==='Enter')send()">`;
-            }
-            render();
+        // 初始化
+        window.onload = () => {
+            document.getElementById('f-name').innerText = currentUser.name;
+            document.getElementById('f-id').innerText = currentUser.id;
+            document.getElementById('set-name-val').innerText = currentUser.name;
+            document.getElementById('set-id-val').innerText = currentUser.id;
         }
-
-        function render() {
-            const box = document.getElementById('msg-box');
-            const key = `${curG}_${curC}`;
-            const msgs = db.msgs[key] || [];
-            box.innerHTML = msgs.map(m => `
-                <div class="msg-row">
-                    <div class="msg-pfp" onclick="showUser('${m.user}', '0000', '這是歷史紀錄中的用戶')">${m.user[0]}</div>
-                    <div class="msg-body">
-                        <div style="display:flex; align-items:baseline; gap:8px;">
-                            <span class="msg-name" onclick="showUser('${m.user}', '0000', '')">${m.user}</span>
-                            <span style="font-size:12px; color:var(--text-muted);">${m.time}</span>
-                        </div>
-                        <div class="msg-text">${m.text}</div>
-                    </div>
-                </div>
-            `).join('');
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function send() {
-            const input = document.getElementById('msg-in');
-            if(!input || !input.value.trim()) return;
-            const key = `${curG}_${curC}`;
-            db.msgs[key].push({
-                user: db.users[user].name,
-                text: input.value,
-                time: "11:00"
-            });
-            localStorage.setItem('tacker_v8_db', JSON.stringify(db));
-            render();
-            input.value = '';
-        }
-
-        function showUser(name, tag, bio) {
-            const pop = document.getElementById('popout');
-            document.getElementById('p-name').innerText = name;
-            document.getElementById('p-tag').innerText = "#" + tag;
-            document.getElementById('p-pfp').innerText = name[0];
-            document.getElementById('p-bio').innerText = bio || "這個用戶還沒有設定自我介紹。";
-            pop.style.display = 'block';
-            pop.style.left = "80px";
-            pop.style.bottom = "80px";
-            event.stopPropagation();
-        }
-
-        function hidePopout() { document.getElementById('popout').style.display = 'none'; }
     </script>
 </body>
 </html>
