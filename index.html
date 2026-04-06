@@ -3,108 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker v1.2.0 | Official</title>
+    <title>Tacker v1.3.0 | Official</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --db: #313338; --dc: #2b2d31; --du: #232428; --blue: #5865f2; --green: #23a55a; --text: #dbdee1; --muted: #b5bac1; }
-        body { margin: 0; background: var(--db); color: white; font-family: 'gg sans', sans-serif; overflow: hidden; }
-        input { width: 100%; background: #1e1f22; border: none; padding: 10px; color: white; border-radius: 3px; margin-bottom: 15px; }
-        .btn { width: 100%; padding: 12px; border-radius: 3px; border: none; cursor: pointer; font-weight: 500; }
-        
-        /* 頁面切換 */
-        .page { display: none; height: 100vh; justify-content: center; align-items: center; }
-        .active { display: flex; }
+        body { margin: 0; background: var(--db); color: white; font-family: 'gg sans', sans-serif; height: 100vh; overflow: hidden; }
+        input { width: 100%; background: #1e1f22; border: none; padding: 10px; color: white; border-radius: 3px; margin-bottom: 15px; outline: none; }
+        .btn { width: 100%; padding: 12px; border-radius: 3px; border: none; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .btn-google { background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
         /* 介面佈局 (圖一/圖三) */
-        #p2-main { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
-        .sidebar { background: var(--dc); position: relative; display: flex; flex-direction: column; }
+        #main-app { display: none; height: 100vh; grid-template-columns: 240px 1fr; }
+        .sidebar { background: var(--dc); position: relative; border-right: 1px solid #1e1f22; }
         .user-card { background: var(--du); padding: 8px 12px; display: flex; align-items: center; gap: 8px; position: absolute; bottom: 0; width: 100%; cursor: pointer; }
         .avatar { width: 32px; height: 32px; border-radius: 50%; background: #555; overflow: hidden; }
-        
-        /* 彈出選單 (紙稿下半部：自訂功能) */
-        .settings-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; padding: 40px; overflow-y: auto; }
-        .settings-content { max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: 200px 1fr; gap: 40px; }
-        .settings-nav div { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 5px; color: var(--muted); }
-        .settings-nav div:hover { background: #3f4147; color: white; }
-        .settings-nav .active-nav { background: #3f4147; color: white; }
+
+        /* 彈出設定 (紙稿下半部) */
+        #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; padding: 40px; }
+        .settings-box { max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: 200px 1fr; gap: 40px; }
     </style>
 </head>
 <body>
 
-    <div id="page-reg" class="page active">
+    <div id="auth-screen" style="height: 100vh; display: flex; justify-content: center; align-items: center; background: #1e1f22;">
         <div style="background:var(--dc); padding:32px; border-radius:8px; width:480px;">
-            <h2 style="text-align:center;">建立帳號</h2>
-            <label style="font-size:12px; font-weight:bold; color:var(--muted);">帳號名稱</label>
-            <input type="text" id="reg-id" placeholder="僅限小寫英文和數字">
-            <label style="font-size:12px; font-weight:bold; color:var(--muted);">密碼</label>
-            <input type="password" id="reg-pw">
+            <h2 style="text-align:center; margin-bottom:24px;">建立 Tacker 帳號</h2>
+            <label style="font-size:12px; font-weight:bold; color:var(--muted);">帳號 ID (小寫英文、數字)</param>
+            <input type="text" id="reg-id" placeholder="例如: ryfn1998">
             <label style="font-size:12px; font-weight:bold; color:var(--muted);">出生日期</label>
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input type="number" placeholder="年" id="b-y">
                 <input type="number" placeholder="月" id="b-m">
                 <input type="number" placeholder="日" id="b-d">
             </div>
-            <button class="btn" style="background:var(--blue); color:white;" onclick="toVerify()">繼續</button>
-            <p style="text-align:center; font-size:12px; color:#00a8fc; cursor:pointer;" onclick="alert('請先完成註冊才能用Google登入')">已經有帳號了？</p>
+            <p style="font-size:12px; color:var(--muted); text-align:center; margin-bottom:20px;">
+                點擊下方按鈕以 Google 帳號完成註冊/驗證
+            </p>
+            <button class="btn btn-google" onclick="handleAuth()">
+                <img src="https://www.google.com/favicon.ico" width="18"> 使用 Google 驗證並登入
+            </button>
         </div>
     </div>
 
-    <div id="page-verify" class="page">
-        <div style="background:var(--dc); padding:32px; border-radius:8px; width:400px; text-align:center;">
-            <h2>Gmail 驗證碼</h2>
-            <p style="color:var(--muted); font-size:14px;">驗證碼已發送至您的信箱</p>
-            <input type="text" id="v-code" placeholder="輸入驗證碼">
-            <button class="btn" style="background:var(--green); color:white;" onclick="finishReg()">確認驗證碼</button>
-        </div>
-    </div>
-
-    <div id="p2-main" style="display:none;">
+    <div id="main-app">
         <div class="sidebar">
-            <div style="padding:15px; flex:1; font-size:14px; color:var(--muted);">目前沒有好友 :)</div>
-            <div class="user-card" onclick="openSettings()">
-                <div class="avatar"><img id="u-img" style="width:100%;"></div>
+            <div style="padding:20px; text-align:center; color:var(--muted); font-size:14px;">目前沒有好友 :)</div>
+            <div class="user-card" onclick="document.getElementById('settings-modal').style.display='block'">
+                <div class="avatar"><img id="my-avatar" style="width:100%; height:100%;"></div>
                 <div style="font-size:12px;">
-                    <div id="u-name" style="font-weight:bold;"></div>
-                    <div id="u-id" style="color:var(--muted);"></div>
+                    <div id="my-name" style="font-weight:bold;"></div>
+                    <div id="my-id" style="color:var(--muted);"></div>
                 </div>
             </div>
         </div>
         <div style="display:flex; flex-direction:column;">
-            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0.2;">
-                <div style="font-size:80px;">#</div>
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0.15;">
+                <div style="font-size:100px; font-weight:bold;">#</div>
                 <p>因為你沒有在任何頻道</p>
             </div>
             <div style="padding:0 20px 24px;">
-                <div style="background:#383a40; border-radius:8px; padding:11px; display:flex; align-items:center; gap:10px;">
-                    <span style="color:var(--muted); cursor:pointer;" onclick="alert('上傳檔案 10MB 限制')">⊕</span>
+                <div style="background:#383a40; border-radius:8px; padding:11px 15px; display:flex; align-items:center; gap:12px;">
+                    <span style="color:var(--muted); cursor:pointer; font-size:20px;" onclick="alert('檔案限制 10MB')">⊕</span>
                     <input type="text" style="margin:0; background:transparent;" placeholder="傳送訊息到 Tacker">
-                    <span style="cursor:pointer;" onclick="alert('發送')">🚀</span>
+                    <span style="cursor:pointer;">🚀</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="settings" class="settings-overlay">
-        <div class="settings-content">
-            <div class="settings-nav">
-                <h3 style="font-size:12px; color:var(--muted); margin-bottom:20px;">使用者設定</h3>
-                <div class="active-nav">基本資訊</div>
-                <div>外觀設定</div>
-                <div>帳戶設定</div>
+    <div id="settings-modal">
+        <div class="settings-box">
+            <div style="color:var(--muted);">
+                <div style="padding:10px; background:#3f4147; color:white; border-radius:4px;">基本資訊</div>
+                <div style="padding:10px; cursor:pointer;">外觀設定</div>
+                <div style="padding:10px; cursor:pointer;">帳戶設定</div>
                 <hr style="border:0; border-top:1px solid #3f4147; margin:20px 0;">
-                <div style="color:#f23f43;" onclick="location.reload()">登出</div>
-                <div style="color:#f23f43; font-size:12px; opacity:0.6;">移除帳戶(需Gmail驗證)</div>
+                <div style="color:#f23f43; cursor:pointer;" onclick="location.reload()">登出</div>
             </div>
-            <div class="settings-panel">
+            <div>
                 <h2>基本資訊</h2>
-                <label>顯示名稱</label><input type="text" placeholder="顯示名稱">
-                <label>帳號 ID (不可更改)</label><input type="text" id="set-id" disabled>
-                <hr>
+                <label>帳號 ID</label><input type="text" id="final-id" disabled>
+                <label>顯示名稱</label><input type="text" id="final-name">
+                <hr style="opacity:0.1; margin:30px 0;">
                 <h2>外觀</h2>
-                <p>頭像 (可上傳圖片)</p><button class="btn" style="background:#4e5058; color:white; width:auto;">更換頭像</button>
-                <p>橫幅 (可上傳圖片)</p><button class="btn" style="background:#4e5058; color:white; width:auto;">更換橫幅</button>
-                <p>自介</p><input type="text" placeholder="寫點什麼吧...">
-                <button onclick="closeSettings()" class="btn" style="margin-top:40px; background:var(--blue); color:white;">儲存並關閉</button>
+                <p style="font-size:14px; color:var(--muted);">頭像與橫幅 (可上傳圖片)</p>
+                <button class="btn" style="background:#4e5058; color:white; width:auto; margin-right:10px;">更換頭像</button>
+                <button class="btn" style="background:#4e5058; color:white; width:auto;">更換橫幅</button>
+                <button onclick="document.getElementById('settings-modal').style.display='none'" class="btn" style="margin-top:40px; background:var(--blue); color:white;">儲存並關閉</button>
             </div>
         </div>
     </div>
@@ -112,28 +97,51 @@
     <script>
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
-        function toVerify() {
-            document.getElementById('page-reg').classList.remove('active');
-            document.getElementById('page-verify').classList.add('active');
+        async function handleAuth() {
+            const tid = document.getElementById('reg-id').value;
+            if(!tid) return alert('請先輸入你要註冊的帳號 ID');
+            
+            // 將 ID 暫存在本地，登入回來後寫入資料庫
+            localStorage.setItem('pending_id', tid);
+
+            await _s.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
         }
 
-        async function finishReg() {
-            const id = document.getElementById('reg-id').value;
-            // 寫入資料庫邏輯...
-            alert('註冊成功！');
-            showP2(id, id);
+        async function checkSession() {
+            const { data: { session } } = await _s.auth.getSession();
+            if (session) {
+                let { data: profile } = await _s.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+                
+                // 如果是新用戶（沒註冊過），抓取剛才填寫的 ID 並存入
+                if (!profile) {
+                    const pendingId = localStorage.getItem('pending_id') || 'user_' + Math.floor(Math.random()*1000);
+                    const { data: newProfile } = await _s.from('profiles').upsert({
+                        id: session.user.id,
+                        tacker_id: pendingId,
+                        full_name: session.user.user_metadata.full_name,
+                        avatar_url: session.user.user_metadata.avatar_url
+                    }).select().single();
+                    profile = newProfile;
+                }
+
+                showApp(session.user, profile);
+            }
         }
 
-        function showP2(name, id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('p2-main').style.display = 'grid';
-            document.getElementById('u-name').innerText = name;
-            document.getElementById('u-id').innerText = "@" + id;
-            document.getElementById('set-id').value = id;
+        function showApp(user, profile) {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'grid';
+            document.getElementById('my-name').innerText = profile.full_name;
+            document.getElementById('my-id').innerText = "@" + profile.tacker_id;
+            document.getElementById('my-avatar').src = profile.avatar_url;
+            document.getElementById('final-id').value = profile.tacker_id;
+            document.getElementById('final-name').value = profile.full_name;
         }
 
-        function openSettings() { document.getElementById('settings').style.display = 'block'; }
-        function closeSettings() { document.getElementById('settings').style.display = 'none'; }
+        window.onload = checkSession;
     </script>
 </body>
 </html>
