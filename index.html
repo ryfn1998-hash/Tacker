@@ -3,123 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker | Login & Register</title>
+    <title>Tacker | Google Login</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg-auth: #313338; --bg-input: #1e1f22; --accent: #5865f2; --text: #f2f3f5; --text-muted: #b5bac1; }
-        * { box-sizing: border-box; font-family: 'gg sans', 'Noto Sans TC', sans-serif; margin: 0; padding: 0; }
-        body { background: #5865f2 url('https://discord.com/assets/7c01f740da893444036e.png') center/cover; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: var(--bg-auth); width: 480px; padding: 32px; border-radius: 8px; color: var(--text); box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
-        h2 { text-align: center; margin-bottom: 8px; font-size: 24px; }
-        .sub-text { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; color: var(--text-muted); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
-        input, select { width: 100%; padding: 10px; background: var(--bg-input); border: none; border-radius: 3px; color: white; outline: none; font-size: 16px; }
-        .dob-wrap { display: flex; gap: 10px; }
-        .btn-primary { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .link-text { color: #00a8fc; font-size: 14px; cursor: pointer; margin-top: 12px; display: inline-block; }
-        .link-text:hover { text-decoration: underline; }
-        .hidden { display: none; }
+        :root { --bg-auth: #313338; --accent: #5865f2; --text: #f2f3f5; }
+        * { box-sizing: border-box; font-family: 'gg sans', sans-serif; margin: 0; padding: 0; }
+        body { 
+            background: #5865f2 url('https://discord.com/assets/7c01f740da893444036e.png') center/cover; 
+            height: 100vh; display: flex; align-items: center; justify-content: center; 
+        }
+        .auth-card { 
+            background: var(--bg-auth); width: 400px; padding: 32px; border-radius: 8px; 
+            text-align: center; color: var(--text); box-shadow: 0 8px 16px rgba(0,0,0,0.3); 
+        }
+        .google-btn {
+            width: 100%; padding: 12px; background: white; color: #757575; border: none; 
+            border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; 
+            align-items: center; justify-content: center; gap: 10px; margin-top: 20px;
+            font-size: 16px; transition: 0.2s;
+        }
+        .google-btn:hover { background: #eeeeee; }
     </style>
 </head>
 <body>
 
-    <div id="login-view" class="auth-card">
-        <h2>歡迎回來！</h2>
-        <p class="sub-text">很高興再次見到你！</p>
-        <div class="input-group">
-            <label>電子郵件</label>
-            <input type="email" id="login-email">
-        </div>
-        <div class="input-group">
-            <label>密碼</label>
-            <input type="password" id="login-pass">
-        </div>
-        <button class="btn-primary" id="login-btn" onclick="realLogin()">登入</button>
-        <div style="margin-top:12px;">
-            <span style="color:var(--text-muted)">需要帳號？</span>
-            <span class="link-text" onclick="switchView('register')">註冊</span>
-        </div>
-    </div>
+    <div class="auth-card">
+        <h2>Tacker</h2>
+        <p style="color:#b5bac1; margin-top:8px;">使用 Google 帳號安全進入</p>
+        
+        <button class="google-btn" onclick="loginWithGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+            使用 Google 登入
+        </button>
 
-    <div id="register-view" class="auth-card hidden">
-        <h2>建立帳號</h2>
-        <div class="input-group">
-            <label>電子郵件</label>
-            <input type="email" id="reg-email">
-        </div>
-        <div class="input-group">
-            <label>使用者名稱 (帳號代碼)</label>
-            <input type="text" id="reg-id" placeholder="僅限英文與數字">
-        </div>
-        <div class="input-group">
-            <label>密碼</label>
-            <input type="password" id="reg-pass">
-        </div>
-        <div class="input-group">
-            <label>出生日期</label>
-            <div class="dob-wrap">
-                <select id="birth-year"></select>
-                <select id="birth-month"></select>
-                <select id="birth-day"></select>
-            </div>
-        </div>
-        <button class="btn-primary" id="reg-btn" onclick="realSignUp()">繼續</button>
-        <div class="link-text" onclick="switchView('login')">已經有帳號了？</div>
+        <p style="font-size: 12px; color: #949ba4; margin-top: 24px;">
+            登入即代表同意 FR Technology 的服務條款。
+        </p>
     </div>
 
     <script>
-        // 初始化 Supabase
-        const _supabase = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
+        const _supabase = supabase.createClient(
+            'https://coyiifxxfopvabpjszis.supabase.co', 
+            'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH'
+        );
 
-        function switchView(view) {
-            document.getElementById('login-view').classList.add('hidden');
-            document.getElementById('register-view').classList.add('hidden');
-            document.getElementById(view + '-view').classList.remove('hidden');
-        }
-
-        (function initDate() {
-            const y = document.getElementById('birth-year');
-            const m = document.getElementById('birth-month');
-            const d = document.getElementById('birth-day');
-            for(let i=2026; i>=1950; i--) y.options.add(new Option(i, i));
-            for(let i=1; i<=12; i++) m.options.add(new Option(i + "月", i));
-            for(let i=1; i<=31; i++) d.options.add(new Option(i, i));
-            y.value = "2010";
-        })();
-
-        // 真正的註冊邏輯
-        async function realSignUp() {
-            const btn = document.getElementById('reg-btn');
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-pass').value;
-            const username = document.getElementById('reg-id').value;
-
-            if(!email || !password || !username) return alert("請填寫完整資訊！");
-            btn.disabled = true;
-            btn.innerText = "發送中...";
-
-            const { data, error } = await _supabase.auth.signUp({
-                email: email, password: password,
-                options: { data: { username: username, birthday: `${document.getElementById('birth-year').value}` } }
+        async function loginWithGoogle() {
+            const { data, error } = await _supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    // 登入成功後，跳轉回你目前的網頁
+                    redirectTo: window.location.href 
+                }
             });
 
-            if (error) {
-                alert("錯誤：" + error.message);
-                btn.disabled = false; btn.innerText = "繼續";
-            } else {
-                alert("信件已發送至 " + email + "！請去檢查垃圾郵件或收件匣。");
-            }
+            if (error) alert("Google 登入失敗：" + error.message);
         }
 
-        // 真正的登入邏輯
-        async function realLogin() {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            const { data, error } = await _supabase.auth.signInWithPassword({ email: email, password: pass });
-            if (error) alert("登入失敗：" + error.message);
-            else alert("登入成功！歡迎進入 Tacker。");
+        // 檢查是否已經登入成功（從 Google 跳轉回來後）
+        async function checkUser() {
+            const { data: { user } } = await _supabase.auth.getUser();
+            if (user) {
+                alert("歡迎回來，" + user.user_metadata.full_name);
+                // 這裡直接銜接進入你的主程式畫面 (圖一、圖三)
+                enterMainApp(user);
+            }
+        }
+        window.onload = checkUser;
+
+        function enterMainApp(user) {
+            // 負責人，這裡我們會放入你之前的圖一、圖三 HTML 代碼
+            console.log("已登入用戶個資：", user);
         }
     </script>
 </body>
