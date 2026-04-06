@@ -3,195 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker v2.2 | FR Tech</title>
+    <title>Tacker v3.0 | Discord Edition</title>
     <style>
         :root { 
-            --p-green: #00ff41; 
-            --bg-dark: #010409; 
-            --bg-panel: #0d1117; 
-            --bg-side: #161b22; 
-            --border: #30363d; 
-            --discord-blue: #5865F2; 
+            --p-green: #00ff41; --bg-dark: #010409; --bg-panel: #0d1117; 
+            --bg-side: #161b22; --border: #30363d; --ds-blue: #5865F2; --danger: #f85149;
         }
-
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg-dark); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: sans-serif; height: 100vh; display: flex; }
 
-        /* --- 登入頁面 --- */
-        #auth-page { 
-            display: flex; align-items: center; justify-content: center; height: 100vh; 
+        /* 左側伺服器導覽列 (類似 Discord 最左邊那排) */
+        .guild-bar { 
+            width: 72px; background: #010409; display: flex; flex-direction: column; 
+            align-items: center; padding: 12px 0; border-right: 1px solid var(--border);
         }
-        .login-card { 
-            background: var(--bg-side); padding: 30px; border-radius: 12px; border: 1px solid var(--border); 
-            width: 90%; max-width: 360px; text-align: center; 
+        .guild-icon { 
+            width: 48px; height: 48px; background: var(--bg-side); border-radius: 50%; 
+            margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; 
+            justify-content: center; font-weight: bold; transition: 0.2s; border: 1px solid var(--border);
         }
-        input { 
-            width: 100%; padding: 14px; margin-bottom: 12px; background: #000; border: 1px solid var(--border); 
-            color: white; border-radius: 6px; font-size: 16px; outline: none; 
-        }
-        .btn { 
-            width: 100%; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; 
-            margin-top: 10px; font-size: 16px; transition: 0.2s; 
-        }
-        .btn-main { background: var(--p-green); color: black; }
-        .btn-ds { background: var(--discord-blue); color: white; }
+        .guild-icon:hover { border-radius: 15px; background: var(--p-green); color: black; }
+        .guild-icon.active { border-radius: 15px; border: 2px solid var(--p-green); }
 
-        /* --- 主程式介面 --- */
-        #app { 
-            display: none; height: 100vh; width: 100%; 
-        }
+        /* 中間列表列 */
         .sidebar { 
-            width: 280px; background: var(--bg-side); border-right: 1px solid var(--border); 
-            display: flex; flex-direction: column; 
+            width: 240px; background: var(--bg-side); display: flex; flex-direction: column; 
+            border-right: 1px solid var(--border);
         }
-        .sidebar-h { 
-            padding: 20px; font-weight: bold; color: var(--p-green); border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between;
-        }
-        .list-item { 
-            padding: 15px 20px; border-bottom: 1px solid #21262d; cursor: pointer; 
-        }
-        .list-item:hover { background: #1c2128; }
+        .sidebar-header { padding: 15px; font-weight: bold; border-bottom: 1px solid var(--border); }
+        .nav-item { padding: 10px 15px; cursor: pointer; border-radius: 4px; margin: 2px 8px; }
+        .nav-item:hover { background: #21262d; }
+        .nav-item.active { background: #393d43; color: var(--p-green); }
 
-        .chat-window { 
-            flex: 1; display: flex; flex-direction: column; background: var(--bg-panel); 
-        }
-        .chat-header { 
-            height: 60px; padding: 0 20px; display: flex; align-items: center; 
-            border-bottom: 1px solid var(--border); font-weight: bold; 
-        }
-        .msgs { 
-            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; 
-        }
-        .msg-b { 
-            background: #21262d; padding: 10px 15px; border-radius: 8px; max-width: 80%; width: fit-content; 
-        }
-        .input-area { 
-            padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; 
-        }
-        #m-input { 
-            flex: 1; background: #000; border: 1px solid var(--border); color: white; 
-            padding: 12px; border-radius: 6px; 
+        /* 右側主視窗 */
+        main { flex: 1; display: flex; flex-direction: column; background: var(--bg-panel); position: relative; }
+        
+        /* 各個頁面區塊 */
+        .page { display: none; height: 100%; width: 100%; flex-direction: column; }
+        .page.active { display: flex; }
+
+        /* 個資設定樣式 */
+        .settings-form { padding: 40px; max-width: 600px; }
+        .setting-group { margin-bottom: 20px; }
+        .setting-group label { display: block; margin-bottom: 8px; color: #8b949e; }
+        input, textarea { 
+            width: 100%; padding: 10px; background: #000; border: 1px solid var(--border); 
+            color: white; border-radius: 4px; 
         }
 
-        @media (max-width: 768px) {
-            .sidebar { width: 100%; }
-            .chat-window { display: none; } /* 手機版點擊好友後切換 */
+        /* 底部用戶控制欄 */
+        .user-control { 
+            margin-top: auto; padding: 10px; background: #0d1117; 
+            display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border);
         }
+        .avatar-sm { width: 32px; height: 32px; background: var(--p-green); border-radius: 50%; }
+
+        @media (max-width: 768px) { .sidebar { display: none; } }
     </style>
 </head>
 <body>
 
-    <div id="auth-page">
-        <div class="login-card">
-            <h2 id="ui-title" style="color:var(--p-green)">TACKER PRIVATE</h2>
-            <input type="email" id="email" placeholder="信箱">
-            <input type="password" id="pass" placeholder="密碼">
-            <button class="btn btn-main" onclick="handleAuth()">進入系統</button>
-            <button class="btn btn-ds" onclick="handleDiscord()">Discord 登入</button>
-            <p id="ui-sw" onclick="toggleMode()" style="color:var(--p-green); cursor:pointer; margin-top:20px; font-size:13px;">[ 沒有帳號？點此註冊 ]</p>
+    <nav class="guild-bar">
+        <div class="guild-icon active" onclick="showView('home')">🏠</div>
+        <div class="guild-icon" onclick="showView('servers')">💬</div>
+        <div style="flex:1"></div>
+        <div class="guild-icon" onclick="showView('settings')" style="color:var(--p-green)">⚙️</div>
+    </nav>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">TACKER PRIVATE</div>
+        <div id="side-nav-content">
+            <div class="nav-item active">好友</div>
+            <div class="nav-item">待處理邀請</div>
+            <div style="margin: 20px 15px 5px; font-size: 12px; color: #8b949e;">直接訊息</div>
+            <div class="nav-item">👤 Shadow</div>
         </div>
-    </div>
+        
+        <div class="user-control">
+            <div class="avatar-sm"></div>
+            <div style="flex:1; font-size:12px; overflow:hidden;">
+                <b id="my-display-name">使用者名稱</b><br>
+                <span style="color:#8b949e">#id_888</span>
+            </div>
+        </div>
+    </aside>
 
-    <div id="app">
-        <aside class="sidebar" id="side-panel">
-            <div class="sidebar-h">
-                <span>FR TECH | TACKER</span>
-                <span onclick="logout()" style="cursor:pointer;">🚪</span>
+    <main>
+        <section id="view-home" class="page active">
+            <div style="padding:20px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between;">
+                <b>好友</b>
+                <button onclick="addFriendPrompt()" style="background:var(--p-green); border:none; padding:5px 10px; border-radius:4px; font-weight:bold;">發送好友申請</button>
             </div>
-            <div id="contact-list">
-                <div class="list-item" onclick="startChat('Shadow (Admin)')">👤 Shadow (管理員)</div>
-                <div class="list-item" onclick="startChat('FR 核心群組')">🔒 FR 核心群組</div>
-            </div>
-        </aside>
+            <div style="padding:20px; color:#8b949e">你目前還沒有好友，輸入對方的「帳號代號」來添加吧！</div>
+        </section>
 
-        <main class="chat-window" id="chat-panel">
-            <div class="chat-header" id="chat-title"># 系統大廳</div>
-            <div class="msgs" id="msg-box">
-                <div class="msg-b" style="color:var(--p-green)">系統：加密隧道連線成功。</div>
+        <section id="view-settings" class="page">
+            <div class="settings-form">
+                <h2 style="color:var(--p-green)">使用者設定</h2>
+                <div class="setting-group">
+                    <label>顯示名稱 (Display Name)</label>
+                    <input type="text" id="set-display-name" placeholder="大家看到的稱呼">
+                </div>
+                <div class="setting-group">
+                    <label>帳號代號 (Unique ID - 加好友用)</label>
+                    <input type="text" id="set-username" placeholder="例如: ryfn_01">
+                </div>
+                <div class="setting-group">
+                    <label>個人簡介</label>
+                    <textarea id="set-bio" rows="3"></textarea>
+                </div>
+                <button class="btn" style="background:var(--p-green); color:black;" onclick="saveProfile()">儲存個資</button>
+                <hr style="border:0; border-top:1px solid var(--border); margin:30px 0;">
+                <button class="btn" style="background:var(--danger); color:white;" onclick="logout()">登出 Tacker</button>
             </div>
-            <div class="input-area">
-                <input type="text" id="m-input" placeholder="撰寫訊息..." onkeypress="if(event.key==='Enter')send()">
-                <button onclick="send()" style="background:none; border:none; color:var(--p-green); font-weight:bold; cursor:pointer;">發送</button>
-            </div>
-        </main>
-    </div>
+        </section>
+    </main>
 
     <script>
-        const S_URL = 'https://coyiifxxfopvabpjszis.supabase.co';
-        const S_KEY = 'sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH';
-        let isSignUp = false;
-
-        function toggleMode() {
-            isSignUp = !isSignUp;
-            document.getElementById('ui-title').innerText = isSignUp ? "建立帳號" : "TACKER PRIVATE";
-            document.getElementById('ui-sw').innerText = isSignUp ? "[ 返回登入 ]" : "[ 沒有帳號？點此註冊 ]";
-        }
-
-        async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('pass').value;
-            if(!email || !password) return alert("請填寫完整資訊");
-
-            const endpoint = isSignUp ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
-            try {
-                const response = await fetch(S_URL + endpoint, {
-                    method: 'POST',
-                    headers: { 'apikey': S_KEY, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const result = await response.json();
-                if (response.ok) {
-                    localStorage.setItem('tacker_token', result.access_token);
-                    showApp();
-                } else {
-                    alert("錯誤: " + (result.error_description || result.msg || "連線失敗"));
-                }
-            } catch (err) { alert("網路異常"); }
-        }
-
-        function handleDiscord() {
-            window.location.href = `${S_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(window.location.href)}`;
-        }
-
-        function showApp() {
-            document.getElementById('auth-page').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-        }
-
-        function startChat(name) {
-            document.getElementById('chat-title').innerText = "# " + name;
-            if (window.innerWidth <= 768) {
-                document.getElementById('side-panel').style.display = 'none';
-                document.getElementById('chat-panel').style.display = 'flex';
+        // 頁面切換邏輯
+        function showView(viewName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.guild-icon').forEach(i => i.classList.remove('active'));
+            
+            if(viewName === 'settings') {
+                document.getElementById('view-settings').classList.add('active');
+            } else {
+                document.getElementById('view-home').classList.add('active');
             }
         }
 
-        function send() {
-            const input = document.getElementById('m-input');
-            if(!input.value) return;
-            const box = document.getElementById('msg-box');
-            box.innerHTML += `<div class="msg-b" style="align-self:flex-end; background:var(--p-green); color:black;">${input.value}</div>`;
-            input.value = '';
-            box.scrollTop = box.scrollHeight;
+        // 功能彈窗模擬
+        function addFriendPrompt() {
+            const id = prompt("請輸入對方的帳號代號 (例如: Shadow#001):");
+            if(id) alert("好友申請已發送給 " + id);
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('set-display-name').value;
+            if(name) {
+                document.getElementById('my-display-name').innerText = name;
+                alert("個資已更新！");
+            }
         }
 
         function logout() {
-            localStorage.removeItem('tacker_token');
-            location.reload();
-        }
-
-        window.onload = () => {
-            const hash = window.location.hash;
-            if (hash.includes('access_token=')) {
-                const token = new URLSearchParams(hash.replace('#', '?')).get('access_token');
-                localStorage.setItem('tacker_token', token);
-                window.history.replaceState(null, null, window.location.pathname);
-                showApp();
-            } else if (localStorage.getItem('tacker_token')) {
-                showApp();
+            if(confirm("確定要登出嗎？")) {
+                localStorage.removeItem('tacker_token');
+                location.reload();
             }
-        };
+        }
     </script>
 </body>
 </html>
