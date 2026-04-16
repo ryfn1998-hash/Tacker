@@ -7,53 +7,49 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg-p: #313338; --bg-s: #2b2d31; --bg-t: #232428; --brand: #5865f2; --success: #23a559; --danger: #f23f43; --text: #dbdee1; --muted: #949ba4; --white: #ffffff; --gray-card: #383a40; }
-        body, html { margin: 0; padding: 0; font-family: 'PingFang TC', sans-serif; height: 100vh; overflow: hidden; }
+        body, html { margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; height: 100vh; overflow: hidden; }
         .hidden { display: none !important; }
 
-        /* 1. 進入首頁 (使用你提供的電繪圖) */
-        #welcome-screen { position: fixed; inset: 0; background: #fff; z-index: 2000; display: flex; justify-content: center; align-items: center; }
-        #welcome-screen img { max-width: 100%; max-height: 100%; cursor: pointer; }
-        .entry-trigger { position: absolute; bottom: 10%; right: 10%; width: 120px; height: 60px; background: transparent; border: none; cursor: pointer; z-index: 2001; }
+        /* --- 1. 純程式碼首頁 (image_1.png ①, 還原 image_4.png 電繪風格) --- */
+        #welcome-screen { position: fixed; inset: 0; background: #fff; z-index: 2000; display: flex; flex-direction: column; padding: 10% 8%; box-sizing: border-box; }
+        .welcome-title { font-size: 8rem; font-weight: 800; color: #000; margin: 0; letter-spacing: 5px; } /* Tacker大標題 */
+        .welcome-sub { font-size: 2rem; font-weight: bold; color: #000; margin: 2rem 0; letter-spacing: 2px; } /* 永遠.免費副標題 */
+        .welcome-entry-btn { position: absolute; bottom: 8%; right: 8%; background: #3c78e6; color: white; border: none; padding: 1rem 2rem; cursor: pointer; border-radius: 8px; font-size: 1.5rem; font-weight: bold; font-family: 'PingFang TC', sans-serif; box-shadow: 0 4px 10px rgba(0,0,0,0.2); } /* 藍色進入按鈕 */
 
-        /* 2. 登入介面 (image_1.png ②) */
+        /* --- 2. 登入介面 (image_1.png ②) --- */
         #auth-wall { position: fixed; inset: 0; background: var(--white); z-index: 1500; display: none; justify-content: center; align-items: center; }
         .login-card { background: var(--gray-card); width: 320px; padding: 40px; border-radius: 8px; position: relative; color: white; text-align: center; }
+        .login-card h2 { margin: 0 0 20px 0; font-size: 24px; }
         .login-card input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 4px; border: none; background: #1e1f22; color: white; outline: none; }
-        .green-arrow { background: var(--success); color: white; border: none; width: 60px; height: 40px; border-radius: 4px; cursor: pointer; font-size: 20px; margin-top: 10px; }
-        .error-hint { color: var(--danger); font-size: 12px; height: 15px; margin-top: 5px; }
+        .login-card .green-arrow { background: var(--success); color: white; border: none; width: 60px; height: 40px; border-radius: 4px; cursor: pointer; display: block; margin: 15px auto 0; font-size: 20px; }
+        .error-hint { color: var(--danger); font-size: 12px; height: 18px; margin-top: 5px; text-align: left; }
         .apply-link { position: absolute; bottom: 10px; right: 10px; color: var(--brand); font-size: 10px; text-decoration: none; }
 
-        /* 3. 過場動畫 */
-        #loader { position: fixed; inset: 0; background: #fff; z-index: 3000; display: none; justify-content: center; align-items: center; flex-direction: column; }
-        .circle { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--brand); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* --- 3. 過場動畫 (image_2.png) --- */
+        #loader { position: fixed; inset: 0; background: #fff; z-index: 3000; display: none; justify-content: center; align-items: center; flex-direction: column; color: black; }
+        .loader-circle { width: 48px; height: 48px; border: 5px solid #f3f3f3; border-top: 5px solid var(--brand); border-radius: 50%; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 4. 主程式 (image_3.png & P1/P2) */
+        /* --- 4. 主程式介面 (image_3.png & P1/P2手稿) --- */
         #main-app { display: none; grid-template-columns: 240px 1fr; height: 100vh; background: var(--bg-p); color: white; }
-        .sidebar { background: var(--bg-s); display: flex; flex-direction: column; border-right: 1px solid #1e1f22; }
-        .friend-list { flex: 1; padding: 10px; overflow-y: auto; }
-        .add-btn { background: none; border: 1px dashed var(--muted); color: var(--muted); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; margin-left: 10px; }
-        
-        /* 使用者區塊 */
-        .user-footer { background: #232428; padding: 10px; display: flex; align-items: center; gap: 10px; }
-        .u-ava { width: 32px; height: 32px; border-radius: 50%; background: #5865f2; }
-
-        /* 彈窗系統 */
-        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; display: none; justify-content: center; align-items: center; }
-        .modal-box { background: var(--gray-card); padding: 30px; border-radius: 8px; width: 300px; position: relative; }
-        .close-x { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 20px; }
+        .sidebar { background: var(--bg-s); border-right: 1px solid #1e1f22; position: relative; display: flex; flex-direction: column; }
+        .u-panel { background: #232428; padding: 10px 15px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 10px; }
+        .u-ava { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); object-fit: cover; }
+        .friend-placeholder { flex: 1; padding: 20px; font-size: 12px; color: var(--muted); font-weight: bold; }
+        .add-f-btn { background: none; border: 1px dashed var(--muted); color: var(--muted); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; float: right; }
     </style>
 </head>
 <body>
 
     <div id="welcome-screen">
-        <img src="https://i.imgur.com/2sS9lU3.png" alt="Tacker">
-        <button class="entry-trigger" onclick="toAuth()"></button>
+        <h1 class="welcome-title">Tacker</h1>
+        <p class="welcome-sub">永遠.免費</p>
+        <button class="welcome-entry-btn" onclick="showAuth()">進入</button>
     </div>
 
     <div id="auth-wall">
         <div class="login-card">
-            <h2 style="margin-top:0;">登入</h2>
+            <h2>登入</h2>
             <input type="text" id="t-id" placeholder="帳號 ID">
             <input type="password" id="t-pw" placeholder="密碼">
             <div id="err-hint" class="error-hint"></div>
@@ -63,58 +59,48 @@
     </div>
 
     <div id="loader">
-        <div class="circle"></div>
-        <p style="color:black; margin-top:15px; font-weight:bold;">載入數據中...</p>
+        <div class="loader-circle"></div>
+        <p style="margin-top:20px; font-weight:bold;">載入數據中...</p>
     </div>
 
     <div id="main-app">
-        <div class="sidebar">
-            <div style="padding:20px 10px; font-size:12px; color:var(--muted); font-weight:bold;">
-                目前尚未有好朋友 <button class="add-btn" onclick="openAdd()">+</button>
+        <aside class="sidebar">
+            <div class="friend-placeholder">
+                目前尚未有好朋友 
+                <button class="add-f-btn" onclick="alert('新增好友功能對接中...')">+</button>
             </div>
-            <div class="friend-list" id="f-list">
-                </div>
-            <div class="user-footer">
-                <img id="my-ava" class="u-ava">
+            <div class="u-panel">
+                <img id="my-ava" class="u-ava" src="https://via.placeholder.com/32">
                 <div style="flex:1; overflow:hidden;">
-                    <div id="my-name" style="font-weight:bold; font-size:13px; text-overflow:ellipsis; white-space:nowrap;">載入中...</div>
-                    <div id="my-tag" style="color:var(--muted); font-size:10px;">@id</div>
+                    <div id="my-name" style="font-weight:bold; font-size:14px; text-overflow:ellipsis; white-space:nowrap;">Loading...</div>
+                    <div id="my-id" style="color:var(--muted); font-size:10px;">@id</div>
                 </div>
                 <div style="cursor:pointer;" onclick="alert('設定開發中')">✎</div>
             </div>
-        </div>
-        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; color:var(--muted);">
+        </aside>
+        <main style="display:flex; flex-direction:column; justify-content:center; align-items:center; color:var(--muted);">
             <div style="font-size:60px;">#</div>
-            <p>這裡目前什麼都沒有 :/</p>
-        </div>
-    </div>
-
-    <div id="modal-overlay">
-        <div class="modal-box">
-            <span class="close-x" onclick="closeAdd()">✕</span>
-            <h3 style="margin-top:0;">新增好友</h3>
-            <p style="font-size:12px; color:var(--muted);">輸入對方的帳號 ID</p>
-            <input type="text" id="target-id" style="width:100%; padding:10px; background:#1e1f22; border:none; color:white; border-radius:4px;" placeholder="帳號 ID">
-            <button style="width:100%; margin-top:15px; background:var(--brand); border:none; color:white; padding:10px; border-radius:4px; cursor:pointer;" onclick="sendRequest()">確認</button>
-        </div>
+            <p>聊天頻道還沒就緒 (等待 P2 手稿對接)</p>
+        </main>
     </div>
 
     <script>
-        // 修正後的 Supabase 連線
         const _s = supabase.createClient('https://coyiifxxfopvabpjszis.supabase.co', 'Sb_publishable_ZaDrVW5Goe5QFqL4rBvNCg_JrwHKIFH');
 
-        function toAuth() {
+        // 首頁跳轉
+        function showAuth() {
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('auth-wall').style.display = 'flex';
         }
 
+        // 人工帳密登入
         async function doLogin() {
             const tid = document.getElementById('t-id').value;
             const tpw = document.getElementById('t-pw').value;
             const hint = document.getElementById('err-hint');
 
-            // 帳號 666666 測試邏輯
-            const { data, error } = await _s.from('profiles').select('*').eq('tacker_id', tid).eq('temp_pw', tpw).maybeSingle();
+            const { data } = await _s.from('profiles')
+                .select('*').eq('tacker_id', tid).eq('temp_pw', tpw).maybeSingle();
 
             if (data) {
                 hint.innerText = "";
@@ -125,22 +111,11 @@
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('main-app').style.display = 'grid';
                     document.getElementById('my-name').innerText = data.full_name;
-                    document.getElementById('my-tag').innerText = "@" + data.tacker_id;
-                    document.getElementById('my-ava').src = data.avatar_url || "https://via.placeholder.com/32";
-                }, 800); // 載入圈 0.8秒
+                    document.getElementById('my-id').innerText = "@" + data.tacker_id;
+                }, 800);
             } else {
-                hint.innerText = "帳號或密碼錯誤"; // 紅字提醒
+                hint.innerText = "帳號或密碼錯誤";
             }
-        }
-
-        function openAdd() { document.getElementById('modal-overlay').style.display = 'flex'; }
-        function closeAdd() { document.getElementById('modal-overlay').style.display = 'none'; }
-        
-        async function sendRequest() {
-            const target = document.getElementById('target-id').value;
-            if(!target) return;
-            alert("已向 " + target + " 發送好友請求！ (功能對接中)");
-            closeAdd();
         }
     </script>
 </body>
