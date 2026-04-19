@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tacker Pro | Client</title>
+    <title>Tacker Pro | Final Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, set, update, get, push, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -18,21 +19,24 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+
         let currentUser = null;
 
-        // --- 強制跳轉邏輯 ---
+        // --- 核心修正：將函式掛載到 window，確保 HTML onclick 抓得到 ---
         window.entryTacker = async () => {
+            console.log("按鈕已觸發");
             const id = localStorage.getItem('t_id'), pw = localStorage.getItem('t_pw');
             
-            // 如果有舊資料，嘗試自動登入
             if (id && pw) {
-                const s = await get(ref(db, `users/${id}`));
-                if (s.exists() && s.val().temp_pw === pw) {
-                    currentUser = { id, ...s.val() };
-                    return launchApp();
-                }
+                try {
+                    const s = await get(ref(db, `users/${id}`));
+                    if (s.exists() && s.val().temp_pw === pw) {
+                        currentUser = { id, ...s.val() };
+                        return launchApp();
+                    }
+                } catch(e) { console.error(e); }
             }
-            // 沒資料或驗證失敗，切換到登入畫面
+            // 沒登入過，跳轉登入
             document.getElementById('gate-screen').style.display = 'none';
             document.getElementById('login-screen').style.display = 'flex';
         };
@@ -48,19 +52,17 @@
                 localStorage.setItem('t_pw', pw);
                 currentUser = { id, ...s.val() };
                 launchApp();
-            } else { alert("驗證失敗：帳號或密碼錯誤"); }
+            } else { alert("帳密錯誤"); }
         };
 
         function launchApp() {
             document.getElementById('gate-screen').style.display = 'none';
             document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-ui').style.display = 'flex'; // 強制顯示大廳
+            document.getElementById('app-ui').style.display = 'flex';
             startSync();
         }
 
-        // --- 實體功能同步 ---
         function startSync() {
-            // 聊天訊息即時渲染
             onValue(ref(db, 'chats/global'), s => {
                 const flow = document.getElementById('chat-flow');
                 flow.innerHTML = '';
@@ -77,7 +79,6 @@
                 });
                 flow.scrollTop = flow.scrollHeight;
             });
-            // 個人資料同步
             onValue(ref(db, `users/${currentUser.id}`), s => {
                 const d = s.val();
                 document.getElementById('u-name').innerText = d.full_name;
@@ -102,50 +103,51 @@
         * { box-sizing: border-box; }
         body, html { margin:0; padding:0; height:100vh; background:#000; color:var(--text); font-family: sans-serif; overflow:hidden; }
 
-        /* 入口螢幕 */
+        /* 入口與登入 */
         .screen { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        .auth-box { background:var(--b0); padding:40px; border-radius:8px; width:380px; text-align:center; }
-        input { background:#1e1f22; border:1px solid #111; color:#fff; padding:12px; border-radius:4px; width:100%; margin:8px 0; outline:none; }
-        .btn { background:var(--acc); color:#fff; border:none; padding:12px 30px; border-radius:4px; cursor:pointer; font-weight:bold; }
+        .auth-box { background:var(--b0); padding:40px; border-radius:8px; width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+        input { background:#232428; border:1px solid #111; color:#fff; padding:12px; border-radius:4px; width:100%; margin:8px 0; outline:none; }
+        .btn { background:var(--acc); color:#fff; border:none; padding:15px 40px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:16px; transition: 0.2s; }
+        .btn:hover { background: #4752c4; transform: translateY(-2px); }
 
-        /* 大廳比例佈局 */
-        #app-ui { display:none; height:100vh; }
-        .rail { width:72px; background:var(--b0); display:flex; flex-direction:column; align-items:center; padding:12px 0; flex-shrink:0; }
-        .side { width:240px; background:var(--b1); display:flex; flex-direction:column; flex-shrink:0; }
+        /* 主佈局 - 修正比例 */
+        #app-ui { display:none; height:100vh; width: 100vw; }
+        .rail { width:72px; background:var(--b0); flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding:12px 0; }
+        .side { width:240px; background:var(--b1); flex-shrink:0; display:flex; flex-direction:column; border-right: 1px solid rgba(0,0,0,0.2); }
         .chat { flex-grow:1; background:var(--b2); display:flex; flex-direction:column; min-width:0; }
 
         .s-btn { width:48px; height:48px; background:var(--b2); border-radius:50%; margin-bottom:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-        .s-btn:hover { background:var(--acc); border-radius:35%; }
+        .s-btn:hover { background:var(--acc); border-radius:30%; }
 
-        header { height:48px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 16px; font-weight:bold; }
+        header { height:48px; border-bottom:1px solid rgba(0,0,0,0.2); display:flex; align-items:center; padding:0 16px; font-weight:bold; font-size: 15px; }
         #chat-flow { flex-grow:1; overflow-y:auto; padding:20px; }
         .msg { display:flex; gap:16px; margin-bottom:20px; }
         .msg-pfp { width:40px; height:40px; background:#4e5058; border-radius:50%; flex-shrink:0; }
         .msg-content b { color:#fff; font-size:15px; margin-right:8px; }
         .msg-content small { color:var(--sub); font-size:12px; }
-        .msg-text { margin-top:4px; line-height:1.4; }
+        .msg-text { margin-top:4px; line-height:1.4; color: #dcdee1; font-size: 15px; }
 
-        .input-bar { padding:0 20px 24px; }
-        .input-inner { background:#383a40; border-radius:8px; padding:12px; }
+        .input-bar { padding:0 16px 24px; }
+        .input-inner { background:#383a40; border-radius:8px; padding:12px; display: flex; }
 
-        .u-bar { margin-top:auto; background:rgba(0,0,0,0.2); padding:8px; display:flex; align-items:center; gap:10px; }
+        .u-bar { margin-top:auto; background:rgba(0,0,0,0.2); padding:10px; display:flex; align-items:center; gap:10px; }
         .u-pfp { width:32px; height:32px; background:var(--acc); border-radius:50%; }
     </style>
 </head>
 <body>
 
     <div id="gate-screen" class="screen">
-        <h1 style="font-size:60px; letter-spacing:10px; color:var(--acc); margin:0;">TACKER</h1>
-        <p style="color:var(--sub); margin-bottom:40px;">Professional Social Environment</p>
-        <button class="btn" onclick="entryTacker()">進入 Tacker</button>
+        <h1 style="font-size:70px; letter-spacing:15px; color:var(--acc); margin:0; text-shadow: 0 0 20px rgba(88,101,242,0.3);">TACKER</h1>
+        <p style="color:var(--sub); margin: 10px 0 50px 0; font-weight: 300;">THE NEW SOCIAL ENGINE</p>
+        <button class="btn" onclick="window.entryTacker()">進入 Tacker</button>
     </div>
 
     <div id="login-screen" class="screen" style="display:none">
         <div class="auth-box">
-            <h2>身分驗證</h2>
+            <h2 style="margin:0 0 20px 0;">驗證</h2>
             <input id="l-id" placeholder="Tacker ID">
             <input id="l-pw" type="password" placeholder="密碼">
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="doLogin()">確認並登入</button>
+            <button class="btn" style="width:100%; margin-top:15px;" onclick="window.doLogin()">確認</button>
         </div>
     </div>
 
@@ -156,24 +158,24 @@
             <div class="s-btn"><i class="fa-solid fa-plus" style="color:#23a559"></i></div>
         </nav>
         <aside class="side">
-            <div style="padding:16px; font-weight:bold; color:var(--sub); font-size:12px;">頻道</div>
-            <div style="margin:0 8px; padding:10px; background:rgba(255,255,255,0.05); border-radius:4px; cursor:pointer;">
-                <i class="fa-solid fa-hashtag"></i> 全球大廳
+            <div style="padding:16px; font-weight:bold; color:var(--sub); font-size:11px; letter-spacing:1px;">文字頻道</div>
+            <div style="margin:0 8px; padding:10px; background:rgba(255,255,255,0.05); border-radius:4px; cursor:pointer; color:#fff;">
+                <i class="fa-solid fa-hashtag" style="color:var(--sub); margin-right:5px;"></i> 全球大廳
             </div>
             <div class="u-bar">
                 <div class="u-pfp"></div>
                 <div style="overflow:hidden">
-                    <div id="u-name" style="font-weight:bold; font-size:14px; white-space:nowrap;">User</div>
+                    <div id="u-name" style="font-weight:bold; font-size:13px; color:#fff;">User</div>
                     <div id="u-tag" style="font-size:11px; color:var(--sub);">#0000</div>
                 </div>
             </div>
         </aside>
         <main class="chat">
-            <header># 全球大廳</header>
+            <header><i class="fa-solid fa-hashtag" style="color:var(--sub); margin-right:8px;"></i> 全球大廳</header>
             <div id="chat-flow"></div>
             <div class="input-bar">
                 <div class="input-inner">
-                    <input id="chat-input" placeholder="傳送訊息..." onkeypress="if(event.key==='Enter') sendChat()">
+                    <input id="chat-input" placeholder="發送訊息..." onkeypress="if(event.key==='Enter') window.sendChat()" style="background:none; border:none; margin:0; width:100%; padding:0;">
                 </div>
             </div>
         </main>
