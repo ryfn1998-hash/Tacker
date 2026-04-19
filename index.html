@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker Pro | God Admin Edition</title>
+    <title>Tacker Pro | God Final Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -16,14 +16,22 @@
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
         .active { display: flex; }
 
-        /* --- 開場動畫 (嚴格保留) --- */
-        #s-home { background: #fff; color: #000; align-items: center; justify-content: center; text-align: center; }
-        .big-tacker { font-weight: 900; transform: scale(10); opacity: 0; animation: zoomIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        /* --- 開場動畫修正版 --- */
+        #s-home { background: #fff; color: #000; align-items: center; justify-content: center; text-align: center; z-index: 100; }
+        .big-tacker { font-weight: 900; transform: scale(10); opacity: 0; animation: zoomIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; pointer-events: none; }
         @keyframes zoomIn { 0% { transform: scale(12); opacity: 0; } 100% { transform: scale(1); opacity: 1; font-size: clamp(60px, 15vw, 100px); letter-spacing: 2px; } }
-        .float-btn { margin-top: 50px; padding: 18px 60px; background: #000; color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; opacity: 0; transform: translateY(30px); animation: fadeUp 0.8s 1s forwards; transition: 0.3s; }
+        
+        /* 確保按鈕在最上層且可被點擊 */
+        .float-btn { 
+            position: relative; z-index: 101; margin-top: 50px; padding: 18px 60px; 
+            background: #000; color: #fff; border: none; border-radius: 50px; 
+            font-size: 18px; font-weight: bold; cursor: pointer; 
+            opacity: 0; transform: translateY(30px); animation: fadeUp 0.8s 1s forwards; transition: 0.3s; 
+        }
+        .float-btn:active { transform: scale(0.95); background: #333; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 主導航 --- */
+        /* --- 主佈局 --- */
         .rail { width: 65px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 20px; border-right: 1px solid #222; overflow-y: auto; }
         .rail div { cursor: pointer; z-index: 20; position: relative; }
         .dm-nav { width: 45px; height: 45px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; }
@@ -34,31 +42,27 @@
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
         header { height: 60px; border-bottom: 1px solid #222; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; }
         
-        /* 官方標籤 */
         .sys-tag { background: var(--official); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 900; }
 
         #chat-flow { flex-grow: 1; overflow-y: auto; padding: 15px 0; }
-        .msg-row { display: flex; gap: 12px; margin-bottom: 22px; padding: 0 15px; }
+        .msg-row { display: flex; gap: 12px; margin-bottom: 22px; padding: 0 15px; position: relative; }
         .pfp { width: 44px; height: 44px; border-radius: 50%; background: #222; overflow: hidden; cursor: pointer; border: 1px solid #333; flex-shrink: 0; }
         .pfp img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .msg-body { flex-grow: 1; }
         .msg-content { color: #eee; font-size: 15px; word-break: break-all; margin-top: 2px; }
-        .msg-img { max-width: 250px; border-radius: 12px; margin-top: 8px; border: 1px solid #333; }
+        .msg-img { max-width: 250px; border-radius: 12px; margin-top: 8px; border: 1px solid #333; display: block; }
 
         .input-bar { padding: 12px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 12px; align-items: center; }
         .input-bar input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 12px; outline: none; }
         
-        /* 圖片選擇按鈕 (固定樣式) */
-        .img-label { color: var(--sub); font-size: 22px; cursor: pointer; padding: 5px; transition: 0.2s; }
-        .img-label:hover { color: var(--acc); }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; }
-        .user-card { width: 320px; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; }
-        
-        /* 刪除按鈕 */
-        .trash-icon { color: var(--danger); cursor: pointer; margin-left: 10px; font-size: 12px; padding: 5px; opacity: 0.5; }
+        .img-label { color: var(--sub); font-size: 22px; cursor: pointer; padding: 5px; }
+        .trash-icon { color: var(--danger); cursor: pointer; font-size: 14px; opacity: 0.4; transition: 0.2s; }
         .trash-icon:hover { opacity: 1; }
 
-        /* 修改密碼 (原封不動) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .user-card { width: 320px; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; }
+        
         .pwd-panel { background: #fff; color: #000; padding: 30px; border-radius: 15px; width: 320px; text-align: center; }
         .pwd-panel input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
         .pwd-panel button { width: 100%; padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
@@ -68,7 +72,7 @@
 
     <section id="s-home" class="screen active">
         <div class="big-tacker">Tacker</div>
-        <button class="float-btn" onclick="checkAuth()">進入 ——＞</button>
+        <button class="float-btn" id="entry-btn" onclick="checkAuth()">進入 ——＞</button>
     </section>
 
     <section id="s-login" class="screen" style="background:#f5f5f5; align-items:center; justify-content:center;">
@@ -101,14 +105,14 @@
                     <b id="main-title" style="font-size:18px;">全球大廳</b>
                     <div style="display:flex; align-items:center; gap:15px;">
                         <i id="block-btn" class="fa-solid fa-ban" style="display:none; cursor:pointer; font-size:20px; color:#444;" onclick="toggleBlock()"></i>
-                        <div class="badge">在線 <b><span id="online-count">0</span></b></div>
+                        <div class="badge">在線 <span id="online-count">0</span></div>
                     </div>
                 </header>
                 <div id="chat-flow"><div id="messages"></div></div>
                 <div class="input-bar">
                     <label class="img-label">
                         <i class="fa-solid fa-image"></i>
-                        <input type="file" id="direct-img" accept="image/*" style="display:none;" onchange="handleDirectImg(this)">
+                        <input type="file" id="img-send" accept="image/*" style="display:none;" onchange="handleImageSend(this)">
                     </label>
                     <input id="m-input" placeholder="傳送訊息..." onkeypress="if(event.key==='Enter') send()">
                     <button onclick="send()" style="background:var(--acc); border:none; color:#fff; padding:10px 18px; border-radius:12px;"><i class="fa-solid fa-paper-plane"></i></button>
@@ -119,7 +123,7 @@
                 <h2 style="font-weight:800;">帳戶設定</h2>
                 <div style="text-align:center; margin-bottom:30px;">
                     <label for="pfp-input"><img id="current-pfp" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--acc); object-fit:cover;"></label>
-                    <input type="file" id="pfp-input" style="display:none;" onchange="handlePfpFile(this)">
+                    <input type="file" id="pfp-input" style="display:none;" onchange="handleFileChange(this)">
                 </div>
                 <input id="edit-name" placeholder="顯示名稱" style="width:100%; background:#1e1e1e; border:1px solid #333; color:#fff; padding:14px; border-radius:10px; margin-bottom:15px;">
                 <button onclick="openPwdFlow()" style="width:100%; padding:14px; background:#333; color:#fff; border:none; border-radius:10px; margin-bottom:15px; font-weight:bold;">🔒 修改安全密碼</button>
@@ -162,15 +166,21 @@
         firebase.initializeApp(config);
         const db = firebase.database();
 
-        // 【管理員 ID 設定】—— 請把你的 ID 填進去
-        const ADMINS = ['admin', 'your_id_here']; 
+        // --- 管理員 ID 設定 ---
+        const GODS = ['admin', 'your_id_here']; 
         let me = null, currentChat = 'global';
 
-        function isGod(id) { return ADMINS.includes(id); }
+        function checkGod(id) { return GODS.includes(id); }
 
+        // --- 修正後的進入按鈕功能 ---
         function checkAuth() { 
             const saved = localStorage.getItem('tacker_session'); 
             if(saved){ me = JSON.parse(saved); startLoad(); } else go('s-login'); 
+        }
+
+        function go(id) { 
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+            document.getElementById(id).classList.add('active'); 
         }
 
         async function auth() {
@@ -205,53 +215,48 @@
             listenContacts();
         }
 
-        // --- 核心渲染邏輯：神權就在這 ---
+        // --- 神之渲染 (包含刪除邏輯) ---
         function render(snap, dbPath) {
             const box = document.getElementById('messages'); box.innerHTML = '';
-            const iAmGod = isGod(me.uid);
+            const iAmGod = checkGod(me.uid);
 
             snap.forEach(d => {
                 const m = d.val();
-                const isUserGod = isGod(m.uid);
-                // 神權判斷：我是神，或者這封信是我發的，我就能刪除
+                const isUserGod = checkGod(m.uid);
                 const canIDelete = iAmGod || (m.uid === me.uid);
 
-                let body = `<div class="msg-content">${m.t}</div>`;
-                if(m.t.startsWith('data:image')) body = `<img src="${m.t}" class="msg-img" onclick="window.open('${m.t}')">`;
+                let content = `<div class="msg-content">${m.t}</div>`;
+                if(m.t.startsWith('data:image')) content = `<img src="${m.t}" class="msg-img" onclick="window.open('${m.t}')">`;
 
                 box.innerHTML += `
                     <div class="msg-row">
                         <div class="pfp" onclick="showUser('${m.uid}')"><img src="${m.pfp}"></div>
-                        <div style="flex-grow:1">
+                        <div class="msg-body">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <span>
                                     <b style="color:${isUserGod ? 'var(--admin)' : 'var(--acc)'}; font-size:12px;">${m.u}</b>
-                                    ${isUserGod ? '<span class="sys-tag">官方帳號</span>' : ''}
+                                    ${isUserGod ? '<span class="sys-tag">官方</span>' : ''}
                                 </span>
-                                ${canIDelete ? `<i class="fa-solid fa-trash-can trash-icon" onclick="deleteLogic('${dbPath}/${d.key}')"></i>` : ''}
+                                ${canIDelete ? `<i class="fa-solid fa-trash trash-icon" onclick="godDelete('${dbPath}/${d.key}')"></i>` : ''}
                             </div>
-                            ${body}
+                            ${content}
                         </div>
                     </div>`;
             });
             document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
         }
 
-        // --- 神權刪除邏輯 ---
-        async function deleteLogic(fullPath) {
-            if(confirm("神權執行：確定要從雲端抹除這條訊息嗎？")) {
-                await db.ref(fullPath).remove();
-            }
+        async function godDelete(fullPath) {
+            if(confirm("確定要刪除這條訊息嗎？")) await db.ref(fullPath).remove();
         }
 
-        // --- 直接選圖功能 ---
-        function handleDirectImg(input) {
+        // --- 圖片發送 ---
+        function handleImageSend(input) {
             const file = input.files[0]; if(!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                const base64 = e.target.result;
-                sendMsg(base64); // 直接呼叫發送函數，傳入 Base64
-                input.value = ""; // 清空
+                sendFinal(e.target.result);
+                input.value = "";
             };
             reader.readAsDataURL(file);
         }
@@ -259,73 +264,66 @@
         async function send() {
             const inp = document.getElementById('m-input'), val = inp.value.trim();
             if(!val) return;
-            await sendMsg(val);
+            await sendFinal(val);
             inp.value = '';
         }
 
-        async function sendMsg(content) {
-            const iAmGod = isGod(me.uid);
-            
-            // 禁言與封鎖檢查 (神無視這一切)
+        async function sendFinal(content) {
+            const iAmGod = checkGod(me.uid);
             if(!iAmGod) {
                 if(currentChat==='global') {
-                    if((await db.ref(`global_mutes/${me.uid}`).get()).exists()) return alert("你已被官方全球禁言");
+                    if((await db.ref(`global_mutes/${me.uid}`).get()).exists()) return alert("你已被全球禁言");
                 } else {
-                    if((await db.ref(`users/${currentChat}/blocks/${me.uid}`).get()).exists()) return alert("對方已封鎖你，無法傳送");
+                    if((await db.ref(`users/${currentChat}/blocks/${me.uid}`).get()).exists()) return alert("對方已封鎖你");
                 }
             }
-
             const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: content, ts: Date.now() };
-            if(currentChat==='global') {
-                db.ref('chats/global').push(data);
-            } else {
+            if(currentChat==='global') db.ref('chats/global').push(data);
+            else {
                 const rid = getRoomId(currentChat);
                 db.ref(`chats/private/${rid}/msgs`).push(data);
                 db.ref(`chats/private/${rid}/unread/${currentChat}`).set(true);
             }
         }
 
-        // --- 彈窗顯示 (神權按鈕) ---
+        // --- 神權按鈕與彈窗 ---
         async function showUser(uid) {
             const s = await db.ref(`users/${uid}`).get(), u = s.val();
-            const iAmGod = isGod(me.uid);
+            const iAmGod = checkGod(me.uid);
             
             document.getElementById('modal-name').innerText = u.full_name;
-            document.getElementById('modal-bio').innerText = u.bio || "這個人沒寫簡介";
+            document.getElementById('modal-bio').innerText = u.bio || "無簡介";
             document.getElementById('modal-pfp').innerHTML = `<img src="${u.pfp}" style="width:100%;height:100%;object-fit:cover;">`;
-            document.getElementById('modal-sys-tag').style.display = isGod(uid) ? 'inline-block' : 'none';
+            document.getElementById('modal-sys-tag').style.display = checkGod(uid) ? 'inline-block' : 'none';
 
             const acts = document.getElementById('modal-actions'); acts.innerHTML = '';
             
-            // 私訊
             const dmBtn = document.createElement('button');
             dmBtn.style = "width:100%; padding:12px; background:var(--acc); color:#fff; border:none; border-radius:10px; font-weight:bold; cursor:pointer;";
-            dmBtn.innerText = iAmGod ? "【神權】強制開啟對話" : "開啟私訊聊天";
+            dmBtn.innerText = iAmGod ? "【官方】直接進入聊天" : "私訊聊天";
             dmBtn.onclick = async () => {
                 await db.ref(`users/${me.uid}/contacts/${uid}`).set({name: u.full_name, pfp: u.pfp});
                 await db.ref(`users/${uid}/contacts/${me.uid}`).set({name: me.full_name, pfp: me.pfp});
-                switchChat(uid, u.full_name); closeModal('user-modal');
+                switchChat(uid, u.full_name); document.getElementById('user-modal').style.display='none';
             };
             acts.appendChild(dmBtn);
 
-            // 神權：全球禁言
             if(iAmGod && uid !== me.uid) {
                 const muteBtn = document.createElement('button');
                 const isMuted = (await db.ref(`global_mutes/${uid}`).get()).exists();
                 muteBtn.style = `width:100%; padding:12px; background:${isMuted?'#444':'var(--danger)'}; color:#fff; border:none; border-radius:10px; font-weight:bold; cursor:pointer;`;
-                muteBtn.innerText = isMuted ? "解封：恢復發言權" : "神權：全球禁言";
+                muteBtn.innerText = isMuted ? "解封：恢復全球發言" : "禁止：全球發言限制";
                 muteBtn.onclick = async () => {
                     if(isMuted) await db.ref(`global_mutes/${uid}`).remove();
                     else await db.ref(`global_mutes/${uid}`).set(true);
-                    closeModal('user-modal');
+                    document.getElementById('user-modal').style.display='none';
                 };
                 acts.appendChild(muteBtn);
             }
-
             document.getElementById('user-modal').style.display = 'flex';
         }
 
-        // --- 其他原本功能 (保留) ---
+        // --- 核心導航 ---
         function tab(t) {
             document.getElementById('chat-tab').style.display = t==='chat'?'flex':'none';
             document.getElementById('me-tab').style.display = t==='me'?'block':'none';
@@ -335,7 +333,7 @@
         }
         async function switchChat(id, name) {
             currentChat = id; tab('chat');
-            document.getElementById('main-title').innerText = `私訊: ${name}`;
+            document.getElementById('main-title').innerText = `與 ${name} 聊天`;
             document.getElementById('block-btn').style.display = 'block';
             db.ref(`chats/private/${getRoomId(id)}/unread/${me.uid}`).set(false);
             listenPrivate(id);
@@ -360,7 +358,7 @@
         }
         function openPwdFlow() { document.getElementById('pwd-modal').style.display='flex'; }
         function closePwdModal() { document.getElementById('pwd-modal').style.display='none'; document.getElementById('pwd-step1').style.display='block'; document.getElementById('pwd-step2').style.display='none'; }
-        function verifyOldPw() { if(document.getElementById('old-pw-input').value === me.temp_pw){ document.getElementById('pwd-step1').style.display='none'; document.getElementById('pwd-step2').style.display='block'; }else alert("密碼錯誤"); }
+        function verifyOldPw() { if(document.getElementById('old-pw-input').value === me.temp_pw){ document.getElementById('pwd-step1').style.display='none'; document.getElementById('pwd-step2').style.display='block'; }else alert("舊密碼錯誤"); }
         async function submitNewPw() {
             const p1 = document.getElementById('new-pw1').value, p2 = document.getElementById('new-pw2').value;
             if(p1 && p1===p2){ await db.ref(`users/${me.uid}`).update({temp_pw: p1}); me.temp_pw=p1; localStorage.setItem('tacker_session', JSON.stringify(me)); alert("成功"); closePwdModal(); }
@@ -369,8 +367,7 @@
             const up = { full_name: document.getElementById('edit-name').value, bio: document.getElementById('edit-bio').value, pfp: document.getElementById('current-pfp').src };
             await db.ref(`users/${me.uid}`).update(up); me = {...me, ...up}; localStorage.setItem('tacker_session', JSON.stringify(me)); alert("儲存成功");
         }
-        function handlePfpFile(input) { const reader = new FileReader(); reader.onload = (e) => document.getElementById('current-pfp').src = e.target.result; reader.readAsDataURL(input.files[0]); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function handleFileChange(input) { const reader = new FileReader(); reader.onload = (e) => document.getElementById('current-pfp').src = e.target.result; reader.readAsDataURL(input.files[0]); }
         function logout() { localStorage.removeItem('tacker_session'); location.reload(); }
     </script>
 </body>
