@@ -1,204 +1,276 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tacker Ultimate | FR Tech</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, update, get, push, remove, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-const firebaseConfig = { apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw", authDomain: "tacker-ebc5a.firebaseapp.com", databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com", projectId: "tacker-ebc5a", storageBucket: "tacker-ebc5a.firebasestorage.app", appId: "1:689763297968:web:7acf6b857fc89a17d62975" };
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-let currentUser = null;
-window.checkEntry = async () => {
-const savedID = localStorage.getItem('t_id');
-const savedPW = localStorage.getItem('t_pw');
-if (savedID && savedPW) {
-const snap = await get(ref(db, 'users/' + savedID));
-if (snap.exists() && snap.val().temp_pw === savedPW) {
-currentUser = { id: savedID, ...snap.val() };
-return enterApp();
-}}
-document.getElementById('home').style.display = 'none';
-document.getElementById('auth').style.display = 'flex';
-};
-window.doLogin = async () => {
-const id = document.getElementById('l-id').value;
-const pw = document.getElementById('l-pw').value;
-if(!id || !pw) return;
-document.getElementById('l-box').style.display = 'none';
-document.getElementById('ld').style.display = 'block';
-let p = 0;
-const bar = document.getElementById('p-b');
-const iv = setInterval(async () => {
-p += Math.random() * 20;
-if(p >= 100) {
-p = 100; clearInterval(iv);
-const s = await get(ref(db, 'users/' + id));
-if(s.exists() && s.val().temp_pw === pw) {
-localStorage.setItem('t_id', id);
-localStorage.setItem('t_pw', pw);
-currentUser = { id, ...s.val() };
-enterApp();
-} else { location.reload(); }
-} bar.style.width = p + '%';
-}, 100);
-};
-function enterApp() {
-document.getElementById('auth').style.display = 'none';
-document.getElementById('home').style.display = 'none';
-document.getElementById('app').style.display = 'flex';
-updateStatus('online');
-syncData();
-syncChat();
-syncInvites();
-}
-function updateStatus(s) { update(ref(db, 'users/' + currentUser.id), { status: s }); }
-window.searchUser = async () => {
-const targetId = document.getElementById('s-input').value;
-if(!targetId || targetId === currentUser.id) return;
-const s = await get(ref(db, 'users/' + targetId));
-if(s.exists()){
-if(confirm(`發送好友邀請給 ${s.val().full_name}？`)){
-set(ref(db, `invites/${targetId}/${currentUser.id}`), { name: currentUser.full_name, type: 'friend' });
-alert("邀請已發送");
-}} else { alert("找不到該用戶"); }
-};
-window.replyInvite = (sid, act) => {
-if(act === 'accept') {
-update(ref(db, `friends/${currentUser.id}/${sid}`), { status: 'friend' });
-update(ref(db, `friends/${sid}/${currentUser.id}`), { status: 'friend' });
-}
-remove(ref(db, `invites/${currentUser.id}/${sid}`));
-};
-window.sendMsg = () => {
-const i = document.getElementById('c-i');
-if(!i.value.trim()) return;
-push(ref(db, 'chats/global'), { uid: currentUser.id, user: currentUser.full_name, msg: i.value, ts: serverTimestamp() });
-i.value = '';
-};
-function syncChat() {
-onValue(ref(db, 'chats/global'), (s) => {
-const a = document.getElementById('c-a');
-a.innerHTML = '';
-s.forEach(c => {
-const m = c.val();
-const isMe = m.uid === currentUser.id;
-a.innerHTML += `<div class="m-b"><div class="m-p" onclick="showProfile('${m.uid}')"></div><div class="m-c"><div class="m-t"><b>${m.user}</b><small>${new Date(m.ts).toLocaleTimeString()}</small>${isMe?`<i class="fa-solid fa-trash" onclick="delMsg('${c.key}')"></i>`:''}</div><div class="m-txt">${m.msg}</div></div></div>`;
-});
-a.scrollTop = a.scrollHeight;
-});
-}
-window.delMsg = (k) => remove(ref(db, 'chats/global/' + k));
-function syncInvites() {
-onValue(ref(db, 'invites/' + currentUser.id), (s) => {
-const l = document.getElementById('i-l');
-l.innerHTML = '';
-s.forEach(c => {
-const d = c.val();
-l.innerHTML += `<div class="i-card"><div class="i-info"><b>${d.name}</b>邀請好友</div><div class="i-btns"><button onclick="replyInvite('${c.key}','accept')">同意</button><button class="rej" onclick="replyInvite('${c.key}','reject')">拒絕</button></div></div>`;
-});
-});
-}
-function syncData() {
-onValue(ref(db, 'users/' + currentUser.id), (s) => {
-const d = s.val();
-document.getElementById('u-n').innerText = d.full_name;
-document.getElementById('u-i').innerText = `#${currentUser.id}`;
-document.getElementById('c-n').innerText = d.full_name;
-document.getElementById('c-b').innerText = d.bio || "尚無自介";
-document.getElementById('c-h').style.backgroundColor = d.banner_color || '#5865f2';
-const colors = { online: '#23a559', dnd: '#f23f43', idle: '#faa61a' };
-document.getElementById('s-d').style.backgroundColor = colors[d.status] || '#80848e';
-});
-}
-</script>
-<style>
-:root { --b1: #1e1f22; --b2: #2b2d31; --b3: #313338; --acc: #5865f2; --txt: #dbdee1; }
-body, html { margin:0; padding:0; height:100%; font-family:'gg sans', sans-serif; background:#000; color:var(--txt); overflow:hidden; }
-#home { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-.e-btn { position:fixed; bottom:40px; right:40px; background:var(--acc); color:#fff; border:none; padding:12px 30px; border-radius:3px; cursor:pointer; font-weight:bold; }
-#auth { display:none; height:100vh; align-items:center; justify-content:center; }
-.a-card { background:var(--b1); padding:30px; border-radius:8px; width:300px; text-align:center; box-shadow:0 8px 24px #000; }
-.p-t { width:100%; height:6px; background:#000; border-radius:10px; margin:20px 0; overflow:hidden; }
-.p-i { width:0%; height:100%; background:#23a559; transition:0.2s; }
-#app { display:none; height:100vh; }
-.s-v { width:72px; background:#1e1f22; display:flex; flex-direction:column; align-items:center; padding-top:12px; gap:8px; }
-.s-icon { width:48px; height:48px; background:var(--b3); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; }
-.s-icon:hover { border-radius:30%; background:var(--acc); }
-.side { width:240px; background:var(--b2); display:flex; flex-direction:column; }
-.p-t-l { padding:15px; background:rgba(0,0,0,0.1); cursor:pointer; display:flex; align-items:center; gap:10px; border-bottom:1px solid #222; }
-.a-w { position:relative; width:35px; height:35px; }
-.p-p { width:35px; height:35px; background:var(--acc); border-radius:50%; }
-.s-d { width:12px; height:12px; border-radius:50%; border:2px solid var(--b2); position:absolute; bottom:-2px; right:-2px; }
-.main { flex:1; background:var(--b3); display:flex; flex-direction:column; }
-#c-a { flex:1; padding:20px; overflow-y:auto; }
-.m-b { display:flex; gap:15px; margin-bottom:15px; text-align:left; }
-.m-p { width:40px; height:40px; background:#4e5058; border-radius:50%; flex-shrink:0; cursor:pointer; }
-.m-t b { color:#fff; margin-right:5px; }
-.m-t small { color:#949ba4; font-size:12px; }
-.m-t i { margin-left:10px; color:#f23f43; cursor:pointer; opacity:0; transition:0.2s; }
-.m-b:hover i { opacity:0.6; }
-.m-txt { color:#dbdee1; margin-top:2px; word-break:break-all; }
-.i-area { padding:20px; border-top:1px solid #333; }
-.i-card { background:var(--b1); padding:10px; border-radius:5px; margin-bottom:8px; font-size:13px; }
-.i-btns { display:flex; gap:5px; margin-top:8px; }
-.i-btns button { flex:1; background:#23a559; border:none; color:#fff; padding:5px; border-radius:3px; cursor:pointer; }
-.i-btns button.rej { background:#da373c; }
-.p-pop { position:absolute; top:65px; left:80px; width:280px; background:#111; border-radius:8px; display:none; border:1px solid #333; z-index:1000; }
-.p-h { height:60px; }
-.p-b { padding:15px; pt:40px; position:relative; }
-.p-a-b { width:65px; height:65px; background:#333; border:5px solid #111; border-radius:50%; position:absolute; top:-35px; left:15px; }
-input { width:100%; background:#1e1f22; border:none; color:#fff; padding:10px; border-radius:4px; box-sizing:border-box; margin:5px 0; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tacker | FR Technology</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, update, get, push, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Firebase 核心配置 (已連接你的 Tacker 資料庫)
+        const firebaseConfig = { apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw", authDomain: "tacker-ebc5a.firebaseapp.com", databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com", projectId: "tacker-ebc5a", storageBucket: "tacker-ebc5a.firebasestorage.app", appId: "1:689763297968:web:7acf6b857fc89a17d62975" };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        let currentUser = null;
+
+        // --- 核心邏輯：自動跳轉與登入 ---
+        window.tryEntry = async () => {
+            const id = localStorage.getItem('t_id'), pw = localStorage.getItem('t_pw');
+            if (id && pw) {
+                const snap = await get(ref(db, `users/${id}`));
+                if (snap.exists() && snap.val().temp_pw === pw) {
+                    currentUser = { id, ...snap.val() };
+                    return loadApp();
+                }
+            }
+            showPage('auth-page');
+        };
+
+        window.execLogin = async () => {
+            const id = document.getElementById('l-id').value, pw = document.getElementById('l-pw').value;
+            if(!id || !pw) return alert("請輸入完整帳密");
+            document.getElementById('l-form').style.display = 'none';
+            document.getElementById('l-loader').style.display = 'block';
+            let p = 0;
+            const iv = setInterval(async () => {
+                p += Math.random() * 20;
+                if(p >= 100) {
+                    clearInterval(iv);
+                    const snap = await get(ref(db, `users/${id}`));
+                    if(snap.exists() && snap.val().temp_pw === pw) {
+                        localStorage.setItem('t_id', id); localStorage.setItem('t_pw', pw);
+                        currentUser = { id, ...snap.val() };
+                        loadApp();
+                    } else { alert("驗證失敗"); location.reload(); }
+                } document.getElementById('p-bar').style.width = p + '%';
+            }, 80);
+        };
+
+        // --- 主應用程序啟動 ---
+        function loadApp() {
+            showPage('main-app');
+            update(ref(db, `users/${currentUser.id}`), { status: 'online' });
+            syncProfile();
+            syncMessages();
+            syncFriends();
+        }
+
+        // --- 社交功能：ID 搜尋與好友邀請 ---
+        window.sendFriendRequest = async () => {
+            const targetId = document.getElementById('search-id').value;
+            if(!targetId || targetId === currentUser.id) return;
+            const targetSnap = await get(ref(db, `users/${targetId}`));
+            if(targetSnap.exists()){
+                set(ref(db, `invites/${targetId}/${currentUser.id}`), { 
+                    from: currentUser.full_name,
+                    ts: serverTimestamp() 
+                });
+                alert("已發送邀請！");
+                document.getElementById('search-id').value = '';
+            } else alert("找不到該 ID");
+        };
+
+        window.handleInvite = async (senderId, action) => {
+            if(action === 'accept') {
+                await update(ref(db, `friends/${currentUser.id}/${senderId}`), { status: 'friend' });
+                await update(ref(db, `friends/${senderId}/${currentUser.id}`), { status: 'friend' });
+            }
+            remove(ref(db, `invites/${currentUser.id}/${senderId}`)); // 拒絕或接受後消失
+        };
+
+        // --- 聊天功能：即時同步與靠左對齊 ---
+        window.postChat = () => {
+            const input = document.getElementById('chat-input');
+            if(!input.value.trim()) return;
+            push(ref(db, 'chats/global'), {
+                uid: currentUser.id,
+                name: currentUser.full_name,
+                text: input.value,
+                ts: serverTimestamp()
+            });
+            input.value = '';
+        };
+
+        function syncMessages() {
+            onValue(ref(db, 'chats/global'), (snap) => {
+                const area = document.getElementById('chat-area');
+                area.innerHTML = '';
+                snap.forEach(child => {
+                    const m = child.val();
+                    const isMe = m.uid === currentUser.id;
+                    area.innerHTML += `
+                        <div class="msg-box">
+                            <div class="msg-pfp" onclick="showOtherProfile('${m.uid}')"></div>
+                            <div class="msg-content">
+                                <div class="msg-header">
+                                    <span class="m-u">${m.name}</span>
+                                    <span class="m-t">${new Date(m.ts).toLocaleTimeString()}</span>
+                                    ${isMe ? `<i class="fa-solid fa-trash del-btn" onclick="deleteMsg('${child.key}')"></i>` : ''}
+                                </div>
+                                <div class="m-text">${m.text}</div>
+                            </div>
+                        </div>`;
+                });
+                area.scrollTop = area.scrollHeight;
+            });
+        }
+
+        window.deleteMsg = (key) => remove(ref(db, `chats/global/${key}`));
+
+        // --- 名片系統 ---
+        function syncProfile() {
+            onValue(ref(db, `users/${currentUser.id}`), (snap) => {
+                const d = snap.val();
+                document.getElementById('side-name').innerText = d.full_name;
+                document.getElementById('side-id').innerText = `#${currentUser.id}`;
+                document.getElementById('card-name').innerText = d.full_name;
+                document.getElementById('card-bio').innerText = d.bio || "這人很懶，什麼都沒寫";
+                document.getElementById('card-banner').style.backgroundColor = d.banner_color || '#5865f2';
+                const statusColors = { online: '#23a559', dnd: '#f23f43', idle: '#faa61a' };
+                document.getElementById('status-dot').style.backgroundColor = statusColors[d.status] || '#80848e';
+            });
+        }
+
+        function syncFriends() {
+            onValue(ref(db, `invites/${currentUser.id}`), (snap) => {
+                const list = document.getElementById('inv-list');
+                list.innerHTML = '';
+                snap.forEach(child => {
+                    list.innerHTML += `
+                        <div class="inv-card">
+                            <span><b>${child.val().from}</b> 邀請你</span>
+                            <div class="inv-btns">
+                                <button onclick="handleInvite('${child.key}','accept')">✔</button>
+                                <button onclick="handleInvite('${child.key}','reject')" class="rej">✖</button>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
+
+        function showPage(id) {
+            ['home-page','auth-page','main-app'].forEach(p => document.getElementById(p).style.display = 'none');
+            document.getElementById(id).style.display = (id === 'main-app' ? 'flex' : 'flex');
+        }
+    </script>
+    <style>
+        :root { --b1: #1e1f22; --b2: #2b2d31; --b3: #313338; --acc: #5865f2; --green: #23a559; --t1: #dbdee1; --t2: #949ba4; }
+        * { box-sizing: border-box; }
+        body, html { margin:0; padding:0; height:100%; font-family: 'Helvetica Neue', sans-serif; background:#000; color:var(--t1); overflow:hidden; }
+
+        /* 入口 */
+        #home-page { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .hero-title { font-size:60px; letter-spacing:12px; color:var(--acc); margin:0; }
+        .entry-btn { position:fixed; bottom:40px; right:40px; background:var(--acc); color:#fff; border:none; padding:12px 30px; border-radius:3px; cursor:pointer; font-weight:bold; }
+
+        /* 驗證 */
+        #auth-page { display:none; height:100vh; align-items:center; justify-content:center; }
+        .auth-box { background:var(--b1); padding:30px; border-radius:8px; width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+        .p-track { width:100%; height:6px; background:#000; border-radius:10px; margin:20px 0; overflow:hidden; }
+        .p-bar { width:0%; height:100%; background:var(--green); transition:0.1s; }
+        input { width:100%; background:var(--b1); border:1px solid #333; color:#fff; padding:12px; border-radius:4px; margin:8px 0; }
+
+        /* 主程式佈局 */
+        #main-app { display:none; height:100vh; }
+        .server-rail { width:72px; background:var(--b1); display:flex; flex-direction:column; align-items:center; padding-top:12px; gap:10px; }
+        .s-icon { width:48px; height:48px; background:var(--b3); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; }
+        .s-icon:hover { border-radius:30%; background:var(--acc); }
+
+        .sidebar { width:240px; background:var(--b2); display:flex; flex-direction:column; }
+        .profile-trigger { padding:15px; background:rgba(0,0,0,0.1); display:flex; align-items:center; gap:10px; cursor:pointer; border-bottom:1px solid #222; }
+        .pfp-wrap { position:relative; width:35px; height:35px; }
+        .pfp-img { width:100%; height:100%; background:var(--acc); border-radius:50%; }
+        .s-dot { width:12px; height:12px; border:2px solid var(--b2); border-radius:50%; position:absolute; bottom:-2px; right:-2px; }
+
+        .chat-main { flex:1; background:var(--b3); display:flex; flex-direction:column; }
+        header { height:48px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 15px; font-weight:bold; }
+        #chat-area { flex:1; padding:20px; overflow-y:auto; }
+
+        /* 訊息排版 */
+        .msg-box { display:flex; gap:15px; margin-bottom:18px; text-align:left; }
+        .msg-pfp { width:40px; height:40px; background:#4e5058; border-radius:50%; flex-shrink:0; cursor:pointer; }
+        .m-u { font-weight:bold; color:#fff; }
+        .m-t { font-size:11px; color:var(--t2); margin-left:8px; }
+        .m-text { margin-top:3px; word-break:break-all; line-height:1.4; }
+        .del-btn { color:#f23f43; margin-left:10px; font-size:12px; cursor:pointer; opacity:0; }
+        .msg-box:hover .del-btn { opacity:0.6; }
+
+        /* 好友與邀請 */
+        .inv-card { background:var(--b1); padding:10px; border-radius:5px; margin-bottom:8px; font-size:13px; }
+        .inv-btns { display:flex; gap:5px; margin-top:8px; }
+        .inv-btns button { flex:1; padding:5px; border:none; border-radius:3px; cursor:pointer; background:var(--green); color:#fff; }
+        .inv-btns button.rej { background:#da373c; }
+
+        /* 名片 */
+        .pop-card { position:absolute; top:65px; left:85px; width:300px; background:#111; border-radius:8px; border:1px solid #333; z-index:1000; display:none; overflow:hidden; }
+        .c-banner { height:60px; }
+        .c-body { padding:15px; pt:40px; position:relative; }
+        .c-pfp { width:65px; height:65px; background:#333; border:5px solid #111; border-radius:50%; position:absolute; top:-35px; left:15px; }
+    </style>
 </head>
-<body onload="document.getElementById('home').style.display='flex'">
-<div id="home">
-<h1 style="font-size:60px; letter-spacing:10px; color:var(--acc); margin:0;">TACKER</h1>
-<p style="color:#666; margin-bottom:40px;">永遠・免費</p>
-<button class="e-btn" onclick="checkEntry()">進入 <i class="fa-solid fa-arrow-right"></i></button>
-</div>
-<div id="auth">
-<div class="a-card" id="l-box">
-<h2 style="color:var(--acc); margin-top:0;">身分驗證</h2>
-<input id="l-id" placeholder="使用者帳號">
-<input id="l-pw" type="password" placeholder="密碼">
-<button class="e-btn" style="position:static; width:100%; margin-top:15px;" onclick="doLogin()">登入</button>
-</div>
-<div class="a-card" id="ld" style="display:none;">
-<p>對接雲端節點...</p>
-<div class="p-t"><div id="p-b" class="p-i"></div></div>
-</div>
-</div>
-<div id="app">
-<div class="s-v">
-<div class="s-icon"><i class="fa-solid fa-fire"></i></div>
-<div style="width:32px; height:2px; background:#333; margin:5px 0;"></div>
-<div class="s-icon"><i class="fa-solid fa-plus" style="color:#23a559"></i></div>
-</div>
-<aside class="side">
-<div class="p-t-l" onclick="document.getElementById('my-p').style.display='block'">
-<div class="a-w"><div class="p-p"></div><div id="s-d" class="s-d"></div></div>
-<div style="overflow:hidden;"><div id="u-n" style="font-weight:bold; white-space:nowrap;">User</div><div id="u-i" style="font-size:11px; color:#888;">#0000</div></div>
-</div>
-<div style="flex:1; padding:15px; overflow-y:auto;">
-<div style="font-size:11px; color:#949ba4; font-weight:bold; margin-bottom:10px;">好友搜尋</div>
-<input id="s-input" placeholder="輸入 ID 並按 Enter" onkeypress="if(event.key==='Enter') searchUser()" style="font-size:12px;">
-<div style="font-size:11px; color:#949ba4; font-weight:bold; margin:20px 0 10px;">待處理邀請</div>
-<div id="i-l"></div>
-</div>
-</aside>
-<main class="main">
-<header style="height:48px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 15px; font-weight:bold;"><i class="fa-solid fa-hashtag" style="color:#80848e; margin-right:8px;"></i> 全球大廳</header>
-<div id="c-a"></div>
-<div style="padding:0 20px 20px;"><input id="c-i" placeholder="傳送訊息到 #全球大廳" onkeypress="if(event.key==='Enter') sendMsg()" style="background:#383a40; padding:12px; border-radius:8px;"></div>
-<div id="my-p" class="p-pop" onclick="this.style.display='none'">
-<div id="c-h" class="p-h"></div>
-<div class="p-b"><div class="p-a-b"></div><h3 id="c-n" style="margin:0">Name</h3><p id="c-b" style="font-size:13px; color:#b5bac1; margin:10px 0;"></p><div style="font-size:10px; color:#4e5058; border-top:1px solid #222; padding-top:10px;">點擊關閉名片</div></div>
-</div>
-</main>
-</div>
+<body onload="showPage('home-page')">
+
+    <div id="home-page">
+        <h1 class="hero-title">TACKER</h1>
+        <p style="color:#666; margin-top:10px;">永遠・免費</p>
+        <button class="entry-btn" onclick="tryEntry()">進入入口 <i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+
+    <div id="auth-page">
+        <div class="auth-box">
+            <div id="l-form">
+                <h3 style="color:var(--acc); margin-top:0;">系統驗證</h3>
+                <input id="l-id" placeholder="使用者 ID">
+                <input id="l-pw" type="password" placeholder="存取密碼">
+                <button class="entry-btn" style="position:static; width:100%; margin-top:15px;" onclick="execLogin()">登入系統</button>
+            </div>
+            <div id="l-loader" style="display:none">
+                <p>對接 Firebase 節點...</p>
+                <div class="p-track"><div id="p-bar" class="p-bar"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="server-rail">
+            <div class="s-icon"><i class="fa-solid fa-house"></i></div>
+            <div style="width:32px; height:2px; background:#333;"></div>
+            <div class="s-icon"><i class="fa-solid fa-plus" style="color:var(--green)"></i></div>
+        </div>
+
+        <aside class="sidebar">
+            <div class="profile-trigger" onclick="document.getElementById('my-card').style.display='block'">
+                <div class="pfp-wrap"><div class="pfp-img"></div><div id="status-dot" class="s-dot"></div></div>
+                <div style="overflow:hidden;"><div id="side-name" style="font-weight:bold; white-space:nowrap;">User</div><div id="side-id" style="font-size:11px; color:var(--t2);">#0000</div></div>
+            </div>
+            <div style="flex:1; padding:15px; overflow-y:auto;">
+                <p style="font-size:11px; font-weight:bold; color:var(--t2); text-transform:uppercase;">好友搜尋</p>
+                <input id="search-id" placeholder="輸入 ID 按下 Enter" onkeypress="if(event.key==='Enter') sendFriendRequest()">
+                <p style="font-size:11px; font-weight:bold; color:var(--t2); margin-top:20px; text-transform:uppercase;">待處理邀請</p>
+                <div id="inv-list"></div>
+            </div>
+        </aside>
+
+        <main class="chat-main">
+            <header><i class="fa-solid fa-hashtag" style="color:var(--t2); margin-right:10px;"></i> 全球大廳</header>
+            <div id="chat-area"></div>
+            <div style="padding:0 20px 20px;">
+                <input id="chat-input" placeholder="傳送訊息到 #全球大廳..." onkeypress="if(event.key==='Enter') postChat()" style="background:#383a40; border:none; padding:12px;">
+            </div>
+        </main>
+    </div>
+
+    <div id="my-card" class="pop-card" onclick="this.style.display='none'">
+        <div id="card-banner" class="c-banner"></div>
+        <div class="c-body">
+            <div class="c-pfp"></div>
+            <h3 id="card-name" style="margin:0">Name</h3>
+            <p id="card-bio" style="font-size:13px; color:var(--t2); margin:10px 0;"></p>
+            <div style="font-size:10px; color:#444; border-top:1px solid #222; padding-top:10px;">點擊關閉名片</div>
+        </div>
+    </div>
+
 </body>
 </html>
