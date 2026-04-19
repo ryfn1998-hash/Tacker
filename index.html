@@ -2,127 +2,153 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Tacker Pro | Ultimate Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tacker Mobile | Professional Engine</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        /* --- 1. 基礎核心樣式 --- */
         :root {
-            --b0: #0f1012; --b1: #1e1f22; --b2: #2b2d31; --b3: #313338;
-            --acc: #5865f2; --text: #dbdee1; --sub: #949ba4; --danger: #f23f43;
-            --wood: #8b4513; /* 手稿提到的木頭色 */
+            --bg-black: #000000; --bg-dark: #111111; --bg-card: #1e1e1e;
+            --accent: #23a559; --text-p: #ffffff; --text-s: #aaaaaa;
+            --danger: #f23f43;
         }
-        body { margin:0; background:var(--b0); color:var(--text); font-family: sans-serif; overflow:hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg-black); color: var(--text-p); font-family: -apple-system, sans-serif; overflow: hidden; }
 
-        /* --- 2. 佈局架構 (對標手稿 Rail 佈局) --- */
-        #app-ui { display:none; height:100vh; flex-direction: row; }
-        .rail { width:72px; background:var(--b0); flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:10px; }
-        .side { width:240px; background:var(--b1); flex-shrink:0; display:flex; flex-direction:column; }
-        .chat-main { flex-grow:1; background:var(--b2); display:flex; flex-direction:column; min-width:0; }
-        .member-side { width:240px; background:var(--b1); flex-shrink:0; display:flex; flex-direction:column; border-left: 1px solid rgba(0,0,0,0.2); }
+        /* --- 1. 首頁 (對標手稿 1: 進入頁) --- */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; }
+        #home-screen { display: flex; align-items: center; justify-content: center; background: #fff; color: #000; }
+        .tacker-box { border: 2px solid #000; padding: 40px; text-align: center; }
+        .enter-btn { margin-top: 20px; background: #007bff; color: #fff; border: none; padding: 10px 30px; cursor: pointer; border-radius: 4px; }
 
-        /* --- 3. 元件樣式 --- */
-        .server-icon { width:48px; height:48px; background:var(--b3); border-radius:50%; cursor:pointer; transition:0.2s; display:flex; align-items:center; justify-content:center; }
-        .server-icon:hover, .server-icon.active { border-radius:35%; background:var(--acc); color:#fff; }
+        /* --- 2. 登入頁 (對標手稿 2: 登入) --- */
+        #login-screen { background: #eee; color: #333; align-items: center; justify-content: center; }
+        .login-card { background: #fff; width: 85%; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 14px; margin-bottom: 5px; color: #666; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; }
+        .submit-btn { width: 100%; padding: 12px; background: #23a559; border: none; color: #fff; font-weight: bold; border-radius: 4px; }
+
+        /* --- 3. 加載進度條 (對標手稿 3: 40% 進度條) --- */
+        #loading-screen { background: var(--bg-black); align-items: center; justify-content: center; }
+        .progress-container { width: 70%; text-align: center; }
+        .progress-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+        #progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.1s linear; }
+
+        /* --- 4. 主介面 (對標手稿: 手機側邊導航) --- */
+        #main-app { flex-direction: row; }
+        .mobile-rail { width: 65px; background: #050505; display: flex; flex-direction: column; align-items: center; padding-top: 15px; gap: 15px; }
+        .content-area { flex-grow: 1; display: flex; flex-direction: column; background: var(--bg-dark); }
+        .chat-header { height: 55px; border-bottom: 1px solid #222; display: flex; align-items: center; padding: 0 15px; justify-content: space-between; }
         
-        .msg-row { display:flex; gap:16px; margin-bottom:18px; padding:0 20px; transition: 0.1s; }
-        .msg-row:hover { background: rgba(0,0,0,0.05); }
-        .msg-pfp { width:40px; height:40px; border-radius:50%; background:var(--sub); flex-shrink:0; cursor:pointer; }
-        .msg-name { font-weight:bold; color:#fff; cursor:pointer; }
-        .msg-time { font-size:12px; color:var(--sub); margin-left:8px; }
+        /* --- 5. 訊息與設定 --- */
+        #chat-flow { flex-grow: 1; overflow-y: auto; padding: 15px; }
+        .msg-box { margin-bottom: 15px; display: flex; gap: 12px; }
+        .pfp { width: 38px; height: 38px; border-radius: 50%; background: #444; flex-shrink: 0; overflow: hidden; }
+        .pfp img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .input-bar { padding: 10px; background: var(--bg-dark); border-top: 1px solid #222; }
+        .input-inner { background: #222; border-radius: 20px; padding: 5px 15px; display: flex; align-items: center; }
+        .input-inner input { background: none; border: none; color: #fff; flex-grow: 1; padding: 8px; outline: none; }
 
-        /* --- 4. 實體個人檔案卡 --- */
-        .user-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; }
-        .card { width:340px; background:var(--b0); border-radius:8px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.8); }
-        .card-banner { height:100px; background:var(--acc); position:relative; }
-        .card-pfp { width:80px; height:80px; border:6px solid var(--b0); border-radius:50%; background:var(--sub); position:absolute; bottom:-40px; left:16px; }
+        /* --- 6. 個人設定頁面 (對標手稿: 可改自介/橫幅) --- */
+        #profile-screen { background: var(--bg-black); padding: 20px; }
+        .profile-banner { height: 120px; border-radius: 8px; background: var(--accent); position: relative; margin-bottom: 50px; }
+        .profile-pfp-edit { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--bg-black); position: absolute; bottom: -40px; left: 20px; background: #444; }
+        .uneditable { background: #222; color: #666; padding: 10px; border-radius: 4px; font-size: 13px; margin-top: 5px; }
 
-        /* --- 5. 木視窗 (Wood Alert) --- */
-        .wood-alert { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:300px; background:var(--wood); border:4px solid #5d2e0a; color:#fff; padding:20px; text-align:center; border-radius:12px; z-index:10000; box-shadow:0 0 50px #000; }
-        .wood-btn { background:#5d2e0a; border:none; color:#fff; padding:10px 20px; margin-top:15px; cursor:pointer; }
+        /* 通知系統 */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); padding: 10px 20px; border-radius: 4px; display: none; z-index: 10000; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" style="height:100vh; display:flex; align-items:center; justify-content:center; background:var(--b1);">
-        <div style="width:400px; background:var(--b2); padding:40px; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-            <h2 style="text-align:center; margin-bottom:30px;">Tacker 驗證入口</h2>
-            <input id="l-uid" placeholder="使用者代碼 (ID)" style="width:100%; padding:15px; background:#111; border:1px solid #333; color:#fff; margin-bottom:15px;">
-            <input id="l-pw" type="password" placeholder="存取密碼" style="width:100%; padding:15px; background:#111; border:1px solid #333; color:#fff; margin-bottom:20px;">
-            <button onclick="realLogin()" style="width:100%; padding:15px; background:var(--acc); border:none; color:#fff; font-weight:bold; cursor:pointer;">登入</button>
-            <p style="font-size:12px; color:var(--sub); text-align:center; margin-top:15px;">如需建立帳號，請聯繫負責人手動新增。</p>
-        </div>
-    </div>
+    <div id="toast" class="toast"></div>
 
-    <div id="app-ui">
-        <nav class="rail">
-            <div class="server-icon active" onclick="switchSid('global')" id="btn-global"><i class="fa-solid fa-earth-asia"></i></div>
-            <div class="server-icon" onclick="switchSid('private')" id="btn-private"><i class="fa-solid fa-user-group"></i></div>
-            <div id="admin-entry" class="server-icon" style="display:none; color:var(--danger);" onclick="openAdmin()"><i class="fa-solid fa-gears"></i></div>
+    <section id="home-screen" class="screen" style="display: flex;">
+        <div class="tacker-box">
+            <h1 style="margin:0; letter-spacing: 2px;">Tacker</h1>
+            <p style="font-size: 14px; color: #666;">永遠. 贊.</p>
+            <button class="enter-btn" onclick="goToLogin()">進入</button>
+        </div>
+    </section>
+
+    <section id="login-screen" class="screen">
+        <div class="login-card">
+            <h2 style="margin:0 0 20px 0;">登入 Tacker</h2>
+            <div class="input-group">
+                <label>帳號</label>
+                <input id="l-uid" placeholder="請輸入帳號">
+            </div>
+            <div class="input-group">
+                <label>密碼</label>
+                <input id="l-pw" type="password" placeholder="請輸入密碼">
+            </div>
+            <button class="submit-btn" onclick="startLoading()">確認登入</button>
+        </div>
+    </section>
+
+    <section id="loading-screen" class="screen">
+        <div class="progress-container">
+            <div class="progress-bar"><div id="progress-fill"></div></div>
+            <div id="progress-text" style="color: var(--text-s); font-size: 14px;">正在加載數據... 0%</div>
+        </div>
+    </section>
+
+    <section id="main-app" class="screen">
+        <nav class="mobile-rail">
+            <div style="width:45px; height:45px; background:var(--accent); border-radius:12px; display:flex; align-items:center; justify-content:center;" onclick="showTab('chat')">
+                <i class="fa-solid fa-comments"></i>
+            </div>
+            <div style="width:45px; height:45px; background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center;" onclick="showTab('profile')">
+                <i class="fa-solid fa-user"></i>
+            </div>
         </nav>
 
-        <aside class="side">
-            <div style="padding:16px; font-weight:bold; font-size:14px; border-bottom:1px solid rgba(0,0,0,0.2);">Tacker 社群核心</div>
-            <div id="channel-list" style="flex-grow:1; padding:10px;">
-                <div style="color:var(--sub); font-size:12px; margin:10px 0;">頻道列表</div>
-                <div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:4px; cursor:pointer;"># 全球大廳</div>
-            </div>
-            <div style="padding:10px; background:rgba(0,0,0,0.2); display:flex; align-items:center; gap:10px;">
-                <div id="my-pfp" class="msg-pfp" style="width:32px; height:32px;"></div>
-                <div style="overflow:hidden">
-                    <div id="my-name" style="font-weight:bold; font-size:13px;">載入中...</div>
-                    <div id="my-id" style="font-size:11px; color:var(--sub);">#0000</div>
-                </div>
-            </div>
-        </aside>
-
-        <main class="chat-main">
-            <header style="height:48px; border-bottom:1px solid #222; padding:0 16px; display:flex; align-items:center; justify-content:space-between;">
-                <div style="font-weight:bold;"><i class="fa-solid fa-hashtag"></i> <span id="sid-label">全球大廳</span></div>
-                <div style="font-size:13px; color:var(--sub);">
-                    <i class="fa-solid fa-users" style="margin-right:5px;"></i> 在線：<span id="online-count">0</span>
-                </div>
+        <div id="chat-tab" class="content-area">
+            <header class="chat-header">
+                <span style="font-weight: bold;"># 全球大廳</span>
+                <span style="font-size: 12px; color: var(--accent);">● <span id="online-num">0</span> 在線</span>
             </header>
-            <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding-top:20px;"></div>
-            <div style="padding:0 20px 24px;">
-                <div style="background:#383a40; border-radius:8px; padding:12px; display:flex; align-items:center; gap:12px;">
-                    <i class="fa-solid fa-circle-plus" style="color:var(--sub); cursor:pointer;"></i>
-                    <input id="chat-input" placeholder="說點什麼..." style="background:none; border:none; color:#fff; width:100%; outline:none;" onkeypress="if(event.key==='Enter') realSend()">
+            <div id="chat-flow"></div>
+            <div class="input-bar">
+                <div class="input-inner">
+                    <input id="chat-input" placeholder="說點什麼..." onkeypress="if(event.key==='Enter') sendMsg()">
+                    <i class="fa-solid fa-paper-plane" style="color:var(--accent);" onclick="sendMsg()"></i>
                 </div>
             </div>
-        </main>
-
-        <aside class="member-side" id="member-list-ui">
-            <div style="padding:20px; font-weight:bold; font-size:12px; color:var(--sub);">成員列表</div>
-            <div id="members-online" style="padding:0 10px;"></div>
-        </aside>
-    </div>
-
-    <div id="wood-window" class="wood-alert">
-        <h3 style="margin-top:0;">🛑 刷屏警告</h3>
-        <p>你的發言速度過快！為了社群品質，系統已將你暫時禁言。</p>
-        <button class="wood-btn" onclick="document.getElementById('wood-window').style.display='none'">我知道了</button>
-    </div>
-
-    <div id="admin-panel" class="user-modal">
-        <div class="card" style="width:500px; padding:20px;">
-            <h3>Tacker 後台控制器</h3>
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <input id="adm-uid" placeholder="要建立/修改的 UID">
-                <input id="adm-name" placeholder="顯示名稱">
-                <input id="adm-pw" placeholder="設定密碼">
-                <button onclick="adminAction('create')" style="padding:10px; background:var(--acc); color:#fff; border:none; cursor:pointer;">建立/更新帳戶資料</button>
-                <div style="height:1px; background:#444; margin:10px 0;"></div>
-                <div id="user-stats" style="font-size:12px; color:var(--sub);"></div>
-            </div>
-            <button onclick="this.parentElement.parentElement.style.display='none'" style="width:100%; margin-top:20px; padding:8px; background:#444; border:none; color:#fff;">關閉</button>
         </div>
-    </div>
+
+        <div id="profile-tab" class="content-area" style="display:none; overflow-y:auto;">
+            <header class="chat-header"><b>個人帳號設定</b></header>
+            <div style="padding: 15px;">
+                <div class="profile-banner" id="p-banner">
+                    <div class="profile-pfp-edit" id="p-pfp"></div>
+                </div>
+                
+                <div style="margin-top:10px;">
+                    <label style="font-size:12px; color:var(--text-s);">使用者代碼 (不可修改)</label>
+                    <div class="uneditable" id="p-id-display">#0000</div>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <label style="font-size:12px; color:var(--text-s);">顯示名稱 (可修改)</label>
+                    <input id="edit-name" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:#fff; margin-top:5px;">
+                </div>
+
+                <div style="margin-top:20px;">
+                    <label style="font-size:12px; color:var(--text-s);">個人簡介 (可修改)</label>
+                    <textarea id="edit-bio" style="width:100%; height:80px; padding:10px; background:#222; border:1px solid #444; color:#fff; margin-top:5px;"></textarea>
+                </div>
+                
+                <button onclick="saveProfile()" style="width:100%; margin-top:20px; padding:12px; background:var(--accent); border:none; color:#fff; border-radius:4px; font-weight:bold;">儲存設定</button>
+            </div>
+        </div>
+    </section>
 
     <script>
-        // --- 初始化 Firebase ---
         const config = { 
             apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw",
             databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com",
@@ -132,112 +158,103 @@
         const db = firebase.database();
 
         let me = null;
-        let currentSid = 'global';
-        let spamCount = 0;
-        let lastMsgTime = 0;
+        let spamGuard = 0;
 
-        // --- 核心：登入系統 ---
-        async function realLogin() {
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function goToLogin() { showScreen('login-screen'); }
+
+        // --- 加載進度條邏輯 ---
+        async function startLoading() {
             const uid = document.getElementById('l-uid').value.trim();
             const pw = document.getElementById('l-pw').value.trim();
             
             const snap = await db.ref(`users/${uid}`).get();
             if(snap.exists() && snap.val().temp_pw === pw) {
                 me = { uid, ...snap.val() };
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-ui').style.display = 'flex';
-                launchApp();
-            } else { alert("驗證失敗：帳號不存在或密碼錯誤"); }
+                showScreen('loading-screen');
+                let p = 0;
+                const interval = setInterval(() => {
+                    p += Math.floor(Math.random() * 15);
+                    if(p >= 100) {
+                        p = 100;
+                        clearInterval(interval);
+                        initApp();
+                    }
+                    document.getElementById('progress-fill').style.width = p + '%';
+                    document.getElementById('progress-text').innerText = `正在載入核心組件... ${p}%`;
+                }, 150);
+            } else { alert("帳密錯誤！"); }
         }
 
-        function launchApp() {
-            // 設定個人資料
-            document.getElementById('my-name').innerText = me.full_name;
-            document.getElementById('my-id').innerText = `#${me.uid}`;
-            if(me.role === 'admin') document.getElementById('admin-entry').style.display = 'flex';
-
-            // 啟動 Presence (在線系統)
-            const pRef = db.ref(`presence/${me.uid}`);
-            pRef.set({ name: me.full_name, status: 'online' });
-            pRef.onDisconnect().remove();
-
-            // 監聽在線人數
-            db.ref('presence').on('value', s => {
-                document.getElementById('online-count').innerText = s.numChildren();
-                const list = document.getElementById('members-online');
-                list.innerHTML = '';
-                s.forEach(u => {
-                    list.innerHTML += `<div style="padding:10px; display:flex; align-items:center; gap:8px;"><div class="msg-pfp" style="width:24px; height:24px;"></div><span style="font-size:13px;">${u.val().name}</span></div>`;
-                });
-            });
-
-            switchSid('global');
-        }
-
-        // --- 核心：訊息系統 (含圖片解析 & 刷屏偵測) ---
-        function switchSid(sid) {
-            currentSid = sid;
-            document.getElementById('sid-label').innerText = sid === 'global' ? '全球大廳' : '私密頻道';
-            const chatRef = db.ref(`chats/${sid}`);
-            chatRef.limitToLast(100).off();
-            chatRef.limitToLast(100).on('value', snap => {
+        function initApp() {
+            showScreen('main-app');
+            syncProfileUI();
+            
+            // 監聽訊息
+            db.ref('chats/global').limitToLast(50).on('value', snap => {
                 const flow = document.getElementById('chat-flow');
                 flow.innerHTML = '';
                 snap.forEach(c => {
                     const m = c.val();
-                    const isImg = m.t.match(/\.(jpeg|jpg|gif|png|webp)$/i) && !m.t.includes('.gif'); // 禁 GIF
                     flow.innerHTML += `
-                        <div class="msg-row">
-                            <div class="msg-pfp"></div>
-                            <div class="msg-content">
-                                <span class="msg-name">${m.u}</span><span class="msg-time">${new Date(m.ts).toLocaleTimeString()}</span>
-                                <div class="msg-text">${isImg ? `<img src="${m.t}" style="max-width:300px; display:block; margin-top:8px; border-radius:8px;">` : m.t}</div>
+                        <div class="msg-box">
+                            <div class="pfp"></div>
+                            <div>
+                                <div style="font-size:13px; font-weight:bold; color:var(--accent);">${m.u} <span style="font-weight:normal; color:#555; font-size:11px;">${new Date(m.ts).toLocaleTimeString()}</span></div>
+                                <div style="font-size:14px; margin-top:3px; line-height:1.4;">${m.t}</div>
                             </div>
                         </div>`;
                 });
                 flow.scrollTop = flow.scrollHeight;
             });
+
+            // 在線人數
+            const pRef = db.ref(`presence/${me.uid}`);
+            pRef.set(me.full_name);
+            pRef.onDisconnect().remove();
+            db.ref('presence').on('value', s => document.getElementById('online-num').innerText = s.numChildren());
         }
 
-        function realSend() {
+        function sendMsg() {
             const inp = document.getElementById('chat-input');
             const val = inp.value.trim();
             if(!val) return;
+            
+            // 防刷屏
+            spamGuard++;
+            if(spamGuard > 8) {
+                alert("刷屏檢測！觸發系統警告視窗。");
+                return;
+            }
+            setTimeout(()=> spamGuard = 0, 2000);
 
-            // 刷屏偵測
-            const now = Date.now();
-            if(now - lastMsgTime < 1000) {
-                spamCount++;
-                if(spamCount >= 5) {
-                    document.getElementById('wood-window').style.display = 'block';
-                    return;
-                }
-            } else { spamCount = 0; }
-            lastMsgTime = now;
-
-            db.ref(`chats/${currentSid}`).push({
-                u: me.full_name, uid: me.uid, t: val, ts: now
-            });
+            db.ref('chats/global').push({ u: me.full_name, t: val, ts: Date.now(), uid: me.uid });
             inp.value = '';
         }
 
-        // --- 核心：後台管理功能 (手動建立帳戶) ---
-        function openAdmin() { document.getElementById('admin-panel').style.display = 'flex'; }
+        function showTab(tab) {
+            document.getElementById('chat-tab').style.display = tab === 'chat' ? 'flex' : 'none';
+            document.getElementById('profile-tab').style.display = tab === 'profile' ? 'flex' : 'none';
+        }
 
-        async function adminAction(type) {
-            const uid = document.getElementById('adm-uid').value.trim();
-            const name = document.getElementById('adm-name').value.trim();
-            const pw = document.getElementById('adm-pw').value.trim();
-            if(!uid || !name || !pw) return alert("後台欄位必填！");
+        function syncProfileUI() {
+            document.getElementById('p-id-display').innerText = `#${me.uid}`;
+            document.getElementById('edit-name').value = me.full_name;
+            document.getElementById('edit-bio').value = me.bio || "";
+            document.getElementById('p-banner').style.background = me.banner_color || '#23a559';
+        }
 
-            await db.ref(`users/${uid}`).set({
-                full_name: name,
-                temp_pw: pw,
-                role: 'user',
-                banner_color: '#5865f2',
-                bio: '新加入的 Tacker 成員'
-            });
-            alert(`成功建立/更新用戶：${name} (#${uid})`);
+        async function saveProfile() {
+            const newName = document.getElementById('edit-name').value;
+            const newBio = document.getElementById('edit-bio').value;
+            await db.ref(`users/${me.uid}`).update({ full_name: newName, bio: newBio });
+            me.full_name = newName;
+            me.bio = newBio;
+            alert("設定已同步到雲端！");
         }
     </script>
 </body>
