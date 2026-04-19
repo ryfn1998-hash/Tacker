@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker Pro | Ultimate Official Version</title>
+    <title>Tacker Pro | Stable Final</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -16,17 +16,17 @@
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
         .active { display: flex; }
 
-        /* --- 開場動畫 (嚴格還原) --- */
+        /* --- 原版開場動畫 --- */
         #s-home { background: #fff; color: #000; align-items: center; justify-content: center; text-align: center; }
         .big-tacker { font-weight: 900; transform: scale(10); opacity: 0; animation: zoomIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes zoomIn { 0% { transform: scale(12); opacity: 0; } 100% { transform: scale(1); opacity: 1; font-size: clamp(60px, 15vw, 100px); letter-spacing: 2px; } }
         .float-btn { margin-top: 50px; padding: 18px 60px; background: #000; color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; opacity: 0; transform: translateY(30px); animation: fadeUp 0.8s 1s forwards; transition: 0.3s; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 側邊欄與點擊修復 --- */
+        /* --- 佈局設定 --- */
         .rail { width: 65px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 20px; border-right: 1px solid #222; overflow-y: auto; }
         .rail div { cursor: pointer; z-index: 20; position: relative; transition: 0.2s; }
-        .rail i { pointer-events: none; } /* 點擊靈敏度修復 */
+        .rail i { pointer-events: none; }
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
         
         .dm-nav { width: 45px; height: 45px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; }
@@ -34,10 +34,16 @@
         .dm-nav.active { border-color: var(--acc); }
         .red-dot { position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: var(--danger); border-radius: 50%; border: 2px solid #000; display: none; }
 
-        /* --- 訊息樣式 --- */
+        .badge-box { display: flex; gap: 8px; }
+        .badge { background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; color: var(--sub); border: 1px solid #222; font-size: 12px; }
+        .badge b { color: var(--text); }
+
         .msg-row { display: flex; gap: 12px; margin-bottom: 22px; padding: 0 15px; }
         .pfp { width: 44px; height: 44px; border-radius: 50%; background: #222; overflow: hidden; border: 1px solid #333; flex-shrink: 0; cursor: pointer; }
         .pfp img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* 圖片訊息樣式 */
+        .msg-img { max-width: 250px; max-height: 300px; border-radius: 12px; margin-top: 8px; border: 1px solid #333; cursor: pointer; }
 
         .input-bar { padding: 12px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 12px; align-items: center; }
         .input-bar input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 12px; outline: none; }
@@ -85,7 +91,10 @@
                     <b id="main-title" style="font-size:18px;">全球大廳</b>
                     <div style="display:flex; align-items:center; gap:15px;">
                         <i id="block-btn" class="fa-solid fa-ban" style="display:none; cursor:pointer; font-size:20px; color:#444;" onclick="toggleBlock()"></i>
-                        <span id="online-count" style="font-size:12px; color:var(--acc); background:rgba(35,165,89,0.1); padding:4px 10px; border-radius:10px;">0 Online</span>
+                        <div class="badge-box">
+                            <div class="badge">用戶 <b><span id="total-count">0</span></b></div>
+                            <div class="badge">在線 <b><span id="online-count">0</span></b></div>
+                        </div>
                     </div>
                 </header>
                 <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding-top:15px;">
@@ -142,7 +151,7 @@
         firebase.initializeApp(config);
         const db = firebase.database();
 
-        // 【管理員特權清單】請在括號內填入你的 ID
+        // 官方帳號清單
         const OFFICIAL_UIDS = ['admin', 'your_id_here']; 
         let me = null, currentChat = 'global';
 
@@ -150,33 +159,54 @@
 
         function checkAuth() { const saved = localStorage.getItem('tacker_session'); if(saved){ me = JSON.parse(saved); startLoad(); }else go('s-login'); }
         function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-        
         async function auth() {
             const uid = document.getElementById('u-id').value, pw = document.getElementById('u-pw').value;
             const s = await db.ref(`users/${uid}`).get();
             if(s.exists() && s.val().temp_pw === pw) { me = {uid, ...s.val()}; localStorage.setItem('tacker_session', JSON.stringify(me)); startLoad(); } else alert("帳號或密碼錯誤");
         }
-        
         function startLoad() { go('s-load'); let p = 0; const t = setInterval(() => { p+=10; if(p>=100){ clearInterval(t); initApp(); } document.getElementById('bar').style.width = p+'%'; document.getElementById('percent').innerText = `SYNCING... ${p}%`; }, 50); }
 
         function initApp() {
             go('s-app');
             db.ref(`presence/${me.uid}`).set(true); db.ref(`presence/${me.uid}`).onDisconnect().remove();
-            db.ref('presence').on('value', s => document.getElementById('online-count').innerText = s.numChildren() + ' Online');
+            
+            // 監聽在線人數與用戶總數
+            db.ref('presence').on('value', s => document.getElementById('online-count').innerText = s.numChildren());
+            db.ref('users').on('value', s => document.getElementById('total-count').innerText = s.numChildren());
+            
             listenGlobal(); listenContacts();
             document.getElementById('current-pfp').src = me.pfp || "";
             document.getElementById('edit-name').value = me.full_name;
             document.getElementById('edit-bio').value = me.bio || "";
         }
 
-        // --- 核心導航邏輯 ---
-        function tab(t) {
-            document.getElementById('chat-tab').style.display = t==='chat'?'flex':'none';
-            document.getElementById('me-tab').style.display = t==='me'?'block':'none';
-            document.getElementById('nav-chat').style.color = t==='chat'?'var(--acc)':'#444';
-            document.getElementById('nav-me').style.color = t==='me'?'var(--acc)':'#444';
-            document.querySelectorAll('.dm-nav').forEach(el => el.classList.remove('active'));
-            if(t==='chat') { currentChat = 'global'; document.getElementById('main-title').innerText = '全球大廳'; document.getElementById('block-btn').style.display = 'none'; listenGlobal(); }
+        // --- 核心顯示邏輯 ---
+        function render(snap, path) {
+            const box = document.getElementById('messages'); box.innerHTML = '';
+            snap.forEach(d => { 
+                const m = d.val();
+                const isOff = isOfficial(m.uid);
+                const canDel = isOfficial(me.uid) || (m.uid === me.uid);
+                
+                // 判斷是否為圖片連結
+                let contentHTML = `<div style="color:#eee; font-size:15px; word-break:break-all;">${m.t}</div>`;
+                if (m.t.match(/\.(jpeg|jpg|gif|png|webp)/i) || m.t.startsWith('data:image')) {
+                    contentHTML = `<img src="${m.t}" class="msg-img" onclick="window.open('${m.t}')">`;
+                }
+
+                box.innerHTML += `
+                    <div class="msg-row">
+                        <div class="pfp" onclick="showUser('${m.uid}')"><img src="${m.pfp}"></div>
+                        <div style="flex-grow:1">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <b style="color:${isOff?'var(--official)':'var(--acc)'}; font-size:12px;">${m.u} ${isOff?'<i class="fa-solid fa-circle-check"></i>':''}</b>
+                                ${canDel ? `<i class="fa-solid fa-trash-can" style="cursor:pointer; color:#555; padding:5px; font-size:12px;" onclick="deleteMsg('${path}/${d.key}')"></i>` : ''}
+                            </div>
+                            ${contentHTML}
+                        </div>
+                    </div>`; 
+            });
+            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
         }
 
         async function switchChat(id, name) {
@@ -185,12 +215,31 @@
             document.getElementById('main-title').innerText = `與 ${name} 聊天`;
             document.querySelectorAll('.dm-nav').forEach(el => el.classList.remove('active'));
             const icon = document.getElementById(`nav-dm-${id}`); if(icon) icon.classList.add('active');
+            
+            // 修正：重載不見的問題。每次切換私聊，都重新檢查資料庫的封鎖狀態
             const bBtn = document.getElementById('block-btn'); bBtn.style.display = 'block';
-            const bSnap = await db.ref(`users/${me.uid}/blocks/${id}`).get(); bBtn.style.color = bSnap.exists()?'var(--danger)':'#444';
+            db.ref(`users/${me.uid}/blocks/${id}`).on('value', s => {
+                bBtn.style.color = s.exists() ? 'var(--danger)' : '#444';
+            });
+
             db.ref(`chats/private/${getRoomId(id)}/unread/${me.uid}`).set(false);
             listenPrivate(id);
         }
 
+        async function toggleBlock() {
+            const ref = db.ref(`users/${me.uid}/blocks/${currentChat}`);
+            const s = await ref.get();
+            if(s.exists()){ await ref.remove(); } else { await ref.set(true); }
+        }
+
+        // --- 其餘邏輯保留 ---
+        function tab(t) {
+            document.getElementById('chat-tab').style.display = t==='chat'?'flex':'none';
+            document.getElementById('me-tab').style.display = t==='me'?'block':'none';
+            document.getElementById('nav-chat').style.color = t==='chat'?'var(--acc)':'#444';
+            document.getElementById('nav-me').style.color = t==='me'?'var(--acc)':'#444';
+            if(t==='chat') { currentChat = 'global'; document.getElementById('main-title').innerText = '全球大廳'; document.getElementById('block-btn').style.display = 'none'; listenGlobal(); }
+        }
         function listenContacts() {
             db.ref(`users/${me.uid}/contacts`).on('value', snap => {
                 const list = document.getElementById('dm-list'); list.innerHTML = '';
@@ -203,39 +252,12 @@
                 });
             });
         }
-
-        // --- 訊息渲染與刪除邏輯 ---
         function getRoomId(uid) { return [me.uid, uid].sort().join('_'); }
         function listenGlobal() { db.ref('chats/global').limitToLast(40).on('value', snap => render(snap, 'chats/global')); }
         function listenPrivate(uid) { db.ref(`chats/private/${getRoomId(uid)}/msgs`).limitToLast(40).on('value', snap => render(snap, `chats/private/${getRoomId(uid)}/msgs`)); }
-
-        function render(snap, path) {
-            const box = document.getElementById('messages'); box.innerHTML = '';
-            snap.forEach(d => { 
-                const m = d.val();
-                const isOff = isOfficial(m.uid);
-                // 刪除權限：自己發的 OR 官方
-                const canDel = (m.uid === me.uid || isOfficial(me.uid));
-                box.innerHTML += `
-                    <div class="msg-row">
-                        <div class="pfp" onclick="showUser('${m.uid}')"><img src="${m.pfp}"></div>
-                        <div style="flex-grow:1">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <b style="color:${isOff?'var(--official)':'var(--acc)'}; font-size:12px;">${m.u} ${isOff?'<i class="fa-solid fa-circle-check"></i>':''}</b>
-                                ${canDel ? `<i class="fa-solid fa-trash-can" style="cursor:pointer; color:#555; padding:5px;" onclick="deleteMsg('${path}/${d.key}')"></i>` : ''}
-                            </div>
-                            <div style="color:#eee; font-size:15px; word-break:break-all;">${m.t}</div>
-                        </div>
-                    </div>`; 
-            });
-            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
-        }
-
-        async function deleteMsg(fullPath) { if(confirm("確定刪除此訊息？")) await db.ref(fullPath).remove(); }
-
+        async function deleteMsg(p) { if(confirm("確定刪除？")) await db.ref(p).remove(); }
         async function send() {
             const inp = document.getElementById('m-input'), val = inp.value.trim(); if(!val) return;
-            // 官方無視封鎖，普通人需檢查
             if(currentChat!=='global' && !isOfficial()) {
                 const bSnap = await db.ref(`users/${currentChat}/blocks/${me.uid}`).get();
                 if(bSnap.exists()) return alert("對方已封鎖你。");
@@ -245,21 +267,12 @@
             else { db.ref(`chats/private/${getRoomId(currentChat)}/msgs`).push(data); db.ref(`chats/private/${getRoomId(currentChat)}/unread/${currentChat}`).set(true); }
             inp.value = '';
         }
-
-        // --- 其他功能功能 ---
-        async function toggleBlock() {
-            const ref = db.ref(`users/${me.uid}/blocks/${currentChat}`);
-            if((await ref.get()).exists()){ await ref.remove(); document.getElementById('block-btn').style.color='#444'; }
-            else { await ref.set(true); document.getElementById('block-btn').style.color='var(--danger)'; }
-        }
-
         async function showUser(uid) {
             const s = await db.ref(`users/${uid}`).get(), u = s.val();
             document.getElementById('modal-name').innerHTML = u.full_name + (isOfficial(uid)?' <i class="fa-solid fa-circle-check" style="color:var(--official)"></i>':'');
             document.getElementById('modal-bio').innerText = u.bio || "無簡介";
             document.getElementById('modal-pfp').innerHTML = `<img src="${u.pfp}" style="width:100%;height:100%;object-fit:cover;">`;
             const btn = document.getElementById('dm-btn');
-            
             if(isOfficial()) {
                 btn.innerText = "官方強制發訊";
                 btn.onclick = async () => {
@@ -269,22 +282,20 @@
                 };
             } else {
                 btn.innerText = "發起私訊邀請";
-                btn.onclick = () => { db.ref(`dm_requests/${uid}/${me.uid}`).set({fromName:me.full_name, fromPfp:me.pfp}); alert("邀請已發送"); };
+                btn.onclick = () => { db.ref(`dm_requests/${uid}/${me.uid}`).set({fromName:me.full_name, fromPfp:me.pfp}); alert("已發送邀請"); };
             }
             document.getElementById('user-modal').style.display='flex';
         }
-
         function openPwdFlow() { document.getElementById('pwd-modal').style.display='flex'; }
         function closePwdModal() { document.getElementById('pwd-modal').style.display='none'; document.getElementById('pwd-step1').style.display='block'; document.getElementById('pwd-step2').style.display='none'; }
-        function verifyOldPw() { if(document.getElementById('old-pw-input').value === me.temp_pw){ document.getElementById('pwd-step1').style.display='none'; document.getElementById('pwd-step2').style.display='block'; }else alert("密碼錯誤"); }
+        function verifyOldPw() { if(document.getElementById('old-pw-input').value === me.temp_pw){ document.getElementById('pwd-step1').style.display='none'; document.getElementById('pwd-step2').style.display='block'; }else alert("舊密碼錯誤"); }
         async function submitNewPw() {
             const p1 = document.getElementById('new-pw1').value, p2 = document.getElementById('new-pw2').value;
-            if(p1 && p1===p2){ await db.ref(`users/${me.uid}`).update({temp_pw: p1}); me.temp_pw=p1; localStorage.setItem('tacker_session', JSON.stringify(me)); alert("修改成功"); closePwdModal(); }else alert("密碼不一致");
+            if(p1 && p1===p2){ await db.ref(`users/${me.uid}`).update({temp_pw: p1}); me.temp_pw=p1; localStorage.setItem('tacker_session', JSON.stringify(me)); alert("修改成功"); closePwdModal(); }else alert("不一致");
         }
-
         async function saveProfile() {
             const updates = { full_name: document.getElementById('edit-name').value, bio: document.getElementById('edit-bio').value };
-            await db.ref(`users/${me.uid}`).update(updates); me = {...me, ...updates}; localStorage.setItem('tacker_session', JSON.stringify(me)); alert("已儲存");
+            await db.ref(`users/${me.uid}`).update(updates); me = {...me, ...updates}; localStorage.setItem('tacker_session', JSON.stringify(me)); alert("儲存成功");
         }
         function logout() { localStorage.removeItem('tacker_session'); location.reload(); }
     </script>
