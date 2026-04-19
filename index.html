@@ -2,231 +2,181 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Tacker Pro | Client Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tacker Pro | Client</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, set, update, get, push, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        const firebaseConfig = { databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com" };
+        const firebaseConfig = { 
+            apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw",
+            authDomain: "tacker-ebc5a.firebaseapp.com",
+            databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com",
+            projectId: "tacker-ebc5a",
+            appId: "1:689763297968:web:7acf6b857fc89a17d62975"
+        };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let currentUser = null;
-        let currentChannel = 'global';
 
-        // --- 核心：身分與自動登入 ---
-        window.entry = async () => {
+        // --- 強制跳轉邏輯 ---
+        window.entryTacker = async () => {
             const id = localStorage.getItem('t_id'), pw = localStorage.getItem('t_pw');
+            
+            // 如果有舊資料，嘗試自動登入
             if (id && pw) {
                 const s = await get(ref(db, `users/${id}`));
                 if (s.exists() && s.val().temp_pw === pw) {
                     currentUser = { id, ...s.val() };
-                    return launch();
+                    return launchApp();
                 }
             }
-            document.getElementById('gate').style.display = 'none';
-            document.getElementById('auth').style.display = 'flex';
+            // 沒資料或驗證失敗，切換到登入畫面
+            document.getElementById('gate-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
         };
 
-        window.login = async () => {
-            const id = document.getElementById('l-id').value, pw = document.getElementById('l-pw').value;
+        window.doLogin = async () => {
+            const id = document.getElementById('l-id').value.trim();
+            const pw = document.getElementById('l-pw').value.trim();
+            if(!id || !pw) return alert("請輸入完整帳密");
+
             const s = await get(ref(db, `users/${id}`));
             if(s.exists() && s.val().temp_pw === pw) {
-                localStorage.setItem('t_id', id); localStorage.setItem('t_pw', pw);
+                localStorage.setItem('t_id', id);
+                localStorage.setItem('t_pw', pw);
                 currentUser = { id, ...s.val() };
-                launch();
-            } else { alert("驗證不通過"); }
+                launchApp();
+            } else { alert("驗證失敗：帳號或密碼錯誤"); }
         };
 
-        function launch() {
-            document.getElementById('auth').style.display = 'none';
-            document.getElementById('main').style.display = 'flex';
-            initData();
+        function launchApp() {
+            document.getElementById('gate-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-ui').style.display = 'flex'; // 強制顯示大廳
+            startSync();
         }
 
-        // --- 功能：即時通訊與渲染 ---
-        window.send = () => {
-            const inp = document.getElementById('msg-i');
-            if(!inp.value.trim()) return;
-            const msgRef = ref(db, `chats/${currentChannel}`);
-            push(msgRef, {
-                u: currentUser.full_name,
-                t: inp.value,
-                uid: currentUser.id,
-                ts: serverTimestamp(),
-                type: inp.value.match(/\.(jpeg|jpg|gif|png|webp)$/) ? 'img' : 'txt'
-            });
-            inp.value = '';
-            set(ref(db, `typing/${currentChannel}/${currentUser.id}`), null);
-        };
-
-        // --- 功能：好友與社交 ---
-        window.findFriend = async () => {
-            const fid = document.getElementById('f-id').value;
-            if(!fid || fid === currentUser.id) return;
-            const s = await get(ref(db, `users/${fid}`));
-            if(s.exists()){
-                set(ref(db, `invites/${fid}/${currentUser.id}`), { name: currentUser.full_name });
-                alert("邀請發送成功");
-            } else { alert("找不到此 ID"); }
-        };
-
-        // --- 實體化同步邏輯 ---
-        function initData() {
-            // 監聽訊息
-            onValue(ref(db, `chats/${currentChannel}`), s => {
-                const box = document.getElementById('chat-box'); box.innerHTML = '';
-                s.forEach(m => {
-                    const d = m.val();
-                    const isImg = d.type === 'img';
-                    box.innerHTML += `
-                        <div class="msg-item">
+        // --- 實體功能同步 ---
+        function startSync() {
+            // 聊天訊息即時渲染
+            onValue(ref(db, 'chats/global'), s => {
+                const flow = document.getElementById('chat-flow');
+                flow.innerHTML = '';
+                s.forEach(child => {
+                    const m = child.val();
+                    flow.innerHTML += `
+                        <div class="msg">
                             <div class="msg-pfp"></div>
-                            <div class="msg-cnt">
-                                <div class="msg-meta"><b>${d.u}</b> <small>${new Date(d.ts).toLocaleTimeString()}</small></div>
-                                <div class="msg-txt">${isImg ? `<img src="${d.t}" class="chat-img">` : d.t}</div>
+                            <div class="msg-content">
+                                <b>${m.u}</b> <small>${new Date(m.ts).toLocaleTimeString()}</small>
+                                <div class="msg-text">${m.t}</div>
                             </div>
                         </div>`;
                 });
-                box.scrollTop = box.scrollHeight;
+                flow.scrollTop = flow.scrollHeight;
             });
-
-            // 監聽打字狀態
-            onValue(ref(db, `typing/${currentChannel}`), s => {
-                const t = document.getElementById('typing-info');
-                let users = [];
-                s.forEach(u => { if(u.key !== currentUser.id) users.push(u.val()); });
-                t.innerText = users.length > 0 ? `${users.join(', ')} 正在輸入...` : '';
-            });
-
-            // 監聽個人資料
+            // 個人資料同步
             onValue(ref(db, `users/${currentUser.id}`), s => {
                 const d = s.val();
                 document.getElementById('u-name').innerText = d.full_name;
                 document.getElementById('u-tag').innerText = `#${currentUser.id}`;
-                document.getElementById('card-bio').innerText = d.bio || "這人還沒寫自介...";
-                document.getElementById('card-banner').style.background = d.banner || '#5865f2';
             });
         }
 
-        // 打字偵測
-        window.handleTyping = () => {
-            const inp = document.getElementById('msg-i');
-            if(inp.value) set(ref(db, `typing/${currentChannel}/${currentUser.id}`), currentUser.full_name);
-            else set(ref(db, `typing/${currentChannel}/${currentUser.id}`), null);
+        window.sendChat = () => {
+            const inp = document.getElementById('chat-input');
+            if(!inp.value.trim()) return;
+            push(ref(db, 'chats/global'), {
+                u: currentUser.full_name,
+                t: inp.value,
+                ts: serverTimestamp(),
+                uid: currentUser.id
+            });
+            inp.value = '';
         };
     </script>
     <style>
-        :root { --b1: #1e1f22; --b2: #2b2d31; --b3: #313338; --acc: #5865f2; --t1: #dbdee1; --t2: #949ba4; }
-        body, html { margin:0; padding:0; height:100%; font-family: 'Segoe UI', sans-serif; background:#000; color:var(--t1); overflow:hidden; }
-        
-        /* 入口與登入 */
-        #gate, #auth { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        .box { background:var(--b1); padding:30px; border-radius:8px; width:300px; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
-        .btn { background:var(--acc); color:#fff; border:none; padding:12px 24px; border-radius:4px; cursor:pointer; font-weight:600; transition:0.2s; }
-        .btn:hover { background:#4752c4; }
-        input { background:#1e1f22; border:1px solid #111; color:#fff; padding:12px; border-radius:4px; width:100%; box-sizing:border-box; margin:8px 0; }
+        :root { --b0: #1e1f22; --b1: #2b2d31; --b2: #313338; --acc: #5865f2; --text: #dbdee1; --sub: #949ba4; }
+        * { box-sizing: border-box; }
+        body, html { margin:0; padding:0; height:100vh; background:#000; color:var(--text); font-family: sans-serif; overflow:hidden; }
 
-        /* 主佈局 */
-        #main { display:none; height:100vh; }
-        .rail { width:72px; background:var(--b1); padding:12px 0; display:flex; flex-direction:column; align-items:center; gap:12px; }
-        .s-btn { width:48px; height:48px; background:var(--b3); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; }
-        .s-btn:hover { border-radius:35%; background:var(--acc); }
+        /* 入口螢幕 */
+        .screen { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .auth-box { background:var(--b0); padding:40px; border-radius:8px; width:380px; text-align:center; }
+        input { background:#1e1f22; border:1px solid #111; color:#fff; padding:12px; border-radius:4px; width:100%; margin:8px 0; outline:none; }
+        .btn { background:var(--acc); color:#fff; border:none; padding:12px 30px; border-radius:4px; cursor:pointer; font-weight:bold; }
 
-        .sidebar { width:240px; background:var(--b2); display:flex; flex-direction:column; }
-        .p-trigger { padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid #222; cursor:pointer; }
-        
-        .chat-v { flex:1; background:var(--b3); display:flex; flex-direction:column; }
-        header { height:48px; padding:0 15px; display:flex; align-items:center; border-bottom:1px solid #222; font-weight:bold; }
-        #chat-box { flex:1; padding:20px; overflow-y:auto; }
-        
-        /* 訊息樣式 */
-        .msg-item { display:flex; gap:15px; margin-bottom:20px; }
-        .msg-pfp { width:40px; height:40px; background:var(--acc); border-radius:50%; }
-        .msg-meta b { font-size:14px; margin-right:8px; }
-        .msg-meta small { color:var(--t2); font-size:11px; }
-        .msg-txt { margin-top:4px; line-height:1.4; }
-        .chat-img { max-width:400px; max-height:300px; border-radius:8px; margin-top:10px; border:1px solid #444; }
+        /* 大廳比例佈局 */
+        #app-ui { display:none; height:100vh; }
+        .rail { width:72px; background:var(--b0); display:flex; flex-direction:column; align-items:center; padding:12px 0; flex-shrink:0; }
+        .side { width:240px; background:var(--b1); display:flex; flex-direction:column; flex-shrink:0; }
+        .chat { flex-grow:1; background:var(--b2); display:flex; flex-direction:column; min-width:0; }
 
-        /* 輸入框區塊 */
-        .input-wrap { padding:20px; background:var(--b3); }
-        .input-box { background:#383a40; border-radius:8px; padding:10px 15px; }
-        #typing-info { font-size:12px; color:var(--t2); height:20px; margin-bottom:5px; padding-left:5px; }
+        .s-btn { width:48px; height:48px; background:var(--b2); border-radius:50%; margin-bottom:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .s-btn:hover { background:var(--acc); border-radius:35%; }
 
-        /* 名片浮窗 */
-        .pop-card { position:fixed; left:80px; bottom:80px; width:300px; background:#111; border-radius:12px; border:1px solid #333; overflow:hidden; display:none; z-index:100; }
-        .banner { height:90px; }
-        .card-body { padding:15px; pt:45px; position:relative; }
-        .card-pfp { width:70px; height:70px; background:#333; border:6px solid #111; border-radius:50%; position:absolute; top:-40px; left:15px; }
+        header { height:48px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 16px; font-weight:bold; }
+        #chat-flow { flex-grow:1; overflow-y:auto; padding:20px; }
+        .msg { display:flex; gap:16px; margin-bottom:20px; }
+        .msg-pfp { width:40px; height:40px; background:#4e5058; border-radius:50%; flex-shrink:0; }
+        .msg-content b { color:#fff; font-size:15px; margin-right:8px; }
+        .msg-content small { color:var(--sub); font-size:12px; }
+        .msg-text { margin-top:4px; line-height:1.4; }
+
+        .input-bar { padding:0 20px 24px; }
+        .input-inner { background:#383a40; border-radius:8px; padding:12px; }
+
+        .u-bar { margin-top:auto; background:rgba(0,0,0,0.2); padding:8px; display:flex; align-items:center; gap:10px; }
+        .u-pfp { width:32px; height:32px; background:var(--acc); border-radius:50%; }
     </style>
 </head>
-<body onload="document.getElementById('gate').style.display='flex'">
+<body>
 
-    <div id="gate">
-        <h1 style="color:var(--acc); letter-spacing:12px; font-size:50px;">TACKER</h1>
-        <p style="color:#555; margin-bottom:30px;">Professional Social Engine</p>
-        <button class="btn" onclick="entry()">進入客戶端</button>
+    <div id="gate-screen" class="screen">
+        <h1 style="font-size:60px; letter-spacing:10px; color:var(--acc); margin:0;">TACKER</h1>
+        <p style="color:var(--sub); margin-bottom:40px;">Professional Social Environment</p>
+        <button class="btn" onclick="entryTacker()">進入 Tacker</button>
     </div>
 
-    <div id="auth" style="display:none">
-        <div class="box">
-            <h2 style="margin-top:0">身分驗證</h2>
-            <input id="l-id" placeholder="使用者 ID">
-            <input id="l-pw" type="password" placeholder="存取密碼">
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="login()">登入系統</button>
+    <div id="login-screen" class="screen" style="display:none">
+        <div class="auth-box">
+            <h2>身分驗證</h2>
+            <input id="l-id" placeholder="Tacker ID">
+            <input id="l-pw" type="password" placeholder="密碼">
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="doLogin()">確認並登入</button>
         </div>
     </div>
 
-    <div id="main">
-        <div class="rail">
+    <div id="app-ui">
+        <nav class="rail">
             <div class="s-btn"><i class="fa-solid fa-house"></i></div>
-            <div style="width:32px; height:2px; background:#333;"></div>
-            <div class="s-btn" onclick="alert('建立功能開發中')"><i class="fa-solid fa-plus"></i></div>
-        </div>
-
-        <aside class="sidebar">
-            <div class="p-trigger" onclick="document.getElementById('card').style.display='block'">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:32px; height:32px; background:var(--acc); border-radius:50%;"></div>
-                    <div style="overflow:hidden;">
-                        <div id="u-name" style="font-weight:bold; white-space:nowrap;">載入中...</div>
-                        <div id="u-tag" style="font-size:10px; color:var(--t2);">#0000</div>
-                    </div>
-                </div>
+            <div style="width:32px; height:2px; background:#333; margin:8px 0;"></div>
+            <div class="s-btn"><i class="fa-solid fa-plus" style="color:#23a559"></i></div>
+        </nav>
+        <aside class="side">
+            <div style="padding:16px; font-weight:bold; color:var(--sub); font-size:12px;">頻道</div>
+            <div style="margin:0 8px; padding:10px; background:rgba(255,255,255,0.05); border-radius:4px; cursor:pointer;">
+                <i class="fa-solid fa-hashtag"></i> 全球大廳
             </div>
-            <div style="padding:15px; flex:1;">
-                <div style="font-size:11px; font-weight:bold; color:var(--t2); margin-bottom:8px;">搜尋使用者</div>
-                <input id="f-id" placeholder="輸入 ID 並按 Enter" onkeypress="if(event.key==='Enter') findFriend()">
-                <div style="margin-top:20px; font-size:11px; font-weight:bold; color:var(--t2);">頻道列表</div>
-                <div style="padding:8px; background:rgba(255,255,255,0.05); border-radius:4px; margin-top:5px; color:#fff; cursor:pointer;">
-                    <i class="fa-solid fa-hashtag"></i> 全球大廳
+            <div class="u-bar">
+                <div class="u-pfp"></div>
+                <div style="overflow:hidden">
+                    <div id="u-name" style="font-weight:bold; font-size:14px; white-space:nowrap;">User</div>
+                    <div id="u-tag" style="font-size:11px; color:var(--sub);">#0000</div>
                 </div>
             </div>
         </aside>
-
-        <main class="chat-v">
-            <header><i class="fa-solid fa-hashtag" style="color:var(--t2); margin-right:8px;"></i> 全球大廳</header>
-            <div id="chat-box"></div>
-            <div class="input-wrap">
-                <div id="typing-info"></div>
-                <div class="input-box">
-                    <input id="msg-i" placeholder="在 #全球大廳 發送訊息..." 
-                           oninput="handleTyping()" 
-                           onkeypress="if(event.key==='Enter') send()"
-                           style="border:none; padding:5px; margin:0; background:transparent;">
+        <main class="chat">
+            <header># 全球大廳</header>
+            <div id="chat-flow"></div>
+            <div class="input-bar">
+                <div class="input-inner">
+                    <input id="chat-input" placeholder="傳送訊息..." onkeypress="if(event.key==='Enter') sendChat()">
                 </div>
             </div>
         </main>
-    </div>
-
-    <div id="card" class="pop-card" onclick="this.style.display='none'">
-        <div id="card-banner" class="banner"></div>
-        <div class="card-body">
-            <div class="card-pfp"></div>
-            <h3 style="margin:0">負責人</h3>
-            <p id="card-bio" style="font-size:13px; color:var(--t2); margin:10px 0;"></p>
-            <div style="font-size:10px; color:#333; border-top:1px solid #222; padding-top:10px;">點擊任何地方關閉</div>
-        </div>
     </div>
 
 </body>
