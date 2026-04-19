@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Tacker | FR Tech</title>
+    <title>Tacker Pro | Client Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -12,157 +12,220 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let currentUser = null;
+        let currentChannel = 'global';
 
-        // 1. 自動跳轉：真正具備記憶功能
+        // --- 核心：身分與自動登入 ---
         window.entry = async () => {
             const id = localStorage.getItem('t_id'), pw = localStorage.getItem('t_pw');
             if (id && pw) {
                 const s = await get(ref(db, `users/${id}`));
                 if (s.exists() && s.val().temp_pw === pw) {
                     currentUser = { id, ...s.val() };
-                    return start();
+                    return launch();
                 }
             }
-            document.getElementById('home').style.display = 'none';
-            document.getElementById('login').style.display = 'flex';
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('auth').style.display = 'flex';
         };
 
-        window.doLogin = async () => {
+        window.login = async () => {
             const id = document.getElementById('l-id').value, pw = document.getElementById('l-pw').value;
             const s = await get(ref(db, `users/${id}`));
             if(s.exists() && s.val().temp_pw === pw) {
                 localStorage.setItem('t_id', id); localStorage.setItem('t_pw', pw);
                 currentUser = { id, ...s.val() };
-                start();
+                launch();
             } else { alert("驗證不通過"); }
         };
 
-        function start() {
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-            sync();
+        function launch() {
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('main').style.display = 'flex';
+            initData();
         }
 
-        // 2. 自由好友系統：純 ID 對接
-        window.sendFriend = async () => {
-            const tid = document.getElementById('s-id').value;
-            if(!tid || tid === currentUser.id) return;
-            await set(ref(db, `invites/${tid}/${currentUser.id}`), { name: currentUser.full_name });
-            alert("邀請已送出"); document.getElementById('s-id').value = '';
+        // --- 功能：即時通訊與渲染 ---
+        window.send = () => {
+            const inp = document.getElementById('msg-i');
+            if(!inp.value.trim()) return;
+            const msgRef = ref(db, `chats/${currentChannel}`);
+            push(msgRef, {
+                u: currentUser.full_name,
+                t: inp.value,
+                uid: currentUser.id,
+                ts: serverTimestamp(),
+                type: inp.value.match(/\.(jpeg|jpg|gif|png|webp)$/) ? 'img' : 'txt'
+            });
+            inp.value = '';
+            set(ref(db, `typing/${currentChannel}/${currentUser.id}`), null);
         };
 
-        window.accept = async (sid) => {
-            await update(ref(db, `friends/${currentUser.id}/${sid}`), { status: 'friend' });
-            await update(ref(db, `friends/${sid}/${currentUser.id}`), { status: 'friend' });
-            await remove(ref(db, `invites/${currentUser.id}/${sid}`));
+        // --- 功能：好友與社交 ---
+        window.findFriend = async () => {
+            const fid = document.getElementById('f-id').value;
+            if(!fid || fid === currentUser.id) return;
+            const s = await get(ref(db, `users/${fid}`));
+            if(s.exists()){
+                set(ref(db, `invites/${fid}/${currentUser.id}`), { name: currentUser.full_name });
+                alert("邀請發送成功");
+            } else { alert("找不到此 ID"); }
         };
 
-        // 3. 名片功能：只保留自介與橫幅
-        window.saveProfile = async () => {
-            const bio = document.getElementById('i-bio').value;
-            const color = document.getElementById('i-color').value;
-            await update(ref(db, `users/${currentUser.id}`), { bio, banner: color });
-            document.getElementById('modal').style.display = 'none';
-        };
+        // --- 實體化同步邏輯 ---
+        function initData() {
+            // 監聽訊息
+            onValue(ref(db, `chats/${currentChannel}`), s => {
+                const box = document.getElementById('chat-box'); box.innerHTML = '';
+                s.forEach(m => {
+                    const d = m.val();
+                    const isImg = d.type === 'img';
+                    box.innerHTML += `
+                        <div class="msg-item">
+                            <div class="msg-pfp"></div>
+                            <div class="msg-cnt">
+                                <div class="msg-meta"><b>${d.u}</b> <small>${new Date(d.ts).toLocaleTimeString()}</small></div>
+                                <div class="msg-txt">${isImg ? `<img src="${d.t}" class="chat-img">` : d.t}</div>
+                            </div>
+                        </div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            });
 
-        function sync() {
+            // 監聽打字狀態
+            onValue(ref(db, `typing/${currentChannel}`), s => {
+                const t = document.getElementById('typing-info');
+                let users = [];
+                s.forEach(u => { if(u.key !== currentUser.id) users.push(u.val()); });
+                t.innerText = users.length > 0 ? `${users.join(', ')} 正在輸入...` : '';
+            });
+
+            // 監聽個人資料
             onValue(ref(db, `users/${currentUser.id}`), s => {
                 const d = s.val();
                 document.getElementById('u-name').innerText = d.full_name;
-                document.getElementById('u-id').innerText = `#${currentUser.id}`;
-                document.getElementById('m-bio').innerText = d.bio || "使用者尚未定義自介";
-                document.getElementById('m-head').style.background = d.banner || '#5865f2';
-            });
-            onValue(ref(db, `invites/${currentUser.id}`), s => {
-                const l = document.getElementById('inv-list'); l.innerHTML = '';
-                s.forEach(c => {
-                    l.innerHTML += `<div class="inv"><b>${c.val().name}</b> <button onclick="accept('${c.key}')">✔</button></div>`;
-                });
-            });
-            onValue(ref(db, 'chats/global'), s => {
-                const c = document.getElementById('chat'); c.innerHTML = '';
-                s.forEach(m => { c.innerHTML += `<div class="msg"><b>${m.val().u}:</b> ${m.val().t}</div>`; });
-                c.scrollTop = c.scrollHeight;
+                document.getElementById('u-tag').innerText = `#${currentUser.id}`;
+                document.getElementById('card-bio').innerText = d.bio || "這人還沒寫自介...";
+                document.getElementById('card-banner').style.background = d.banner || '#5865f2';
             });
         }
 
-        window.sendMsg = () => {
-            const i = document.getElementById('msg-i');
-            if(!i.value) return;
-            push(ref(db, 'chats/global'), { u: currentUser.full_name, t: i.value });
-            i.value = '';
+        // 打字偵測
+        window.handleTyping = () => {
+            const inp = document.getElementById('msg-i');
+            if(inp.value) set(ref(db, `typing/${currentChannel}/${currentUser.id}`), currentUser.full_name);
+            else set(ref(db, `typing/${currentChannel}/${currentUser.id}`), null);
         };
     </script>
     <style>
-        :root { --b1: #1e1f22; --b2: #2b2d31; --b3: #313338; --acc: #5865f2; --t1: #dbdee1; }
-        body { margin:0; background:#000; color:var(--t1); font-family: sans-serif; overflow:hidden; }
-        #home { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        #login { display:none; height:100vh; align-items:center; justify-content:center; }
-        #app { display:none; height:100vh; }
-        .rail { width:72px; background:var(--b1); padding:15px 0; display:flex; flex-direction:column; align-items:center; gap:10px; }
-        .side { width:240px; background:var(--b2); display:flex; flex-direction:column; }
+        :root { --b1: #1e1f22; --b2: #2b2d31; --b3: #313338; --acc: #5865f2; --t1: #dbdee1; --t2: #949ba4; }
+        body, html { margin:0; padding:0; height:100%; font-family: 'Segoe UI', sans-serif; background:#000; color:var(--t1); overflow:hidden; }
+        
+        /* 入口與登入 */
+        #gate, #auth { height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .box { background:var(--b1); padding:30px; border-radius:8px; width:300px; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+        .btn { background:var(--acc); color:#fff; border:none; padding:12px 24px; border-radius:4px; cursor:pointer; font-weight:600; transition:0.2s; }
+        .btn:hover { background:#4752c4; }
+        input { background:#1e1f22; border:1px solid #111; color:#fff; padding:12px; border-radius:4px; width:100%; box-sizing:border-box; margin:8px 0; }
+
+        /* 主佈局 */
+        #main { display:none; height:100vh; }
+        .rail { width:72px; background:var(--b1); padding:12px 0; display:flex; flex-direction:column; align-items:center; gap:12px; }
+        .s-btn { width:48px; height:48px; background:var(--b3); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; }
+        .s-btn:hover { border-radius:35%; background:var(--acc); }
+
+        .sidebar { width:240px; background:var(--b2); display:flex; flex-direction:column; }
+        .p-trigger { padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid #222; cursor:pointer; }
+        
         .chat-v { flex:1; background:var(--b3); display:flex; flex-direction:column; }
-        .pfp-area { padding:15px; background:rgba(0,0,0,0.2); cursor:pointer; }
-        .btn { background:var(--acc); color:#fff; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; }
-        input { background:#111; border:1px solid #333; color:#fff; padding:10px; border-radius:4px; width:100%; margin:5px 0; }
-        #chat { flex:1; padding:20px; overflow-y:auto; }
-        .msg { margin-bottom:10px; }
-        .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
-        .inv { background:var(--b1); padding:10px; margin-top:5px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; }
+        header { height:48px; padding:0 15px; display:flex; align-items:center; border-bottom:1px solid #222; font-weight:bold; }
+        #chat-box { flex:1; padding:20px; overflow-y:auto; }
+        
+        /* 訊息樣式 */
+        .msg-item { display:flex; gap:15px; margin-bottom:20px; }
+        .msg-pfp { width:40px; height:40px; background:var(--acc); border-radius:50%; }
+        .msg-meta b { font-size:14px; margin-right:8px; }
+        .msg-meta small { color:var(--t2); font-size:11px; }
+        .msg-txt { margin-top:4px; line-height:1.4; }
+        .chat-img { max-width:400px; max-height:300px; border-radius:8px; margin-top:10px; border:1px solid #444; }
+
+        /* 輸入框區塊 */
+        .input-wrap { padding:20px; background:var(--b3); }
+        .input-box { background:#383a40; border-radius:8px; padding:10px 15px; }
+        #typing-info { font-size:12px; color:var(--t2); height:20px; margin-bottom:5px; padding-left:5px; }
+
+        /* 名片浮窗 */
+        .pop-card { position:fixed; left:80px; bottom:80px; width:300px; background:#111; border-radius:12px; border:1px solid #333; overflow:hidden; display:none; z-index:100; }
+        .banner { height:90px; }
+        .card-body { padding:15px; pt:45px; position:relative; }
+        .card-pfp { width:70px; height:70px; background:#333; border:6px solid #111; border-radius:50%; position:absolute; top:-40px; left:15px; }
     </style>
 </head>
-<body onload="document.getElementById('home').style.display='flex'">
+<body onload="document.getElementById('gate').style.display='flex'">
 
-    <div id="home">
-        <h1 style="color:var(--acc); letter-spacing:10px;">TACKER</h1>
-        <button class="btn" style="position:fixed; bottom:40px; right:40px;" onclick="entry()">進入 Tacker</button>
+    <div id="gate">
+        <h1 style="color:var(--acc); letter-spacing:12px; font-size:50px;">TACKER</h1>
+        <p style="color:#555; margin-bottom:30px;">Professional Social Engine</p>
+        <button class="btn" onclick="entry()">進入客戶端</button>
     </div>
 
-    <div id="login">
-        <div style="background:var(--b1); padding:30px; border-radius:8px; width:300px;">
-            <h3 style="margin-top:0;">身分驗證</h3>
-            <input id="l-id" placeholder="Tacker ID">
-            <input id="l-pw" type="password" placeholder="Password">
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="doLogin()">登入</button>
+    <div id="auth" style="display:none">
+        <div class="box">
+            <h2 style="margin-top:0">身分驗證</h2>
+            <input id="l-id" placeholder="使用者 ID">
+            <input id="l-pw" type="password" placeholder="存取密碼">
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="login()">登入系統</button>
         </div>
     </div>
 
-    <div id="app">
+    <div id="main">
         <div class="rail">
-            <div style="width:48px; height:48px; background:var(--acc); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="alert('建立功能開發中')"><i class="fa-solid fa-plus"></i></div>
+            <div class="s-btn"><i class="fa-solid fa-house"></i></div>
+            <div style="width:32px; height:2px; background:#333;"></div>
+            <div class="s-btn" onclick="alert('建立功能開發中')"><i class="fa-solid fa-plus"></i></div>
         </div>
-        <aside class="side">
-            <div class="pfp-area" onclick="document.getElementById('modal').style.display='flex'">
-                <b id="u-name">Loading...</b><br><small id="u-id">#0000</small>
+
+        <aside class="sidebar">
+            <div class="p-trigger" onclick="document.getElementById('card').style.display='block'">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; background:var(--acc); border-radius:50%;"></div>
+                    <div style="overflow:hidden;">
+                        <div id="u-name" style="font-weight:bold; white-space:nowrap;">載入中...</div>
+                        <div id="u-tag" style="font-size:10px; color:var(--t2);">#0000</div>
+                    </div>
+                </div>
             </div>
             <div style="padding:15px; flex:1;">
-                <p style="font-size:11px; font-weight:bold; color:#888;">搜尋好友</p>
-                <input id="s-id" placeholder="輸入 ID 並按 Enter" onkeypress="if(event.key==='Enter') sendFriend()">
-                <p style="font-size:11px; font-weight:bold; color:#888; margin-top:20px;">好友請求</p>
-                <div id="inv-list"></div>
+                <div style="font-size:11px; font-weight:bold; color:var(--t2); margin-bottom:8px;">搜尋使用者</div>
+                <input id="f-id" placeholder="輸入 ID 並按 Enter" onkeypress="if(event.key==='Enter') findFriend()">
+                <div style="margin-top:20px; font-size:11px; font-weight:bold; color:var(--t2);">頻道列表</div>
+                <div style="padding:8px; background:rgba(255,255,255,0.05); border-radius:4px; margin-top:5px; color:#fff; cursor:pointer;">
+                    <i class="fa-solid fa-hashtag"></i> 全球大廳
+                </div>
             </div>
         </aside>
+
         <main class="chat-v">
-            <header style="height:48px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 15px;"># 全球大廳</header>
-            <div id="chat"></div>
-            <div style="padding:20px;"><input id="msg-i" placeholder="在 #全球大廳 聊天..." onkeypress="if(event.key==='Enter') sendMsg()"></div>
+            <header><i class="fa-solid fa-hashtag" style="color:var(--t2); margin-right:8px;"></i> 全球大廳</header>
+            <div id="chat-box"></div>
+            <div class="input-wrap">
+                <div id="typing-info"></div>
+                <div class="input-box">
+                    <input id="msg-i" placeholder="在 #全球大廳 發送訊息..." 
+                           oninput="handleTyping()" 
+                           onkeypress="if(event.key==='Enter') send()"
+                           style="border:none; padding:5px; margin:0; background:transparent;">
+                </div>
+            </div>
         </main>
     </div>
 
-    <div id="modal" class="modal">
-        <div style="background:var(--b2); width:350px; border-radius:8px; overflow:hidden;">
-            <div id="m-head" style="height:80px;"></div>
-            <div style="padding:20px;">
-                <h3 style="margin:0 0 10px 0;">個人設定</h3>
-                <p id="m-bio" style="font-size:13px; color:#aaa; margin-bottom:15px;"></p>
-                <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
-                <label style="font-size:12px;">修改自我介紹</label><input id="i-bio">
-                <label style="font-size:12px;">橫幅顏色 (HEX)</label><input id="i-color" placeholder="#5865f2">
-                <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button class="btn" style="flex:1" onclick="saveProfile()">儲存</button>
-                    <button class="btn" style="flex:1; background:#444;" onclick="document.getElementById('modal').style.display='none'">關閉</button>
-                </div>
-            </div>
+    <div id="card" class="pop-card" onclick="this.style.display='none'">
+        <div id="card-banner" class="banner"></div>
+        <div class="card-body">
+            <div class="card-pfp"></div>
+            <h3 style="margin:0">負責人</h3>
+            <p id="card-bio" style="font-size:13px; color:var(--t2); margin:10px 0;"></p>
+            <div style="font-size:10px; color:#333; border-top:1px solid #222; padding-top:10px;">點擊任何地方關閉</div>
         </div>
     </div>
 
