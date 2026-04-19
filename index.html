@@ -132,7 +132,7 @@
                     <textarea id="edit-bio" style="width:100%; height:80px; background:#1e1e1e; border:1px solid #333; color:#fff; padding:14px; border-radius:10px; margin-top:8px; resize:none;"></textarea>
                 </div>
 
-                <button onclick="saveProfile()" style="width:100%; padding:16px; background:var(--acc); border:none; color:#fff; font-weight:bold; border-radius:12px; font-size:16px;">儲存所有變更</button>
+                <button id="save-btn" onclick="saveProfile()" style="width:100%; padding:16px; background:var(--acc); border:none; color:#fff; font-weight:bold; border-radius:12px; font-size:16px; cursor:pointer;">儲存所有變更</button>
                 <button onclick="logout()" style="width:100%; padding:16px; background:transparent; border:1px solid #333; color:var(--danger); font-weight:bold; border-radius:12px; margin-top:15px; cursor:pointer;">登出目前帳號</button>
             </main>
         </div>
@@ -159,9 +159,10 @@
         };
         firebase.initializeApp(config);
         const db = firebase.database();
-        let me = null; let pendingImg = "";
+        let me = null; 
+        let pendingImg = ""; 
+        let tempPfpData = ""; // 用於暫存新選取的頭像
 
-        // --- 自動登入邏輯 ---
         function checkAuth() {
             const saved = localStorage.getItem('tacker_session');
             if(saved) {
@@ -216,8 +217,9 @@
                     document.getElementById('preview-img').src = pendingImg;
                     document.getElementById('upload-preview').style.display = 'flex';
                 } else {
+                    // 設定預覽圖
                     document.getElementById('current-pfp').src = e.target.result;
-                    me.temp_pfp_data = e.target.result;
+                    tempPfpData = e.target.result; // 存入暫存變數
                 }
             };
             reader.readAsDataURL(file);
@@ -233,11 +235,9 @@
             db.ref(`presence/${me.uid}`).set(true);
             db.ref(`presence/${me.uid}`).onDisconnect().remove();
             
-            // 同步大廳資訊 (在線/總用戶)
             db.ref('presence').on('value', s => document.getElementById('online-count').innerText = s.numChildren());
             db.ref('users').on('value', s => document.getElementById('total-count').innerText = s.numChildren());
 
-            // 公告監聽
             db.ref('announcements').limitToLast(1).on('value', snap => {
                 const area = document.getElementById('official-ann');
                 area.innerHTML = '';
@@ -247,7 +247,6 @@
                 });
             });
 
-            // 訊息監聽
             db.ref('chats/global').limitToLast(40).on('value', snap => {
                 const box = document.getElementById('messages'); box.innerHTML = '';
                 snap.forEach(d => {
@@ -275,21 +274,58 @@
             document.getElementById('edit-bio').value = me.bio || "";
         }
 
+        // --- 修復後的儲存函數 ---
         async function saveProfile() {
+            const btn = document.getElementById('save-btn');
             const n = document.getElementById('edit-name').value.trim();
             const b = document.getElementById('edit-bio').value.trim();
             const p = document.getElementById('edit-pw').value.trim();
-            if(!n) return;
+            const pfpImg = document.getElementById('current-pfp');
 
-            const up = { full_name: n, bio: b };
-            if(p) { up.temp_pw = p; me.temp_pw = p; } // 改密碼邏輯
-            if(me.temp_pfp_data) { up.pfp = me.temp_pfp_data; me.pfp = me.temp_pfp_data; }
+            if(!n) return alert("名稱不能為空");
 
-            await db.ref(`users/${me.uid}`).update(up);
-            me.full_name = n; me.bio = b;
-            localStorage.setItem('tacker_session', JSON.stringify(me));
-            alert("✅ 同步儲存成功！");
-            document.getElementById('edit-pw').value = ""; // 清空密碼欄
+            // 鎖定按鈕
+            btn.innerText = "正在同步...";
+            btn.disabled = true;
+
+            try {
+                let updates = {
+                    full_name: n,
+                    bio: b
+                };
+
+                // 密碼同步：有輸入才改
+                if(p) updates.temp_pw = p;
+
+                // 頭像同步：優先使用暫存資料，其次使用目前畫面的 src
+                if(tempPfpData) {
+                    updates.pfp = tempPfpData;
+                } else if (pfpImg.src && pfpImg.src.startsWith('data:image')) {
+                    updates.pfp = pfpImg.src;
+                }
+
+                // 寫入雲端
+                await db.ref(`users/${me.uid}`).update(updates);
+
+                // 更新本地記憶體
+                me.full_name = n;
+                me.bio = b;
+                if(updates.pfp) me.pfp = updates.pfp;
+                if(updates.temp_pw) me.temp_pw = updates.temp_pw;
+
+                // 更新永久儲存
+                localStorage.setItem('tacker_session', JSON.stringify(me));
+                
+                alert("✅ 個人資料與頭像已同步成功！");
+                document.getElementById('edit-pw').value = ""; // 清空密碼欄
+                tempPfpData = ""; // 清空暫存
+            } catch (e) {
+                console.error(e);
+                alert("儲存失敗，可能圖片太大或網路不穩");
+            } finally {
+                btn.innerText = "儲存所有變更";
+                btn.disabled = false;
+            }
         }
 
         function send() {
