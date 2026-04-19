@@ -3,65 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker</title>
+    <title>Tacker Pro | Admin Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #000; --card: #111; --acc: #23a559; --official: #f1c40f; --text: #fff; --sub: #888; }
-        * { box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-        body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; }
+        :root { --bg: #000; --card: #111; --acc: #23a559; --official: #f1c40f; --text: #fff; --sub: #888; --danger: #f23f43; }
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { margin:0; background:var(--bg); color:var(--text); overflow:hidden; }
 
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; }
         .active { display: flex; }
 
-        /* 進度條樣式 */
-        #progress-box { width: 70%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
-        #bar { width: 0%; height: 100%; background: var(--acc); transition: 0.1s; }
-
-        /* 單一社群版導航 */
-        .rail { width: 65px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 20px; }
+        /* 導航與主區 */
+        .rail { width: 60px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 20px; border-right: 1px solid #222; }
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
+
+        /* 訊息樣式 */
+        .msg-row { display: flex; gap: 12px; margin-bottom: 20px; padding: 0 15px; position: relative; }
+        .pfp { width: 42px; height: 42px; border-radius: 50%; background: #333; flex-shrink: 0; overflow: hidden; cursor: pointer; }
+        .pfp img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* 公告樣式 */
-        .ann-card { background: rgba(241, 196, 15, 0.1); border-left: 4px solid var(--official); padding: 10px; margin-bottom: 15px; border-radius: 4px; }
-        .official-tag { background: var(--official); color: #000; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 5px; font-weight: bold; }
+        /* 圖片訊息預覽 */
+        .msg-img { max-width: 250px; max-height: 350px; border-radius: 8px; margin-top: 8px; cursor: zoom-in; display: block; }
         
-        .chat-flow { flex-grow: 1; overflow-y: auto; padding: 15px; }
-        .msg { margin-bottom: 15px; }
-        .input-area { padding: 15px; background: #0a0a0a; border-top: 1px solid #222; display: flex; gap: 10px; }
-        input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 8px; outline: none; }
+        /* 刪除按鈕 */
+        .del-btn { position: absolute; right: 15px; top: 0; color: #444; font-size: 14px; cursor: pointer; padding: 5px; }
+        .del-btn:hover { color: var(--danger); }
+
+        .input-bar { padding: 15px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 10px; align-items: center; }
+        .input-bar input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 8px; }
+        .img-icon { color: var(--sub); font-size: 20px; cursor: pointer; }
+        .img-icon.active { color: var(--acc); }
     </style>
 </head>
 <body>
 
-    <section id="s-home" class="screen active" style="background:#fff; color:#000; align-items:center; justify-content:center;">
-        <div style="border:2px solid #000; padding:50px; text-align:center;">
-            <h1>Tacker</h1><p>永遠.FR.</p>
-            <button onclick="go('s-login')" style="background:#007bff; color:#fff; border:none; padding:10px 40px; border-radius:4px;">進入</button>
+    <section id="s-login" class="screen active" style="align-items:center; justify-content:center; background:#eee;">
+        <div style="background:#fff; width:300px; padding:25px; border-radius:8px; color:#333;">
+            <h2 style="margin:0 0 15px;">登入 Tacker</h2>
+            <input id="u-id" placeholder="帳號" style="width:100%; padding:10px; margin-bottom:10px;">
+            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:10px;">
+            <button onclick="auth()" style="width:100%; padding:10px; background:var(--acc); color:#fff; border:none; margin-top:10px; border-radius:4px;">進入</button>
         </div>
-    </section>
-
-    <section id="s-login" class="screen" style="background:#eee; color:#333; align-items:center; justify-content:center;">
-        <div style="background:#fff; width:300px; padding:25px; border-radius:8px;">
-            <h2>登入</h2>
-            <input id="u-id" placeholder="帳號" style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ddd;">
-            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; margin-bottom:15px; padding:10px; border:1px solid #ddd;">
-            <button onclick="auth()" style="width:100%; padding:10px; background:var(--acc); color:#fff; border:none; border-radius:4px;">確認</button>
-        </div>
-    </section>
-
-    <section id="s-load" class="screen" style="align-items:center; justify-content:center;">
-        <div id="progress-box"><div id="bar"></div></div>
-        <div id="percent" style="font-size:12px; color:var(--sub);">正在連線至大廳... 0%</div>
     </section>
 
     <section id="s-app" class="screen">
         <div style="display:flex; height:100%;">
             <nav class="rail">
-                <div onclick="tab('chat')" style="color:var(--acc); font-size:20px;"><i class="fa-solid fa-comments"></i></div>
-                <div onclick="tab('me')" style="color:#444; font-size:20px;"><i class="fa-solid fa-user-gear"></i></div>
+                <div onclick="tab('chat')" style="color:var(--acc);"><i class="fa-solid fa-comments"></i></div>
+                <div onclick="tab('me')"><i class="fa-solid fa-user-gear"></i></div>
             </nav>
 
             <main id="chat-tab" class="main">
@@ -69,27 +61,21 @@
                     <b>全球大廳</b>
                     <span style="font-size:12px; color:var(--acc);">● <span id="online-count">0</span> 在線</span>
                 </header>
+                <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding-top:15px;"></div>
                 
-                <div id="chat-flow" class="chat-flow">
-                    <div id="official-ann"></div>
-                    <div id="messages"></div>
-                </div>
-
-                <div class="input-area">
-                    <input id="m-input" placeholder="說點什麼...">
-                    <button onclick="send()" style="background:var(--acc); border:none; color:#fff; width:45px; border-radius:8px;"><i class="fa-solid fa-paper-plane"></i></button>
+                <div class="input-bar">
+                    <i id="img-toggle" class="fa-solid fa-image img-icon" onclick="toggleImgMode()"></i>
+                    <input id="m-input" placeholder="說點什麼..." onkeypress="if(event.key==='Enter') send()">
+                    <button onclick="send()" style="background:var(--acc); border:none; color:#fff; padding:8px 15px; border-radius:8px;"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </main>
 
             <main id="me-tab" class="main" style="display:none; padding:20px;">
                 <h3>帳戶設定</h3>
-                <label style="font-size:12px; color:var(--sub);">顯示名稱</label>
-                <input id="edit-name" style="width:100%; background:#222; border:1px solid #333; margin:8px 0 20px 0;">
-                
-                <label style="font-size:12px; color:var(--sub);">修改密碼</label>
-                <input id="edit-pw" type="password" placeholder="留空則不修改" style="width:100%; background:#222; border:1px solid #333; margin-top:8px;">
-                
-                <button onclick="saveProfile()" style="width:100%; margin-top:30px; padding:12px; background:var(--acc); border:none; color:#fff; font-weight:bold; border-radius:8px;">儲存修改</button>
+                <input id="edit-pfp" placeholder="頭像圖片連結">
+                <input id="edit-name" placeholder="顯示名稱">
+                <textarea id="edit-bio" placeholder="個人自介"></textarea>
+                <button onclick="saveProfile()" style="width:100%; padding:12px; background:var(--acc); border:none; color:#fff; margin-top:20px;">儲存設定</button>
             </main>
         </div>
     </section>
@@ -103,92 +89,93 @@
         firebase.initializeApp(config);
         const db = firebase.database();
         let me = null;
-
-        function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+        let isImgMode = false;
 
         async function auth() {
             const uid = document.getElementById('u-id').value.trim();
             const pw = document.getElementById('u-pw').value.trim();
             const s = await db.ref(`users/${uid}`).get();
-            if(s.exists() && s.val().temp_pw === pw) { me = { uid, ...s.val() }; startLoad(); }
-            else { alert("驗證失敗"); }
+            if(s.exists() && s.val().temp_pw === pw) { me = { uid, ...s.val() }; initApp(); }
+            else alert("驗證失敗");
         }
 
-        function startLoad() {
-            go('s-load');
-            let p = 0;
-            const t = setInterval(() => {
-                p += 10;
-                if(p >= 100) { clearInterval(t); initApp(); }
-                document.getElementById('bar').style.width = p + '%';
-                document.getElementById('percent').innerText = `連線中... ${p}%`;
-            }, 50);
+        function toggleImgMode() {
+            isImgMode = !isImgMode;
+            const btn = document.getElementById('img-toggle');
+            const inp = document.getElementById('m-input');
+            btn.className = isImgMode ? "fa-solid fa-circle-xmark img-icon active" : "fa-solid fa-image img-icon";
+            inp.placeholder = isImgMode ? "請貼上圖片網址..." : "說點什麼...";
+            if(!isImgMode) btn.style.color = "#888";
         }
 
         function initApp() {
-            go('s-app');
+            document.getElementById('s-login').classList.remove('active');
+            document.getElementById('s-app').classList.add('active');
             db.ref(`presence/${me.uid}`).set(true);
-            db.ref(`presence/${me.uid}`).onDisconnect().remove();
-            db.ref('presence').on('value', s => document.getElementById('online-count').innerText = s.numChildren());
-
-            // 監聽公告
-            db.ref('announcements').limitToLast(1).on('value', snap => {
-                const annArea = document.getElementById('official-ann');
-                annArea.innerHTML = '';
-                snap.forEach(d => {
-                    annArea.innerHTML = `<div class="ann-card"><b>Tacker官方公告</b><br><span style="font-size:14px;">${d.val().t}</span></div>`;
-                });
-            });
-
-            // 監聽訊息
-            db.ref('chats/global').limitToLast(40).on('value', snap => {
-                const mBox = document.getElementById('messages'); mBox.innerHTML = '';
+            
+            // 監聽訊息流與刪除權限
+            db.ref('chats/global').limitToLast(50).on('value', snap => {
+                const flow = document.getElementById('chat-flow');
+                flow.innerHTML = '';
                 snap.forEach(d => {
                     const m = d.val();
+                    const key = d.key;
                     const isOfficial = m.u === "Tacker官方";
-                    mBox.innerHTML += `<div class="msg">
-                        <span style="font-weight:bold; color:${isOfficial ? 'var(--official)' : 'var(--acc)'};">${m.u}</span>
-                        ${isOfficial ? '<span class="official-tag">官方</span>' : ''}
-                        <div style="font-size:14px; margin-top:4px;">${m.t}</div>
-                    </div>`;
+                    const isMine = m.uid === me.uid;
+                    const canDelete = isMine || (me.full_name === "Tacker官方");
+
+                    flow.innerHTML += `
+                        <div class="msg-row">
+                            <div class="pfp"><img src="${m.pfp || ''}"></div>
+                            <div style="flex-grow:1">
+                                <div class="msg-meta">
+                                    <b style="color:${isOfficial?'var(--official)':'var(--acc)'};">${m.u}</b>
+                                    <span class="msg-time">${new Date(m.ts).toLocaleTimeString()}</span>
+                                </div>
+                                ${m.type === 'img' ? `<img src="${m.t}" class="msg-img">` : `<div style="font-size:15px; color:#ddd;">${m.t}</div>`}
+                            </div>
+                            ${canDelete ? `<i class="fa-solid fa-trash-can del-btn" onclick="deleteMsg('${key}')"></i>` : ''}
+                        </div>`;
                 });
-                document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
+                flow.scrollTop = flow.scrollHeight;
             });
-            
-            document.getElementById('edit-name').value = me.full_name;
         }
 
         function send() {
-            const val = document.getElementById('m-input').value.trim();
+            const inp = document.getElementById('m-input');
+            const val = inp.value.trim();
             if(!val) return;
-            
-            // 官方帳號檢查邏輯
-            if(val.startsWith("/ann ") && me.full_name === "Tacker官方") {
-                db.ref('announcements').push({ t: val.replace("/ann ", ""), ts: Date.now() });
-            } else {
-                db.ref('chats/global').push({ u: me.full_name, t: val, ts: Date.now() });
-            }
-            document.getElementById('m-input').value = '';
+
+            const msgData = {
+                u: me.full_name,
+                uid: me.uid,
+                pfp: me.pfp || '',
+                t: val,
+                type: isImgMode ? 'img' : 'text',
+                ts: Date.now()
+            };
+
+            db.ref('chats/global').push(msgData);
+            inp.value = '';
+            if(isImgMode) toggleImgMode();
         }
 
+        // --- 實體化刪除邏輯 ---
+        async function deleteMsg(key) {
+            if(confirm("確定要刪除這條訊息嗎？")) {
+                await db.ref(`chats/global/${key}`).remove();
+            }
+        }
+
+        // 其餘 saveProfile, tab 功能維持...
         async function saveProfile() {
-            let newName = document.getElementById('edit-name').value.trim();
-            const newPw = document.getElementById('edit-pw').value.trim();
-
-            // 禁用字檢查
-            if(newName.includes("官方") || newName.toLowerCase().includes("tacker")) {
-                alert("禁止使用包含「Tacker官方」或「Tacker」的名字！");
-                return;
-            }
-
-            let updates = { full_name: newName };
-            if(newPw) updates.temp_pw = newPw;
-
-            await db.ref(`users/${me.uid}`).update(updates);
-            me.full_name = newName;
-            alert("資料已更新！");
+            const n = document.getElementById('edit-name').value;
+            const b = document.getElementById('edit-bio').value;
+            const p = document.getElementById('edit-pfp').value;
+            await db.ref(`users/${me.uid}`).update({ full_name:n, bio:b, pfp:p });
+            me.full_name = n; me.pfp = p;
+            alert("更新成功");
         }
-
         function tab(t) {
             document.getElementById('chat-tab').style.display = t === 'chat' ? 'flex' : 'none';
             document.getElementById('me-tab').style.display = t === 'me' ? 'block' : 'none';
