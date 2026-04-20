@@ -9,152 +9,118 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #000; --card: #111; --acc: #23a559; --official: #f1c40f; --text: #fff; --sub: #888; --danger: #f23f43; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root { --bg: #000; --card: #111; --acc: #23a559; --text: #fff; --sub: #888; --danger: #f23f43; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; }
 
-        .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
+        /* --- 靈敏度與互動 --- */
+        .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; }
         .active { display: flex; }
-
-        /* --- 靈敏度優化：加入點擊縮放效果 --- */
-        button, .float-btn, .dm-nav, .pfp, .nav-icon, label { 
-            cursor: pointer !important; 
-            transition: transform 0.1s, opacity 0.1s; 
-            pointer-events: auto !important; 
+        button, .pfp, .dm-nav, .nav-icon, label, .fa-ban, .fa-trash { 
+            cursor: pointer !important; transition: 0.1s; pointer-events: auto !important; 
         }
-        button:active, .float-btn:active, .dm-nav:active, .pfp:active, label:active { 
-            transform: scale(0.95); 
-            opacity: 0.8; 
-        }
+        button:active, .dm-nav:active, label:active { transform: scale(0.92); opacity: 0.8; }
 
-        /* --- 開場動畫 --- */
-        #s-home { background: #fff; color: #000; align-items: center; justify-content: center; text-align: center; }
-        .big-tacker { font-weight: 900; transform: scale(10); opacity: 0; animation: zoomIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes zoomIn { 0% { transform: scale(12); opacity: 0; } 100% { transform: scale(1); opacity: 1; font-size: clamp(60px, 15vw, 100px); letter-spacing: 2px; } }
-        .float-btn { margin-top: 50px; padding: 18px 60px; background: #000; color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; opacity: 0; transform: translateY(30px); animation: fadeUp 0.8s 1s forwards; }
-        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
-
-        /* --- 主導航與佈局 --- */
-        .rail { width: 65px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 20px; border-right: 1px solid #222; overflow-y: auto; }
+        .rail { width: 65px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 15px; border-right: 1px solid #222; overflow-y: auto; }
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
         
-        .badge-box { font-size: 10px; display: flex; gap: 6px; }
-        .badge { background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; color: var(--sub); border: 1px solid #222; }
-        .badge b { color: var(--acc); }
-
-        .dm-nav { width: 45px; height: 45px; border-radius: 50%; border: 2px solid transparent; position: relative; flex-shrink: 0; }
+        .dm-nav { width: 45px; height: 45px; border-radius: 50%; border: 2px solid transparent; position: relative; }
         .dm-nav img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .dm-nav.active { border-color: var(--acc); }
         .red-dot { position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: var(--danger); border-radius: 50%; border: 2px solid #000; display: none; }
 
-        /* --- 訊息與輸入 --- */
-        .msg-row { display: flex; gap: 12px; margin-bottom: 22px; padding: 0 15px; }
-        .pfp { width: 44px; height: 44px; border-radius: 50%; background: #222; overflow: hidden; border: 1px solid #333; flex-shrink: 0; }
-        .pfp img { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* 圖片顯示修正 */
-        .msg-img { max-width: 85%; max-height: 350px; border-radius: 10px; margin-top: 8px; border: 1px solid #333; display: block; }
+        .msg-row { display: flex; gap: 12px; margin-bottom: 18px; padding: 0 15px; position: relative; }
+        .pfp { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 1px solid #333; flex-shrink: 0; }
+        .msg-content { flex-grow: 1; position: relative; }
+        .msg-img { max-width: 80%; max-height: 300px; border-radius: 10px; margin-top: 5px; border: 1px solid #333; }
+        .del-btn { font-size: 12px; color: var(--danger); margin-left: 10px; opacity: 0.5; }
+        .del-btn:hover { opacity: 1; }
 
         .input-bar { padding: 12px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 12px; align-items: center; }
         .input-bar input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 12px; outline: none; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
-        .user-card { width: 300px; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; }
-
-        .pwd-panel { background: #fff; color: #000; padding: 30px; border-radius: 15px; width: 300px; text-align: center; }
-        .pwd-panel input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
-        .pwd-panel button { width: 100%; padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
+        .user-card { width: 300px; background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
-    <section id="s-home" class="screen active">
-        <div class="big-tacker">Tacker</div>
-        <button class="float-btn" onclick="checkAuth()">進入 ——＞</button>
+    <section id="s-home" class="screen active" style="align-items:center; justify-content:center;">
+        <h1 style="font-size:60px;">Tacker</h1>
+        <button onclick="checkAuth()" style="padding:15px 50px; border-radius:50px; background:#fff; color:#000; border:none; font-weight:bold;">進入</button>
     </section>
 
-    <section id="s-login" class="screen" style="background:#f5f5f5; align-items:center; justify-content:center;">
-        <div style="background:#fff; width:320px; padding:35px; border-radius:15px; color:#333;">
-            <h2 style="margin:0 0 25px; font-weight:800;">驗證身分</h2>
-            <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:14px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px;">
-            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:14px; margin-bottom:25px; border:1px solid #ddd; border-radius:8px;">
-            <button onclick="auth()" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:8px; font-weight:bold;">登入 Tacker</button>
+    <section id="s-login" class="screen" style="justify-content:center; align-items:center;">
+        <div style="width:300px; background:#111; padding:30px; border-radius:15px; border:1px solid #222;">
+            <h2>登入</h2>
+            <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:12px; margin-bottom:10px; background:#222; border:none; color:#fff; border-radius:8px;">
+            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:12px; margin-bottom:20px; background:#222; border:none; color:#fff; border-radius:8px;">
+            <button onclick="auth()" style="width:100%; padding:12px; background:var(--acc); color:#fff; border:none; border-radius:8px;">登入</button>
         </div>
-    </section>
-
-    <section id="s-load" class="screen" style="align-items:center; justify-content:center;">
-        <div style="width:70%; height:4px; background:#222; border-radius:10px; overflow:hidden; margin-bottom:12px;">
-            <div id="bar" style="width:0%; height:100%; background:var(--acc); transition:0.1s;"></div>
-        </div>
-        <div id="percent" style="font-size:12px; color:var(--sub);">同步雲端環境... 0%</div>
     </section>
 
     <section id="s-app" class="screen">
         <div style="display:flex; height:100%;">
             <nav class="rail">
-                <div onclick="tab('chat')" id="nav-chat" style="color:var(--acc); font-size:24px;"><i class="fa-solid fa-earth-asia"></i></div>
-                <div onclick="tab('me')" id="nav-me" style="color:#444; font-size:24px;"><i class="fa-solid fa-shield-halved"></i></div>
-                <div style="width:30px; height:1px; background:#222; margin:5px 0;"></div>
-                <div id="dm-list" style="display:flex; flex-direction:column; gap:15px; align-items:center;"></div>
+                <div onclick="tab('chat')" class="nav-icon" style="color:var(--acc); font-size:22px;"><i class="fa-solid fa-earth-asia"></i></div>
+                <div onclick="tab('me')" class="nav-icon" style="color:#444; font-size:22px;"><i class="fa-solid fa-user-gear"></i></div>
+                <hr style="width:30px; border-color:#222;">
+                <div id="dm-list"></div>
             </nav>
 
             <main id="chat-tab" class="main">
-                <header style="height:60px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 20px; justify-content:space-between;">
-                    <b id="main-title" style="font-size:18px;">全球大廳</b>
-                    <div class="badge-box">
-                        <div class="badge">用戶 <b><span id="total-count">0</span></b></div>
-                        <div class="badge">在線 <b><span id="online-count">0</span></b></div>
-                    </div>
+                <header style="padding:15px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+                    <b id="main-title">全球大廳</b>
+                    <i id="block-btn" class="fa-solid fa-ban" style="display:none; color:var(--sub);" onclick="toggleBlock()"></i>
                 </header>
-                
-                <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding-top:15px;">
-                    <div id="messages"></div>
+                <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding:15px 0;"><div id="messages"></div></div>
+                <div id="upload-preview" style="display:none; padding:10px; background:#000; align-items:center; gap:10px; border-top:1px solid #222;">
+                    <img id="preview-img" style="height:40px; border-radius:4px;">
+                    <i class="fa-solid fa-times" onclick="cancelUpload()" style="margin-left:auto; color:var(--danger);"></i>
                 </div>
-                
-                <div id="upload-preview" style="display:none; padding:12px 20px; background:#1a1a1a; align-items:center; gap:15px; border-top:1px solid #333;">
-                    <img id="preview-img" style="height:55px; border-radius:6px; border:1px solid #444;">
-                    <span style="font-size:12px; color:var(--sub);">準備發送照片...</span>
-                    <i class="fa-solid fa-circle-xmark" onclick="cancelUpload()" style="margin-left:auto; color:var(--danger); font-size:20px;"></i>
-                </div>
-
                 <div class="input-bar">
-                    <label for="file-input"><i class="fa-solid fa-plus-circle" style="color:var(--sub); font-size:26px; cursor:pointer;"></i></label>
+                    <label for="file-input"><i class="fa-solid fa-plus-circle" style="color:var(--sub); font-size:24px;"></i></label>
                     <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFile(this, 'chat')">
-                    <input id="m-input" placeholder="在這裡說點什麼..." onkeypress="if(event.key==='Enter') send()">
-                    <button onclick="send()" style="background:var(--acc); border:none; color:#fff; padding:10px 18px; border-radius:12px;"><i class="fa-solid fa-paper-plane"></i></button>
+                    <input id="m-input" placeholder="說點什麼..." onkeypress="if(event.key==='Enter') send()">
+                    <button onclick="send()" style="background:var(--acc); color:#fff; border:none; padding:10px 15px; border-radius:10px;"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </main>
 
-            <main id="me-tab" class="main" style="display:none; padding:25px; overflow-y:auto;">
-                <h2 style="margin-bottom:30px; font-weight:800;">帳戶與安全</h2>
-                <div style="text-align:center; margin-bottom:35px;">
-                    <label for="pfp-input" style="cursor:pointer; display:inline-block;">
-                        <div style="width:100px; height:100px; border-radius:50%; background:#222; overflow:hidden; border:3px solid var(--acc);">
-                            <img id="current-pfp" style="width:100%; height:100%; object-fit:cover;">
-                        </div>
-                    </label>
-                    <input type="file" id="pfp-input" accept="image/*" style="display:none;" onchange="handleFile(this, 'pfp')">
+            <main id="me-tab" class="main" style="display:none; padding:20px; overflow-y:auto;">
+                <h3>個人設定</h3>
+                <div style="text-align:center; margin-bottom:20px;">
+                    <label for="pfp-input"><img id="current-pfp" style="width:80px; height:80px; border-radius:50%; border:2px solid var(--acc); object-fit:cover;"></label>
+                    <input type="file" id="pfp-input" style="display:none;" onchange="handleFile(this, 'pfp')">
                 </div>
-                <div style="margin-bottom:20px;">
-                    <label style="font-size:11px; color:var(--sub);">顯示名稱</label>
-                    <input id="edit-name" style="width:100%; background:#1e1e1e; border:1px solid #333; color:#fff; padding:14px; border-radius:10px; margin-top:8px;">
-                </div>
-                <div style="margin-bottom:20px;">
-                    <label style="font-size:11px; color:var(--sub);">個人簡介</label>
-                    <textarea id="edit-bio" style="width:100%; height:80px; background:#1e1e1e; border:1px solid #333; color:#fff; padding:14px; border-radius:10px; margin-top:8px; resize:none;"></textarea>
-                </div>
-                <button onclick="saveProfile()" style="width:100%; padding:16px; background:var(--acc); border:none; color:#fff; font-weight:bold; border-radius:12px;">儲存變更</button>
-                <button onclick="logout()" style="width:100%; padding:16px; background:transparent; border:1px solid #333; color:var(--danger); font-weight:bold; border-radius:12px; margin-top:15px;">登出帳號</button>
+                <p style="font-size:12px; color:var(--sub);">顯示名稱</p>
+                <input id="edit-name" style="width:100%; padding:12px; background:#222; color:#fff; border:none; border-radius:10px; margin-bottom:20px;">
+                
+                <hr style="border-color:#222; margin-bottom:20px;">
+                <p style="font-size:12px; color:var(--sub);">三段式改密碼</p>
+                <input type="password" id="old-pw" placeholder="輸入舊密碼" style="width:100%; padding:12px; background:#222; color:#fff; border:none; border-radius:10px; margin-bottom:10px;">
+                <input type="password" id="new-pw1" placeholder="輸入新密碼" style="width:100%; padding:12px; background:#222; color:#fff; border:none; border-radius:10px; margin-bottom:10px;">
+                <input type="password" id="new-pw2" placeholder="再次確認新密碼" style="width:100%; padding:12px; background:#222; color:#fff; border:none; border-radius:10px; margin-bottom:20px;">
+                
+                <button onclick="saveAll()" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:10px; font-weight:bold;">儲存變更</button>
+                <button onclick="logout()" style="width:100%; margin-top:20px; background:none; border:1px solid #333; color:var(--danger); padding:10px; border-radius:10px;">登出</button>
             </main>
         </div>
     </section>
 
     <div id="user-modal" class="modal" onclick="this.style.display='none'">
-        <div class="user-card" onclick="event.stopPropagation()">
-            <div id="modal-pfp" style="width:70px; height:70px; border-radius:50%; margin:20px auto; overflow:hidden;"></div>
-            <div style="padding:0 20px 20px; text-align:center;">
-                <div id="modal-name" style="font-weight:800; font-size:22px;"></div>
-                <button id="dm-btn" style="width:100%; padding:12px; background:var(--acc); border:none; color:#fff; border-radius:10px; margin-top:15px; font-weight:bold;">發起私訊</button>
+        <div class="user-card" onclick="event.stopPropagation()" style="text-align:center;">
+            <div id="modal-pfp-box" style="width:70px; height:70px; border-radius:50%; margin:0 auto 15px; overflow:hidden;"></div>
+            <h3 id="modal-name"></h3>
+            <button id="dm-btn" style="width:100%; padding:12px; background:var(--acc); color:#fff; border:none; border-radius:10px; margin-top:15px; font-weight:bold;">發送私訊</button>
+        </div>
+    </div>
+
+    <div id="req-modal" class="modal">
+        <div class="user-card" style="text-align:center;">
+            <h4 id="req-text">想要跟你私訊</h4>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button id="req-yes" style="flex:1; padding:10px; background:var(--acc); border:none; border-radius:8px; color:#fff;">同意</button>
+                <button id="req-no" style="flex:1; padding:10px; background:var(--danger); border:none; border-radius:8px; color:#fff;">不同意</button>
             </div>
         </div>
     </div>
@@ -165,38 +131,35 @@
         const db = firebase.database();
         let me = null, pendingImg = "", currentChat = "global";
 
-        function checkAuth() { const saved = localStorage.getItem('tacker_session'); if(saved) { me = JSON.parse(saved); startLoad(); } else { go('s-login'); } }
-        function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+        function checkAuth() { const s = localStorage.getItem('tacker_session'); if(s){ me = JSON.parse(s); initApp(); } else go('s-login'); }
+        function go(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
         async function auth() {
-            const uid = document.getElementById('u-id').value.trim(); const pw = document.getElementById('u-pw').value.trim();
+            const uid = document.getElementById('u-id').value, pw = document.getElementById('u-pw').value;
             const s = await db.ref(`users/${uid}`).get();
-            if(s.exists() && s.val().temp_pw === pw) { me = { uid, ...s.val() }; localStorage.setItem('tacker_session', JSON.stringify(me)); startLoad(); } else alert("帳號或密碼錯誤");
+            if(s.exists() && s.val().temp_pw === pw) { me = {uid, ...s.val()}; localStorage.setItem('tacker_session', JSON.stringify(me)); initApp(); } else alert("密碼錯誤");
         }
-        function startLoad() { go('s-load'); let p = 0; const t = setInterval(() => { p += 10; if(p >= 100) { clearInterval(t); initApp(); } document.getElementById('bar').style.width = p + '%'; document.getElementById('percent').innerText = `CONNECTING... ${p}%`; }, 50); }
 
         function initApp() {
             go('s-app');
-            db.ref(`presence/${me.uid}`).set(true); db.ref(`presence/${me.uid}`).onDisconnect().remove();
-            db.ref('presence').on('value', s => document.getElementById('online-count').innerText = s.numChildren());
-            db.ref('users').on('value', s => document.getElementById('total-count').innerText = s.numChildren());
-            listenGlobal(); listenContacts();
-            document.getElementById('current-pfp').src = me.pfp || "";
+            document.getElementById('current-pfp').src = me.pfp || '';
             document.getElementById('edit-name').value = me.full_name;
-            document.getElementById('edit-bio').value = me.bio || "";
+            listenGlobal(); listenContacts(); listenRequests();
         }
 
-        // --- 核心修正：判斷圖片並顯示 ---
+        // --- 渲染訊息 (含刪除功能) ---
         function renderMsgs(snap) {
             const box = document.getElementById('messages'); box.innerHTML = '';
             snap.forEach(d => {
-                const m = d.val();
-                const isImg = (m.type === 'img' || (m.t && m.t.startsWith('data:image')));
-                const content = isImg ? `<img src="${m.t}" class="msg-img">` : `<div style="color:#eee; font-size:15px; word-break:break-all;">${m.t}</div>`;
+                const m = d.val(); const mid = d.key;
+                const isImg = (m.t && m.t.startsWith('data:image'));
+                const canDel = (m.uid === me.uid || me.role === 'admin');
+                const content = isImg ? `<img src="${m.t}" class="msg-img">` : `<div style="color:#eee;">${m.t}</div>`;
                 box.innerHTML += `
                     <div class="msg-row">
-                        <div class="pfp" onclick="showUser('${m.uid}')"><img src="${m.pfp || ''}"></div>
-                        <div style="flex-grow:1">
-                            <b style="color:var(--acc); font-size:12px;">${m.u}</b>
+                        <div class="pfp" onclick="showUser('${m.uid}')"><img src="${m.pfp}"></div>
+                        <div class="msg-content">
+                            <b style="color:var(--acc);font-size:12px;">${m.u}</b>
+                            ${canDel ? `<i class="fa-solid fa-trash del-btn" onclick="delMsg('${mid}')"></i>` : ''}
                             ${content}
                         </div>
                     </div>`;
@@ -204,58 +167,132 @@
             document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
         }
 
-        function listenGlobal() { db.ref('chats/global').limitToLast(40).on('value', snap => renderMsgs(snap)); }
-        function listenPrivate(targetUid) { const rid = [me.uid, targetUid].sort().join('_'); db.ref(`chats/private/${rid}/msgs`).limitToLast(40).on('value', snap => renderMsgs(snap)); }
-
-        function send() {
-            const inp = document.getElementById('m-input'); const val = inp.value.trim();
-            if(!val && !pendingImg) return;
-            const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: pendingImg || val, type: pendingImg ? 'img' : 'text', ts: Date.now() };
-            if(currentChat === 'global') db.ref('chats/global').push(data);
-            else { const rid = [me.uid, currentChat].sort().join('_'); db.ref(`chats/private/${rid}/msgs`).push(data); db.ref(`chats/private/${rid}/unread/${currentChat}`).set(true); }
-            inp.value = ''; cancelUpload();
+        function delMsg(mid) { 
+            const path = currentChat === 'global' ? `chats/global/${mid}` : `chats/private/${getRid(currentChat)}/msgs/${mid}`;
+            if(confirm("確定刪除此訊息？")) db.ref(path).remove();
         }
 
-        function handleFile(input, type) {
-            const file = input.files[0]; const reader = new FileReader();
-            reader.onload = (e) => {
-                if(type === 'chat') { pendingImg = e.target.result; document.getElementById('preview-img').src = pendingImg; document.getElementById('upload-preview').style.display = 'flex'; }
-                else document.getElementById('current-pfp').src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
+        function listenGlobal() { db.ref('chats/global').off(); db.ref('chats/global').limitToLast(30).on('value', s => renderMsgs(s)); }
+        function getRid(uid) { return [me.uid, uid].sort().join('_'); }
 
-        function cancelUpload() { pendingImg = ""; document.getElementById('upload-preview').style.display = 'none'; }
-        
+        // --- 私訊請求與禁止 ---
         async function showUser(uid) {
+            if(uid === me.uid) return;
             const s = await db.ref(`users/${uid}`).get(); const u = s.val();
             document.getElementById('modal-name').innerText = u.full_name;
-            document.getElementById('modal-pfp').innerHTML = `<img src="${u.pfp}" style="width:100%;height:100%;object-fit:cover;">`;
+            document.getElementById('modal-pfp-box').innerHTML = `<img src="${u.pfp}" style="width:100%;height:100%;object-fit:cover;">`;
             document.getElementById('dm-btn').onclick = () => {
-                db.ref(`users/${me.uid}/contacts/${uid}`).set({ name: u.full_name, pfp: u.pfp });
-                switchChat(uid, u.full_name); document.getElementById('user-modal').style.display = 'none';
+                if(confirm(`是否要發送私訊權限給 ${u.full_name}？`)) {
+                    db.ref(`requests/${uid}/${me.uid}`).set({ name: me.full_name, pfp: me.pfp });
+                    alert("已發送請求，請等待對方同意");
+                }
             };
             document.getElementById('user-modal').style.display = 'flex';
         }
 
+        function listenRequests() {
+            db.ref(`requests/${me.uid}`).on('child_added', snap => {
+                const req = snap.val(); const fromUid = snap.key;
+                document.getElementById('req-text').innerText = `${req.name} 想要跟你私訊`;
+                document.getElementById('req-modal').style.display = 'flex';
+                document.getElementById('req-yes').onclick = () => {
+                    db.ref(`users/${me.uid}/contacts/${fromUid}`).set({ name: req.name, pfp: req.pfp });
+                    db.ref(`users/${fromUid}/contacts/${me.uid}`).set({ name: me.full_name, pfp: me.pfp });
+                    db.ref(`requests/${me.uid}/${fromUid}`).remove();
+                    document.getElementById('req-modal').style.display = 'none';
+                };
+                document.getElementById('req-no').onclick = () => {
+                    db.ref(`requests/${me.uid}/${fromUid}`).remove();
+                    document.getElementById('req-modal').style.display = 'none';
+                };
+            });
+        }
+
         function listenContacts() {
             db.ref(`users/${me.uid}/contacts`).on('value', snap => {
-                const list = document.getElementById('dm-list'); list.innerHTML = '';
+                const box = document.getElementById('dm-list'); box.innerHTML = '';
                 snap.forEach(d => {
-                    const u = d.val(); const div = document.createElement('div');
-                    div.className = `dm-nav ${currentChat === d.key ? 'active' : ''}`;
+                    const u = d.val();
+                    const div = document.createElement('div'); div.className = `dm-nav ${currentChat===d.key?'active':''}`;
                     div.innerHTML = `<img src="${u.pfp}"><div class="red-dot" id="dot-${d.key}"></div>`;
-                    div.onclick = () => switchChat(d.key, u.name); list.appendChild(div);
+                    div.onclick = () => switchChat(d.key, u.name); box.appendChild(div);
+                    db.ref(`chats/private/${getRid(d.key)}/unread/${me.uid}`).on('value', s => {
+                        document.getElementById(`dot-${d.key}`).style.display = s.val() ? 'block' : 'none';
+                    });
                 });
             });
         }
 
-        function switchChat(id, name) { currentChat = id; document.getElementById('main-title').innerText = id === 'global' ? '全球大廳' : name; if(id === 'global') listenGlobal(); else listenPrivate(id); }
-        function tab(t) { document.getElementById('chat-tab').style.display = t === 'chat' ? 'flex' : 'none'; document.getElementById('me-tab').style.display = t === 'me' ? 'block' : 'none'; }
-        async function saveProfile() {
-            const updates = { full_name: document.getElementById('edit-name').value, bio: document.getElementById('edit-bio').value, pfp: document.getElementById('current-pfp').src };
-            await db.ref(`users/${me.uid}`).update(updates); alert("儲存成功");
+        async function switchChat(id, name) {
+            currentChat = id;
+            document.getElementById('main-title').innerText = id === 'global' ? '全球大廳' : name;
+            document.getElementById('block-btn').style.display = id === 'global' ? 'none' : 'block';
+            if(id !== 'global') {
+                const s = await db.ref(`users/${me.uid}/blocked/${id}`).get();
+                document.getElementById('block-btn').style.color = s.val() ? 'var(--danger)' : 'var(--sub)';
+            }
+            if(id === 'global') listenGlobal(); 
+            else {
+                db.ref(`chats/private/${getRid(id)}/unread/${me.uid}`).set(false);
+                db.ref(`chats/private/${getRid(id)}/msgs`).off();
+                db.ref(`chats/private/${getRid(id)}/msgs`).limitToLast(30).on('value', s => renderMsgs(s));
+            }
         }
+
+        async function toggleBlock() {
+            const target = currentChat;
+            const s = await db.ref(`users/${me.uid}/blocked/${target}`).get();
+            const newState = !s.val();
+            await db.ref(`users/${me.uid}/blocked/${target}`).set(newState);
+            document.getElementById('block-btn').style.color = newState ? 'var(--danger)' : 'var(--sub)';
+            alert(newState ? "已禁止對方發送訊息" : "已解除禁止");
+        }
+
+        // --- 發送訊息 (檢查禁止狀態) ---
+        async function send() {
+            const inp = document.getElementById('m-input'); if(!inp.value && !pendingImg) return;
+            if(currentChat !== 'global') {
+                const s = await db.ref(`users/${currentChat}/blocked/${me.uid}`).get();
+                if(s.val()) return alert("對方已禁止你發送訊息");
+            }
+            const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: pendingImg || inp.value, ts: Date.now() };
+            const path = currentChat === 'global' ? 'chats/global' : `chats/private/${getRid(currentChat)}/msgs`;
+            db.ref(path).push(data);
+            if(currentChat !== 'global') db.ref(`chats/private/${getRid(currentChat)}/unread/${currentChat}`).set(true);
+            inp.value = ''; cancelUpload();
+        }
+
+        // --- 個人資料儲存 (含三段改密碼) ---
+        async function saveAll() {
+            const newName = document.getElementById('edit-name').value;
+            const oldPw = document.getElementById('old-pw').value;
+            const np1 = document.getElementById('new-pw1').value;
+            const np2 = document.getElementById('new-pw2').value;
+            
+            let upData = { full_name: newName, pfp: document.getElementById('current-pfp').src };
+
+            if(oldPw || np1 || np2) {
+                if(oldPw !== me.temp_pw) return alert("舊密碼不正確");
+                if(!np1 || np1 !== np2) return alert("新密碼不一致或為空");
+                upData.temp_pw = np1;
+            }
+
+            await db.ref(`users/${me.uid}`).update(upData);
+            me = {...me, ...upData};
+            localStorage.setItem('tacker_session', JSON.stringify(me));
+            alert("儲存成功！");
+        }
+
+        function handleFile(input, type) {
+            const f = input.files[0]; const r = new FileReader();
+            r.onload = e => { 
+                if(type==='chat'){ pendingImg=e.target.result; document.getElementById('preview-img').src=pendingImg; document.getElementById('upload-preview').style.display='flex'; } 
+                else document.getElementById('current-pfp').src=e.target.result; 
+            };
+            r.readAsDataURL(f);
+        }
+        function cancelUpload() { pendingImg=""; document.getElementById('upload-preview').style.display='none'; }
+        function tab(t) { document.getElementById('chat-tab').style.display = t==='chat'?'flex':'none'; document.getElementById('me-tab').style.display = t==='me'?'block':'none'; }
         function logout() { localStorage.removeItem('tacker_session'); location.reload(); }
     </script>
 </body>
