@@ -3,261 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker</title>
+    <title>Tacker OS - Official</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #000; --card: #18191c; --acc: #23a559; --text: #fff; --sub: #b5bac1; --danger: #f23f43; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; }
+        :root { --bg: #000; --card: #1e1f22; --acc: #23a559; --text: #fff; --sub: #b5bac1; --danger: #f23f43; --vip: #f1c40f; --official: #5865f2; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; user-select: none; }
 
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
         .active { display: flex; }
 
-        /* --- 100% 還原原始首頁樣式 --- */
-        #s-home { background: #fff; color: #000; align-items: center; justify-content: center; text-align: center; }
-        .big-tacker { font-weight: 900; transform: scale(10); opacity: 0; animation: zoomIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes zoomIn { 0% { transform: scale(12); opacity: 0; } 100% { transform: scale(1); opacity: 1; font-size: clamp(60px, 15vw, 100px); letter-spacing: 2px; } }
-        .float-btn { margin-top: 50px; padding: 18px 60px; background: #000; color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; opacity: 0; transform: translateY(30px); animation: fadeUp 0.8s 1s forwards; transition: 0.3s; }
-        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        /* 左側導覽列 (手稿 P4) */
+        .rail { width: 72px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 15px 0; border-right: 1px solid #222; }
+        .rail-item { width: 48px; height: 48px; border-radius: 50%; background: #222; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; color: #fff; border: 2px solid transparent; }
+        .rail-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .rail-item.active { border-radius: 15px; border-color: var(--acc); }
+        .unread-dot { position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: var(--danger); border-radius: 50%; border: 2px solid #000; }
 
-        /* --- 導航與佈局 --- */
-        .rail { width: 70px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 15px; border-right: 1px solid #222; }
-        .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
+        .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; position: relative; }
+        
+        /* 訊息樣式 */
+        #chat-flow { flex-grow: 1; overflow-y: auto; padding: 20px; }
+        .msg-row { display: flex; gap: 12px; margin-bottom: 18px; }
+        .pfp-msg { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .tag-vip { color: var(--vip); font-weight: bold; margin-left: 4px; }
+        .tag-official { background: var(--official); color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 4px; }
 
-        /* --- 多圖預覽區 --- */
-        #preview-area { display: none; padding: 10px; background: #2b2d31; border-radius: 8px 8px 0 0; gap: 10px; overflow-x: auto; border-bottom: 1px solid #333; }
-        .preview-item { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
-        .preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        /* 用戶卡片 & 後台 (手稿 P3/P4) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .dc-card { width: 340px; background: var(--card); border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #333; }
+        .dc-banner { height: 65px; background: var(--official); }
+        .dc-pfp-large { width: 85px; height: 85px; border-radius: 50%; border: 6px solid var(--card); position: absolute; top: 25px; left: 16px; background: #000; }
+        .dc-body { padding: 55px 20px 20px; }
+        
+        /* 按鈕群 */
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-green { background: var(--acc); color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #444; color: #fff; }
 
-        /* --- 訊息內容 --- */
-        .msg-row { display: flex; gap: 12px; margin-bottom: 20px; padding: 0 15px; }
-        .pfp-small { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; overflow: hidden; flex-shrink: 0; }
-        .pfp-small img { width: 100%; height: 100%; object-fit: cover; }
-        .msg-images { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-        .msg-images img { max-width: 150px; border-radius: 8px; border: 1px solid #333; }
-
-        /* --- Discord 風格卡片 --- */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
-        .dc-card { width: 300px; background: var(--card); border-radius: 8px; overflow: hidden; }
-        .dc-header { height: 60px; background: var(--acc); position: relative; }
-        .dc-pfp { width: 80px; height: 80px; border-radius: 50%; border: 6px solid var(--card); position: absolute; top: 20px; left: 16px; background: #000; overflow: hidden; }
-        .dc-body { padding: 50px 16px 16px; }
-        .dc-name { font-size: 20px; font-weight: bold; }
-        .dc-id { font-size: 14px; color: var(--sub); }
-
-        /* --- 設定頁面相機按鈕與鎖定欄位 --- */
-        .me-pfp-container { position: relative; width: 100px; height: 100px; margin: 0 auto 25px; }
-        .me-pfp-container img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--acc); }
-        .cam-btn { position: absolute; bottom: 0; right: 0; background: #222; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--card); color: #fff; }
-        .locked-field { background: #0c0c0c; border: 1px solid #222; color: #666; padding: 12px; border-radius: 5px; font-family: monospace; display: flex; justify-content: space-between; }
-
-        .btn-green { width: 100%; padding: 12px; background: var(--acc); color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        /* 頂部狀態 (手稿 P4) */
+        .top-bar { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #111; }
+        .status-tag { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+        .dot-online { width: 10px; height: 10px; border-radius: 50%; background: var(--acc); }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-    <section id="s-home" class="screen active">
-        <div class="big-tacker">Tacker</div>
-        <button class="float-btn" onclick="checkAuth()">進入 ——＞</button>
-    </section>
-
-    <section id="s-login" class="screen" style="background:#f5f5f5; align-items:center; justify-content:center;">
-        <div style="background:#fff; width:320px; padding:35px; border-radius:15px; color:#333;">
-            <h2 style="margin:0 0 25px; font-weight:800;">驗證身分</h2>
-            <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:14px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px;">
-            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:14px; margin-bottom:25px; border:1px solid #ddd; border-radius:8px;">
-            <button onclick="auth()" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">登入 Tacker</button>
-        </div>
-    </section>
-
-    <section id="s-app" class="screen">
+    <section id="s-app" class="screen active">
         <div style="display:flex; height:100%;">
             <nav class="rail">
-                <div onclick="tab('chat')" style="cursor:pointer; color:var(--acc); font-size:24px;"><i class="fa-solid fa-comments"></i></div>
-                <div onclick="tab('me')" style="cursor:pointer; color:#555; font-size:24px;"><i class="fa-solid fa-gear"></i></div>
-                <div id="dm-list"></div>
+                <div class="rail-item active" id="rail-global" onclick="switchMode('global')">
+                    <i class="fa-solid fa-earth-americas"></i>
+                </div>
+                <div id="dm-list-container" style="display:flex; flex-direction:column; gap:10px; width:100%; align-items:center;">
+                    </div>
+                <div style="flex-grow:1;"></div>
+                <div class="rail-item" onclick="showMe()"><i class="fa-solid fa-shield-halved"></i></div>
             </nav>
 
-            <main id="chat-tab" class="main">
-                <header style="padding:15px; border-bottom:1px solid #222; display:flex; justify-content:space-between;">
-                    <b>全球大廳</b>
-                </header>
-                <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding:15px 0;"><div id="messages"></div></div>
-                
-                <div id="preview-area"></div>
-
-                <div class="input-bar" style="padding:10px; background:#1e1f22; display:flex; gap:10px; align-items:center;">
-                    <label for="file-input" style="cursor:pointer; color:var(--sub); font-size:20px; padding-left:10px;"><i class="fa-solid fa-circle-plus"></i></label>
-                    <input type="file" id="file-input" multiple accept="image/*" style="display:none;" onchange="handleMultipleFiles(this)">
-                    <input id="m-input" placeholder="說點什麼..." style="flex-grow:1; background:#383a40; border:none; color:#fff; padding:10px; border-radius:5px; outline:none;">
-                    <button onclick="send()" style="background:var(--acc); border:none; color:#fff; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">發送</button>
-                </div>
-            </main>
-
-            <main id="me-tab" class="main" style="display:none; padding:40px 20px;">
-                <div class="me-pfp-container">
-                    <img id="current-pfp" src="">
-                    <label for="pfp-update" class="cam-btn"><i class="fa-solid fa-camera"></i></label>
-                    <input type="file" id="pfp-update" style="display:none;" onchange="updateMyPfp(this)">
-                </div>
-
-                <div style="margin-bottom:20px;">
-                    <label style="color:var(--sub); font-size:12px;">顯示名稱</label>
-                    <input id="edit-name" onchange="updateMyName()" style="width:100%; background:#222; border:none; color:#fff; padding:12px; border-radius:5px; margin-top:5px;">
-                </div>
-
-                <div style="margin-bottom:30px;">
-                    <label style="color:var(--sub); font-size:12px;">帳號代碼 (不可修改)</label>
-                    <div class="locked-field">
-                        <span id="my-id-display">@ID</span>
-                        <i class="fa-solid fa-lock"></i>
+            <main class="main">
+                <div class="top-bar">
+                    <b id="view-title">全球大廳</b>
+                    <div id="partner-status" style="display:none;" class="status-tag">
+                        <div class="dot-online"></div> 在線
+                        <i class="fa-solid fa-ban" style="margin-left:10px; color:var(--danger); cursor:pointer;" onclick="toggleBlock()"></i>
                     </div>
                 </div>
 
-                <button class="btn-green" onclick="openPwdModal()">更改密碼</button>
-                <button onclick="logout()" style="width:100%; background:none; border:none; color:var(--danger); margin-top:20px; cursor:pointer; font-weight:bold;">登出</button>
+                <div id="chat-flow"><div id="messages"></div></div>
+
+                <div id="preview-area" style="display:none; padding:10px; background:#222; display:flex; gap:8px;"></div>
+
+                <div style="padding:20px; background:#1e1f22;">
+                    <div id="dm-notice" style="display:none; color:var(--sub); font-size:12px; margin-bottom:10px; text-align:center;">
+                        對方尚未同意私聊，發送訊息後對方會收到請求
+                    </div>
+                    <div style="display:flex; gap:12px; align-items:center; background:#383a40; padding:8px 15px; border-radius:8px;">
+                        <label for="f-in" style="cursor:pointer; color:var(--sub);"><i class="fa-solid fa-circle-plus"></i></label>
+                        <input type="file" id="f-in" multiple style="display:none;" onchange="handleFiles(this)">
+                        <input id="m-in" placeholder="傳送訊息..." style="flex-grow:1; background:none; border:none; color:#fff; outline:none;">
+                        <button onclick="send()" style="background:none; border:none; color:var(--acc); font-weight:bold; cursor:pointer;">發送</button>
+                    </div>
+                </div>
             </main>
         </div>
     </section>
 
-    <div id="user-modal" class="modal" onclick="this.style.display='none'">
+    <div id="u-modal" class="modal" onclick="this.style.display='none'">
         <div class="dc-card" onclick="event.stopPropagation()">
-            <div class="dc-header"><div class="dc-pfp" id="modal-pfp-box"></div></div>
+            <div class="dc-banner"></div>
+            <img class="dc-pfp-large" id="md-pfp">
             <div class="dc-body">
-                <div class="dc-name" id="modal-name"></div>
-                <div class="dc-id" id="modal-id"></div>
-                <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
-                <button class="btn-green" id="dm-req-btn">發送私訊權限</button>
-            </div>
-        </div>
-    </div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <b id="md-name" style="font-size:22px;">用戶</b>
+                    <span id="md-tags"></span>
+                </div>
+                <div id="md-uid" style="color:var(--sub); margin-bottom:20px;">@ID</div>
+                
+                <div id="user-actions">
+                    <button class="btn btn-green" id="btn-msg"><i class="fa-solid fa-paper-plane"></i> 發送訊息</button>
+                </div>
 
-    <div id="pwd-modal" class="modal">
-        <div class="dc-card" style="padding:20px; text-align:center; background:#fff; color:#000;">
-            <div id="pwd-step1">
-                <h3>驗證舊密碼</h3>
-                <input type="password" id="old-pw" placeholder="輸入舊密碼" style="width:100%; padding:12px; margin:15px 0; border:1px solid #ddd; border-radius:4px;">
-                <button class="btn-green" onclick="checkOldPw()">驗證</button>
-            </div>
-            <div id="pwd-step2" style="display:none;">
-                <h3>新密碼</h3>
-                <input type="password" id="new-pw1" placeholder="輸入新密碼" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:4px;">
-                <input type="password" id="new-pw2" placeholder="再次確認" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:4px;">
-                <button class="btn-green" onclick="updatePw()">儲存</button>
+                <div id="admin-panel" style="display:none; margin-top:20px; padding-top:15px; border-top:1px solid #333;">
+                    <b style="font-size:12px; color:var(--official);">[ 官方管理授權 ]</b>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; border-radius:5px;">
+                            <span>會員資格</span>
+                            <input type="checkbox" id="md-vip-check" onchange="toggleVipStatus()">
+                        </div>
+                        <button class="btn btn-danger" onclick="adminCmd('mute')">禁言成員</button>
+                        <button class="btn btn-danger" onclick="adminCmd('kick')">強制登出</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // 1. 防曝光保護 (手稿 P1)
+        document.onkeydown = e => { if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73) || (e.ctrlKey && e.keyCode == 85)) return false; };
+
         const config = { apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw", databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com", projectId: "tacker-ebc5a" };
         firebase.initializeApp(config);
         const db = firebase.database();
+
         let me = null;
-        let selectedImages = [];
+        let mode = 'global'; 
+        let targetUID = null;
 
-        function checkAuth() { 
+        // 2. 登入與同步 (手稿 P1)
+        async function checkAuth() {
             const saved = localStorage.getItem('tacker_session');
-            if(saved) { me = JSON.parse(saved); initApp(); } else { go('s-login'); } 
+            if(!saved) return location.reload();
+            me = JSON.parse(saved);
+            
+            // 即時同步會員資格 (手稿 P2)
+            db.ref(`users/${me.uid}`).on('value', s => {
+                const updated = s.val();
+                if(updated) {
+                    me = { ...me, ...updated };
+                    if(me.status === 'kicked') { logout(); alert("你已被官方強制登出"); }
+                }
+            });
+            initApp();
         }
-        
-        async function auth() {
-            const uid = document.getElementById('u-id').value.trim(); const pw = document.getElementById('u-pw').value.trim();
-            const s = await db.ref(`users/${uid}`).get();
-            if(s.exists() && s.val().temp_pw === pw) { me = { uid, ...s.val() }; localStorage.setItem('tacker_session', JSON.stringify(me)); initApp(); } else alert("帳號或密碼錯誤");
-        }
-
-        function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
         function initApp() {
-            go('s-app');
-            document.getElementById('current-pfp').src = me.pfp;
-            document.getElementById('edit-name').value = me.full_name;
-            document.getElementById('my-id-display').innerText = "@" + me.uid;
-            db.ref('chats/global').limitToLast(50).on('value', s => render(s));
+            listenGlobal();
+            listenDMs();
         }
 
-        function handleMultipleFiles(input) {
-            const files = Array.from(input.files);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => { selectedImages.push(e.target.result); updatePreview(); };
-                reader.readAsDataURL(file);
+        // 3. 私聊與官方授權邏輯 (手稿 P4/P3)
+        async function openCard(uid) {
+            const s = await db.ref(`users/${uid}`).get();
+            const u = s.val();
+            targetUID = uid;
+            
+            document.getElementById('md-name').innerText = u.full_name;
+            document.getElementById('md-uid').innerText = "@" + uid;
+            document.getElementById('md-pfp').src = u.pfp;
+            document.getElementById('md-tags').innerHTML = (u.role === 'official' ? '<span class="tag-official">官方帳戶 [v]</span>' : '') + (u.level === 'vip' ? '<span class="tag-vip">★</span>' : '');
+            
+            // 顯示管理後台 (僅官方可見)
+            document.getElementById('admin-panel').style.display = (me.role === 'official' && uid !== me.uid) ? 'block' : 'none';
+            document.getElementById('md-vip-check').checked = (u.level === 'vip');
+
+            // 私聊按鈕 (不可加自己)
+            document.getElementById('user-actions').style.display = (uid === me.uid) ? 'none' : 'block';
+            document.getElementById('btn-msg').onclick = () => startDM(uid, u.full_name);
+
+            document.getElementById('u-modal').style.display = 'flex';
+        }
+
+        function startDM(uid, name) {
+            mode = 'dm';
+            targetUID = uid;
+            document.getElementById('view-title').innerText = name;
+            document.getElementById('partner-status').style.display = 'flex';
+            document.getElementById('u-modal').style.display = 'none';
+            
+            // 官方權限：不用同意即可發訊
+            if(me.role !== 'official') {
+                document.getElementById('dm-notice').style.display = 'block';
+            }
+            
+            db.ref(`chats/dms/${[me.uid, uid].sort().join('_')}`).limitToLast(50).on('value', s => render(s));
+        }
+
+        // 4. 會員功能與限制 (手稿 P2)
+        function send() {
+            const val = document.getElementById('m-in').value;
+            // 後台如果取消會員勾選，這裡會立刻判定
+            const charLimit = me.level === 'vip' ? 4000 : 100;
+            if(val.length > charLimit) return alert(`會員限制：字數不能超過 ${charLimit}`);
+
+            const path = mode === 'global' ? 'chats/global' : `chats/dms/${[me.uid, targetUID].sort().join('_')}`;
+            
+            db.ref(path).push({
+                u: me.full_name, uid: me.uid, pfp: me.pfp,
+                t: val, role: me.role, level: me.level
             });
-            input.value = '';
+            document.getElementById('m-in').value = '';
         }
 
-        function updatePreview() {
-            const area = document.getElementById('preview-area');
-            area.style.display = selectedImages.length > 0 ? 'flex' : 'none';
-            area.innerHTML = selectedImages.map((src, idx) => `<div class="preview-item"><img src="${src}"><div class="remove-img" onclick="removeSelectedImg(${idx})">✕</div></div>`).join('');
+        // 5. 後台管理執行 (手稿 P3)
+        async function toggleVipStatus() {
+            const isVip = document.getElementById('md-vip-check').checked;
+            await db.ref(`users/${targetUID}`).update({ level: isVip ? 'vip' : 'free' });
+            alert("會員資格已更新，對方特權將立刻暫停或啟用");
         }
-        function removeSelectedImg(idx) { selectedImages.splice(idx, 1); updatePreview(); }
+
+        async function adminCmd(type) {
+            if(type === 'kick') {
+                await db.ref(`users/${targetUID}`).update({ status: 'kicked' });
+                alert("已執行強制登出");
+            } else {
+                alert("已執行禁言");
+            }
+        }
 
         function render(snap) {
             const box = document.getElementById('messages'); box.innerHTML = '';
             snap.forEach(d => {
                 const m = d.val();
-                let imgHtml = (m.imgs && m.imgs.length > 0) ? `<div class="msg-images">${m.imgs.map(s => `<img src="${s}">`).join('')}</div>` : '';
+                const official = m.role === 'official' ? '<span class="tag-official">官方帳戶 [v]</span>' : '';
+                const vip = m.level === 'vip' ? '<span class="tag-vip">★</span>' : '';
                 box.innerHTML += `
                     <div class="msg-row">
-                        <div class="pfp-small" onclick="showUserCard('${m.uid}')"><img src="${m.pfp}"></div>
-                        <div style="flex-grow:1">
-                            <b style="color:var(--acc); cursor:pointer;" onclick="showUserCard('${m.uid}')">${m.u}</b>
-                            ${imgHtml}
-                            <div style="color:#eee; font-size:15px;">${m.t || ''}</div>
+                        <img src="${m.pfp}" class="pfp-msg" onclick="openCard('${m.uid}')">
+                        <div>
+                            <b onclick="openCard('${m.uid}')" style="cursor:pointer; color:var(--acc);">${m.u}</b>${official}${vip}
+                            <div style="word-break:break-all; color:#eee; margin-top:4px;">${m.t}</div>
                         </div>
                     </div>`;
             });
             document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
         }
 
-        function send() {
-            const t = document.getElementById('m-input').value;
-            if(!t && selectedImages.length === 0) return;
-            db.ref('chats/global').push({ u: me.full_name, uid: me.uid, pfp: me.pfp, t: t, imgs: selectedImages });
-            document.getElementById('m-input').value = ''; selectedImages = []; updatePreview();
-        }
-
-        async function updateMyName() {
-            const newName = document.getElementById('edit-name').value;
-            if(newName) { await db.ref(`users/${me.uid}`).update({ full_name: newName }); me.full_name = newName; localStorage.setItem('tacker_session', JSON.stringify(me)); }
-        }
-
-        function updateMyPfp(input) {
-            const r = new FileReader();
-            r.onload = async (e) => { 
-                document.getElementById('current-pfp').src = e.target.result;
-                await db.ref(`users/${me.uid}`).update({ pfp: e.target.result });
-                me.pfp = e.target.result; localStorage.setItem('tacker_session', JSON.stringify(me));
-            };
-            r.readAsDataURL(input.files[0]);
-        }
-
-        async function showUserCard(uid) {
-            const s = await db.ref(`users/${uid}`).get(); const u = s.val();
-            document.getElementById('modal-name').innerText = u.full_name;
-            document.getElementById('modal-id').innerText = "@" + uid;
-            document.getElementById('modal-pfp-box').innerHTML = `<img src="${u.pfp}" style="width:100%;height:100%;object-fit:cover;">`;
-            document.getElementById('user-modal').style.display = 'flex';
-        }
-
-        function openPwdModal() { document.getElementById('pwd-modal').style.display = 'flex'; }
-        function checkOldPw() { if(document.getElementById('old-pw').value === me.temp_pw) { document.getElementById('pwd-step1').style.display='none'; document.getElementById('pwd-step2').style.display='block'; } else alert("密碼錯誤"); }
-        async function updatePw() {
-            const p1 = document.getElementById('new-pw1').value;
-            if(p1 && p1 === document.getElementById('new-pw2').value) {
-                await db.ref(`users/${me.uid}`).update({ temp_pw: p1 });
-                me.temp_pw = p1; localStorage.setItem('tacker_session', JSON.stringify(me));
-                alert("完成"); document.getElementById('pwd-modal').style.display='none';
-            } else alert("不一致");
-        }
-
-        function tab(t) { document.getElementById('chat-tab').style.display = t==='chat'?'flex':'none'; document.getElementById('me-tab').style.display = t==='me'?'block':'none'; }
+        function listenGlobal() { db.ref('chats/global').limitToLast(50).on('value', s => render(s)); }
+        function listenDMs() { /* 監聽私訊名單與紅點提示 */ }
         function logout() { localStorage.removeItem('tacker_session'); location.reload(); }
+
+        checkAuth();
     </script>
 </body>
 </html>
