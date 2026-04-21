@@ -3,252 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker OS - Official</title>
+    <title>Tacker Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #000; --card: #1e1f22; --acc: #23a559; --text: #fff; --sub: #b5bac1; --danger: #f23f43; --vip: #f1c40f; --official: #5865f2; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root { --bg: #000; --card: #111; --acc: #23a559; --official: #5865f2; --vip: #f1c40f; --text: #fff; --sub: #888; --danger: #f23f43; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
         body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; user-select: none; }
 
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
         .active { display: flex; }
 
-        /* 左側導覽列 (手稿 P4) */
-        .rail { width: 72px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 15px 0; border-right: 1px solid #222; }
-        .rail-item { width: 48px; height: 48px; border-radius: 50%; background: #222; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; color: #fff; border: 2px solid transparent; }
-        .rail-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-        .rail-item.active { border-radius: 15px; border-color: var(--acc); }
-        .unread-dot { position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: var(--danger); border-radius: 50%; border: 2px solid #000; }
+        .rail { width: 75px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 15px; border-right: 1px solid #222; overflow-y: auto; }
+        .nav-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #555; font-size: 20px; transition: 0.2s; position: relative; flex-shrink: 0; }
+        .nav-icon img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid transparent; }
+        .nav-icon.active { color: var(--acc); }
+        .nav-icon.active img { border-color: var(--acc); }
+        .red-dot { position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; background: var(--danger); border-radius: 50%; border: 2px solid #000; display: none; }
 
-        .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; position: relative; }
-        
-        /* 訊息樣式 */
-        #chat-flow { flex-grow: 1; overflow-y: auto; padding: 20px; }
-        .msg-row { display: flex; gap: 12px; margin-bottom: 18px; }
-        .pfp-msg { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
-        .tag-vip { color: var(--vip); font-weight: bold; margin-left: 4px; }
-        .tag-official { background: var(--official); color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 4px; }
+        .tag-official { background: var(--official); color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 5px; font-weight: bold; }
+        .tag-vip { color: var(--vip); font-weight: bold; margin-left: 5px; }
 
-        /* 用戶卡片 & 後台 (手稿 P3/P4) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
-        .dc-card { width: 340px; background: var(--card); border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #333; }
-        .dc-banner { height: 65px; background: var(--official); }
-        .dc-pfp-large { width: 85px; height: 85px; border-radius: 50%; border: 6px solid var(--card); position: absolute; top: 25px; left: 16px; background: #000; }
-        .dc-body { padding: 55px 20px 20px; }
+        .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
+        .msg-row { display: flex; gap: 12px; margin-bottom: 20px; padding: 0 15px; }
+        .pfp { width: 42px; height: 42px; border-radius: 50%; background: #222; overflow: hidden; cursor: pointer; flex-shrink: 0; }
+        .pfp img { width: 100%; height: 100%; object-fit: cover; }
+
+        .input-bar { padding: 15px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 12px; align-items: center; }
+        .input-bar input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 10px; outline: none; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
+        .user-card { width: 320px; background: #18191c; border-radius: 15px; overflow: hidden; border: 1px solid #333; position: relative; }
+        .card-banner { height: 60px; background: var(--official); }
+        .card-pfp { width: 80px; height: 80px; border-radius: 50%; border: 5px solid #18191c; position: absolute; top: 20px; left: 15px; background: #000; overflow: hidden; }
+        .card-pfp img { width: 100%; height: 100%; object-fit: cover; }
+        .card-body { padding: 50px 20px 20px; }
         
-        /* 按鈕群 */
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-green { background: var(--acc); color: #fff; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-acc { background: var(--acc); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
-        .btn-outline { background: transparent; border: 1px solid #444; color: #fff; }
 
-        /* 頂部狀態 (手稿 P4) */
-        .top-bar { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #111; }
-        .status-tag { display: flex; align-items: center; gap: 6px; font-size: 13px; }
-        .dot-online { width: 10px; height: 10px; border-radius: 50%; background: var(--acc); }
+        .admin-box { margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; }
+        .admin-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; color: var(--sub); }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <section id="s-app" class="screen active">
         <div style="display:flex; height:100%;">
-            <nav class="rail">
-                <div class="rail-item active" id="rail-global" onclick="switchMode('global')">
-                    <i class="fa-solid fa-earth-americas"></i>
-                </div>
-                <div id="dm-list-container" style="display:flex; flex-direction:column; gap:10px; width:100%; align-items:center;">
-                    </div>
-                <div style="flex-grow:1;"></div>
-                <div class="rail-item" onclick="showMe()"><i class="fa-solid fa-shield-halved"></i></div>
+            <nav class="rail" id="dm-rail">
+                <div onclick="switchChat('global')" id="nav-global" class="nav-icon active"><i class="fa-solid fa-earth-asia"></i></div>
+                <div id="private-list"></div>
+                <div style="flex-grow: 1;"></div>
+                <div id="nav-requests" onclick="showRequests()" class="nav-icon" style="display:none; color:var(--official);"><i class="fa-solid fa-user-plus"></i><div class="red-dot" style="display:block;"></div></div>
+                <div onclick="tab('me')" id="nav-me" class="nav-icon"><i class="fa-solid fa-shield-halved"></i></div>
             </nav>
 
-            <main class="main">
-                <div class="top-bar">
-                    <b id="view-title">全球大廳</b>
-                    <div id="partner-status" style="display:none;" class="status-tag">
-                        <div class="dot-online"></div> 在線
-                        <i class="fa-solid fa-ban" style="margin-left:10px; color:var(--danger); cursor:pointer;" onclick="toggleBlock()"></i>
-                    </div>
+            <main id="chat-tab" class="main">
+                <header style="height:60px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 20px; justify-content:space-between;">
+                    <b id="chat-title">全球大廳</b>
+                </header>
+                <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding:15px;">
+                    <div id="messages"></div>
                 </div>
-
-                <div id="chat-flow"><div id="messages"></div></div>
-
-                <div id="preview-area" style="display:none; padding:10px; background:#222; display:flex; gap:8px;"></div>
-
-                <div style="padding:20px; background:#1e1f22;">
-                    <div id="dm-notice" style="display:none; color:var(--sub); font-size:12px; margin-bottom:10px; text-align:center;">
-                        對方尚未同意私聊，發送訊息後對方會收到請求
-                    </div>
-                    <div style="display:flex; gap:12px; align-items:center; background:#383a40; padding:8px 15px; border-radius:8px;">
-                        <label for="f-in" style="cursor:pointer; color:var(--sub);"><i class="fa-solid fa-circle-plus"></i></label>
-                        <input type="file" id="f-in" multiple style="display:none;" onchange="handleFiles(this)">
-                        <input id="m-in" placeholder="傳送訊息..." style="flex-grow:1; background:none; border:none; color:#fff; outline:none;">
-                        <button onclick="send()" style="background:none; border:none; color:var(--acc); font-weight:bold; cursor:pointer;">發送</button>
-                    </div>
+                <div class="input-bar">
+                    <input id="m-input" placeholder="傳送訊息..." onkeypress="if(event.key==='Enter') send()">
+                    <button onclick="send()" style="background:var(--acc); border:none; color:#fff; padding:10px 18px; border-radius:10px;"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
+            </main>
+
+            <main id="me-tab" class="main" style="display:none; padding:25px; overflow-y:auto;">
+                <h2 style="font-weight:800;">帳戶設定</h2>
+                <div style="text-align:center; margin-bottom:30px;">
+                    <label for="pfp-input"><img id="current-pfp" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--acc); object-fit:cover;"></label>
+                    <input type="file" id="pfp-input" style="display:none;" onchange="handlePfp(this)">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:11px; color:var(--sub);">顯示名稱</label>
+                    <input id="edit-name" style="width:100%; background:#1e1e1e; border:1px solid #333; color:#fff; padding:14px; border-radius:10px;">
+                </div>
+                <button onclick="saveProfile()" style="width:100%; padding:16px; background:var(--acc); color:#fff; font-weight:bold; border-radius:12px;">儲存變更</button>
+                <button onclick="logout()" style="width:100%; margin-top:20px; background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">登出帳號</button>
             </main>
         </div>
     </section>
 
-    <div id="u-modal" class="modal" onclick="this.style.display='none'">
-        <div class="dc-card" onclick="event.stopPropagation()">
-            <div class="dc-banner"></div>
-            <img class="dc-pfp-large" id="md-pfp">
-            <div class="dc-body">
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <b id="md-name" style="font-size:22px;">用戶</b>
+    <div id="user-modal" class="modal" onclick="this.style.display='none'">
+        <div class="user-card" onclick="event.stopPropagation()">
+            <div class="card-banner"></div>
+            <div class="card-pfp" id="md-pfp-box"></div>
+            <div class="card-body">
+                <div style="display:flex; align-items:center;">
+                    <b id="md-name" style="font-size:20px;"></b>
                     <span id="md-tags"></span>
                 </div>
-                <div id="md-uid" style="color:var(--sub); margin-bottom:20px;">@ID</div>
+                <div id="md-uid" style="color:var(--sub); font-size:13px; margin-bottom:10px;"></div>
                 
-                <div id="user-actions">
-                    <button class="btn btn-green" id="btn-msg"><i class="fa-solid fa-paper-plane"></i> 發送訊息</button>
-                </div>
+                <button id="dm-btn" class="btn btn-acc">發送訊息</button>
 
-                <div id="admin-panel" style="display:none; margin-top:20px; padding-top:15px; border-top:1px solid #333;">
-                    <b style="font-size:12px; color:var(--official);">[ 官方管理授權 ]</b>
-                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; border-radius:5px;">
-                            <span>會員資格</span>
-                            <input type="checkbox" id="md-vip-check" onchange="toggleVipStatus()">
-                        </div>
-                        <button class="btn btn-danger" onclick="adminCmd('mute')">禁言成員</button>
-                        <button class="btn btn-danger" onclick="adminCmd('kick')">強制登出</button>
+                <div id="admin-panel" class="admin-box" style="display:none;">
+                    <div style="font-size:11px; color:var(--official); margin-bottom:10px; font-weight:bold;">後台管理</div>
+                    <div class="admin-row">
+                        <span>會員資格</span>
+                        <input type="checkbox" id="md-vip-check" onchange="toggleVip()">
                     </div>
+                    <button class="btn btn-danger" style="padding:8px;" onclick="adminAction('kick')">強制登出</button>
+                    <button class="btn btn-danger" style="padding:8px;" onclick="adminAction('mute')">禁言成員</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. 防曝光保護 (手稿 P1)
         document.onkeydown = e => { if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73) || (e.ctrlKey && e.keyCode == 85)) return false; };
 
         const config = { apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw", databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com", projectId: "tacker-ebc5a" };
         firebase.initializeApp(config);
         const db = firebase.database();
-
         let me = null;
-        let mode = 'global'; 
+        let currentChat = 'global';
         let targetUID = null;
 
-        // 2. 登入與同步 (手稿 P1)
-        async function checkAuth() {
+        async function initApp() {
             const saved = localStorage.getItem('tacker_session');
-            if(!saved) return location.reload();
+            if(!saved) return;
             me = JSON.parse(saved);
-            
-            // 即時同步會員資格 (手稿 P2)
+
             db.ref(`users/${me.uid}`).on('value', s => {
-                const updated = s.val();
-                if(updated) {
-                    me = { ...me, ...updated };
-                    if(me.status === 'kicked') { logout(); alert("你已被官方強制登出"); }
+                if(s.exists()) {
+                    me = { uid: me.uid, ...s.val() };
+                    if(me.status === 'kicked') { logout(); location.reload(); }
+                    document.getElementById('current-pfp').src = me.pfp || "";
+                    document.getElementById('edit-name').value = me.full_name || "";
                 }
             });
-            initApp();
-        }
-
-        function initApp() {
             listenGlobal();
-            listenDMs();
+            listenContacts();
+            listenRequests();
         }
 
-        // 3. 私聊與官方授權邏輯 (手稿 P4/P3)
-        async function openCard(uid) {
+        function send() {
+            const val = document.getElementById('m-input').value.trim();
+            if(!val) return;
+            const limit = me.level === 'vip' ? 4000 : 1000;
+            if(val.length > limit) return alert("超過字數限制");
+
+            const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: val, ts: Date.now(), role: me.role||'user', level: me.level||'free' };
+            if(currentChat === 'global') {
+                db.ref('chats/global').push(data);
+            } else {
+                const rid = [me.uid, currentChat].sort().join('_');
+                db.ref(`chats/private/${rid}/msgs`).push(data);
+                db.ref(`chats/private/${rid}/unread/${currentChat}`).set(true);
+            }
+            document.getElementById('m-input').value = '';
+        }
+
+        async function openUserCard(uid) {
             const s = await db.ref(`users/${uid}`).get();
             const u = s.val();
             targetUID = uid;
-            
             document.getElementById('md-name').innerText = u.full_name;
             document.getElementById('md-uid').innerText = "@" + uid;
-            document.getElementById('md-pfp').src = u.pfp;
-            document.getElementById('md-tags').innerHTML = (u.role === 'official' ? '<span class="tag-official">官方帳戶 [v]</span>' : '') + (u.level === 'vip' ? '<span class="tag-vip">★</span>' : '');
-            
-            // 顯示管理後台 (僅官方可見)
+            document.getElementById('md-pfp-box').innerHTML = `<img src="${u.pfp}">`;
+            document.getElementById('md-tags').innerHTML = (u.role === 'official' ? '<span class="tag-official">官方 [v]</span>' : '') + (u.level === 'vip' ? '<span class="tag-vip">★</span>' : '');
             document.getElementById('admin-panel').style.display = (me.role === 'official' && uid !== me.uid) ? 'block' : 'none';
             document.getElementById('md-vip-check').checked = (u.level === 'vip');
 
-            // 私聊按鈕 (不可加自己)
-            document.getElementById('user-actions').style.display = (uid === me.uid) ? 'none' : 'block';
-            document.getElementById('btn-msg').onclick = () => startDM(uid, u.full_name);
-
-            document.getElementById('u-modal').style.display = 'flex';
+            document.getElementById('dm-btn').onclick = () => {
+                if(me.role === 'official') {
+                    startPrivateChat(uid, u.full_name, u.pfp);
+                } else {
+                    requestDM(uid, u.full_name, u.pfp);
+                }
+                document.getElementById('user-modal').style.display = 'none';
+            };
+            document.getElementById('user-modal').style.display = 'flex';
         }
 
-        function startDM(uid, name) {
-            mode = 'dm';
-            targetUID = uid;
-            document.getElementById('view-title').innerText = name;
-            document.getElementById('partner-status').style.display = 'flex';
-            document.getElementById('u-modal').style.display = 'none';
-            
-            // 官方權限：不用同意即可發訊
-            if(me.role !== 'official') {
-                document.getElementById('dm-notice').style.display = 'block';
-            }
-            
-            db.ref(`chats/dms/${[me.uid, uid].sort().join('_')}`).limitToLast(50).on('value', s => render(s));
-        }
-
-        // 4. 會員功能與限制 (手稿 P2)
-        function send() {
-            const val = document.getElementById('m-in').value;
-            // 後台如果取消會員勾選，這裡會立刻判定
-            const charLimit = me.level === 'vip' ? 4000 : 100;
-            if(val.length > charLimit) return alert(`會員限制：字數不能超過 ${charLimit}`);
-
-            const path = mode === 'global' ? 'chats/global' : `chats/dms/${[me.uid, targetUID].sort().join('_')}`;
-            
-            db.ref(path).push({
-                u: me.full_name, uid: me.uid, pfp: me.pfp,
-                t: val, role: me.role, level: me.level
-            });
-            document.getElementById('m-in').value = '';
-        }
-
-        // 5. 後台管理執行 (手稿 P3)
-        async function toggleVipStatus() {
+        async function toggleVip() {
             const isVip = document.getElementById('md-vip-check').checked;
             await db.ref(`users/${targetUID}`).update({ level: isVip ? 'vip' : 'free' });
-            alert("會員資格已更新，對方特權將立刻暫停或啟用");
         }
 
-        async function adminCmd(type) {
-            if(type === 'kick') {
-                await db.ref(`users/${targetUID}`).update({ status: 'kicked' });
-                alert("已執行強制登出");
-            } else {
-                alert("已執行禁言");
-            }
+        async function adminAction(type) {
+            if(type === 'kick') await db.ref(`users/${targetUID}`).update({ status: 'kicked' });
+            if(type === 'mute') alert("已執行禁言");
         }
 
-        function render(snap) {
+        function listenGlobal() { db.ref('chats/global').limitToLast(40).on('value', s => renderMessages(s)); }
+        
+        function renderMessages(snap) {
             const box = document.getElementById('messages'); box.innerHTML = '';
             snap.forEach(d => {
                 const m = d.val();
-                const official = m.role === 'official' ? '<span class="tag-official">官方帳戶 [v]</span>' : '';
-                const vip = m.level === 'vip' ? '<span class="tag-vip">★</span>' : '';
-                box.innerHTML += `
-                    <div class="msg-row">
-                        <img src="${m.pfp}" class="pfp-msg" onclick="openCard('${m.uid}')">
-                        <div>
-                            <b onclick="openCard('${m.uid}')" style="cursor:pointer; color:var(--acc);">${m.u}</b>${official}${vip}
-                            <div style="word-break:break-all; color:#eee; margin-top:4px;">${m.t}</div>
-                        </div>
-                    </div>`;
+                const off = m.role === 'official' ? '<span class="tag-official">官方 [v]</span>' : '';
+                const vp = m.level === 'vip' ? '<span class="tag-vip">★</span>' : '';
+                box.innerHTML += `<div class="msg-row"><div class="pfp" onclick="openUserCard('${m.uid}')"><img src="${m.pfp}"></div>
+                    <div><b style="color:var(--acc);">${m.u}</b>${off}${vp}<div style="color:#eee;">${m.t}</div></div></div>`;
             });
             document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
         }
 
-        function listenGlobal() { db.ref('chats/global').limitToLast(50).on('value', s => render(s)); }
-        function listenDMs() { /* 監聽私訊名單與紅點提示 */ }
-        function logout() { localStorage.removeItem('tacker_session'); location.reload(); }
+        function tab(t) {
+            document.getElementById('chat-tab').style.display = t === 'chat' ? 'flex' : 'none';
+            document.getElementById('me-tab').style.display = t === 'me' ? 'block' : 'none';
+        }
 
-        checkAuth();
+        function logout() { localStorage.removeItem('tacker_session'); location.reload(); }
+        initApp();
     </script>
 </body>
 </html>
