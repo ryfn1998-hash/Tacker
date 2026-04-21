@@ -16,47 +16,62 @@
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
         .active { display: flex; }
 
-        /* --- 側邊導航 --- */
+        /* --- 100% 還原原始首頁樣式 --- */
+        #s-home { background: #fff; color: #000; align-items: center; justify-content: center; text-align: center; }
+        .big-tacker { font-weight: 900; transform: scale(10); opacity: 0; animation: zoomIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes zoomIn { 0% { transform: scale(12); opacity: 0; } 100% { transform: scale(1); opacity: 1; font-size: clamp(60px, 15vw, 100px); letter-spacing: 2px; } }
+        .float-btn { margin-top: 50px; padding: 18px 60px; background: #000; color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; opacity: 0; transform: translateY(30px); animation: fadeUp 0.8s 1s forwards; transition: 0.3s; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 導航與佈局 --- */
         .rail { width: 70px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 15px; border-right: 1px solid #222; }
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
 
-        /* --- 多圖預覽 (Discord Style) --- */
+        /* --- 多圖預覽區 --- */
         #preview-area { display: none; padding: 10px; background: #2b2d31; border-radius: 8px 8px 0 0; gap: 10px; overflow-x: auto; border-bottom: 1px solid #333; }
         .preview-item { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
         .preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #2b2d31; }
+        .remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
         /* --- 訊息內容 --- */
         .msg-row { display: flex; gap: 12px; margin-bottom: 20px; padding: 0 15px; }
-        .pfp-small { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; overflow: hidden; flex-shrink: 0; border: 1px solid #222; }
+        .pfp-small { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; overflow: hidden; flex-shrink: 0; }
         .pfp-small img { width: 100%; height: 100%; object-fit: cover; }
         .msg-images { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
         .msg-images img { max-width: 150px; border-radius: 8px; border: 1px solid #333; }
 
-        /* --- Discord 風格用戶卡片 --- */
+        /* --- Discord 風格卡片 --- */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
-        .dc-card { width: 300px; background: var(--card); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .dc-card { width: 300px; background: var(--card); border-radius: 8px; overflow: hidden; }
         .dc-header { height: 60px; background: var(--acc); position: relative; }
         .dc-pfp { width: 80px; height: 80px; border-radius: 50%; border: 6px solid var(--card); position: absolute; top: 20px; left: 16px; background: #000; overflow: hidden; }
         .dc-body { padding: 50px 16px 16px; }
         .dc-name { font-size: 20px; font-weight: bold; }
-        .dc-id { font-size: 14px; color: var(--sub); margin: 5px 0 15px; }
+        .dc-id { font-size: 14px; color: var(--sub); }
 
-        /* --- 個人設定排版 --- */
+        /* --- 設定頁面相機按鈕與鎖定欄位 --- */
         .me-pfp-container { position: relative; width: 100px; height: 100px; margin: 0 auto 25px; }
         .me-pfp-container img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--acc); }
         .cam-btn { position: absolute; bottom: 0; right: 0; background: #222; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--card); color: #fff; }
-
-        /* --- 不可改 ID 欄位樣式 --- */
-        .locked-field { background: #0c0c0c; border: 1px solid #222; color: #555; padding: 12px; border-radius: 5px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; }
+        .locked-field { background: #0c0c0c; border: 1px solid #222; color: #666; padding: 12px; border-radius: 5px; font-family: monospace; display: flex; justify-content: space-between; }
 
         .btn-green { width: 100%; padding: 12px; background: var(--acc); color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <section id="s-home" class="screen active" style="background:#fff; color:#000; align-items:center; justify-content:center; cursor:pointer;" onclick="checkAuth()">
-        <div style="font-weight:900; font-size:80px; letter-spacing:2px;">Tacker</div>
+    <section id="s-home" class="screen active">
+        <div class="big-tacker">Tacker</div>
+        <button class="float-btn" onclick="checkAuth()">進入 ——＞</button>
+    </section>
+
+    <section id="s-login" class="screen" style="background:#f5f5f5; align-items:center; justify-content:center;">
+        <div style="background:#fff; width:320px; padding:35px; border-radius:15px; color:#333;">
+            <h2 style="margin:0 0 25px; font-weight:800;">驗證身分</h2>
+            <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:14px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px;">
+            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:14px; margin-bottom:25px; border:1px solid #ddd; border-radius:8px;">
+            <button onclick="auth()" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">登入 Tacker</button>
+        </div>
     </section>
 
     <section id="s-app" class="screen">
@@ -68,7 +83,9 @@
             </nav>
 
             <main id="chat-tab" class="main">
-                <header style="padding:15px; border-bottom:1px solid #222;"><b>全球大廳</b></header>
+                <header style="padding:15px; border-bottom:1px solid #222; display:flex; justify-content:space-between;">
+                    <b>全球大廳</b>
+                </header>
                 <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding:15px 0;"><div id="messages"></div></div>
                 
                 <div id="preview-area"></div>
@@ -96,12 +113,12 @@
                 <div style="margin-bottom:30px;">
                     <label style="color:var(--sub); font-size:12px;">帳號代碼 (不可修改)</label>
                     <div class="locked-field">
-                        <span id="my-id-display">@loading...</span>
-                        <i class="fa-solid fa-lock" style="font-size:10px;"></i>
+                        <span id="my-id-display">@ID</span>
+                        <i class="fa-solid fa-lock"></i>
                     </div>
                 </div>
 
-                <button class="btn-green" onclick="openPwdModal()">修改帳號密碼</button>
+                <button class="btn-green" onclick="openPwdModal()">更改密碼</button>
                 <button onclick="logout()" style="width:100%; background:none; border:none; color:var(--danger); margin-top:20px; cursor:pointer; font-weight:bold;">登出</button>
             </main>
         </div>
@@ -111,8 +128,8 @@
         <div class="dc-card" onclick="event.stopPropagation()">
             <div class="dc-header"><div class="dc-pfp" id="modal-pfp-box"></div></div>
             <div class="dc-body">
-                <div class="dc-name" id="modal-name">名稱</div>
-                <div class="dc-id" id="modal-id">@ID</div>
+                <div class="dc-name" id="modal-name"></div>
+                <div class="dc-id" id="modal-id"></div>
                 <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
                 <button class="btn-green" id="dm-req-btn">發送私訊權限</button>
             </div>
@@ -122,16 +139,15 @@
     <div id="pwd-modal" class="modal">
         <div class="dc-card" style="padding:20px; text-align:center; background:#fff; color:#000;">
             <div id="pwd-step1">
-                <h3 style="margin-top:0;">驗證舊密碼</h3>
+                <h3>驗證舊密碼</h3>
                 <input type="password" id="old-pw" placeholder="輸入舊密碼" style="width:100%; padding:12px; margin:15px 0; border:1px solid #ddd; border-radius:4px;">
-                <button class="btn-green" onclick="checkOldPw()">驗證並下一步</button>
-                <p onclick="closePwdModal()" style="color:#888; cursor:pointer; font-size:12px; margin-top:15px;">取消</p>
+                <button class="btn-green" onclick="checkOldPw()">驗證</button>
             </div>
             <div id="pwd-step2" style="display:none;">
-                <h3 style="margin-top:0;">設定新密碼</h3>
+                <h3>新密碼</h3>
                 <input type="password" id="new-pw1" placeholder="輸入新密碼" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:4px;">
-                <input type="password" id="new-pw2" placeholder="再次輸入新密碼" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:4px;">
-                <button class="btn-green" onclick="updatePw()">完成修改</button>
+                <input type="password" id="new-pw2" placeholder="再次確認" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:4px;">
+                <button class="btn-green" onclick="updatePw()">儲存</button>
             </div>
         </div>
     </div>
@@ -145,19 +161,25 @@
 
         function checkAuth() { 
             const saved = localStorage.getItem('tacker_session');
-            if(saved) { me = JSON.parse(saved); initApp(); } else { alert("請先登入"); location.reload(); }
+            if(saved) { me = JSON.parse(saved); initApp(); } else { go('s-login'); } 
+        }
+        
+        async function auth() {
+            const uid = document.getElementById('u-id').value.trim(); const pw = document.getElementById('u-pw').value.trim();
+            const s = await db.ref(`users/${uid}`).get();
+            if(s.exists() && s.val().temp_pw === pw) { me = { uid, ...s.val() }; localStorage.setItem('tacker_session', JSON.stringify(me)); initApp(); } else alert("帳號或密碼錯誤");
         }
 
+        function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
         function initApp() {
-            document.getElementById('s-home').classList.remove('active');
-            document.getElementById('s-app').classList.add('active');
+            go('s-app');
             document.getElementById('current-pfp').src = me.pfp;
             document.getElementById('edit-name').value = me.full_name;
             document.getElementById('my-id-display').innerText = "@" + me.uid;
-            listenGlobal();
+            db.ref('chats/global').limitToLast(50).on('value', s => render(s));
         }
 
-        // --- 多圖與預覽 ---
         function handleMultipleFiles(input) {
             const files = Array.from(input.files);
             files.forEach(file => {
@@ -170,12 +192,9 @@
 
         function updatePreview() {
             const area = document.getElementById('preview-area');
-            if(selectedImages.length > 0) {
-                area.style.display = 'flex';
-                area.innerHTML = selectedImages.map((src, idx) => `<div class="preview-item"><img src="${src}"><div class="remove-img" onclick="removeSelectedImg(${idx})">✕</div></div>`).join('');
-            } else { area.style.display = 'none'; }
+            area.style.display = selectedImages.length > 0 ? 'flex' : 'none';
+            area.innerHTML = selectedImages.map((src, idx) => `<div class="preview-item"><img src="${src}"><div class="remove-img" onclick="removeSelectedImg(${idx})">✕</div></div>`).join('');
         }
-
         function removeSelectedImg(idx) { selectedImages.splice(idx, 1); updatePreview(); }
 
         function render(snap) {
@@ -187,9 +206,9 @@
                     <div class="msg-row">
                         <div class="pfp-small" onclick="showUserCard('${m.uid}')"><img src="${m.pfp}"></div>
                         <div style="flex-grow:1">
-                            <b style="color:var(--acc); cursor:pointer; font-size:14px;" onclick="showUserCard('${m.uid}')">${m.u}</b>
+                            <b style="color:var(--acc); cursor:pointer;" onclick="showUserCard('${m.uid}')">${m.u}</b>
                             ${imgHtml}
-                            <div style="color:#eee; font-size:15px; word-break:break-all;">${m.t || ''}</div>
+                            <div style="color:#eee; font-size:15px;">${m.t || ''}</div>
                         </div>
                     </div>`;
             });
@@ -203,13 +222,9 @@
             document.getElementById('m-input').value = ''; selectedImages = []; updatePreview();
         }
 
-        // --- 個人資料更新 ---
         async function updateMyName() {
             const newName = document.getElementById('edit-name').value;
-            if(newName) {
-                await db.ref(`users/${me.uid}`).update({ full_name: newName });
-                me.full_name = newName; localStorage.setItem('tacker_session', JSON.stringify(me));
-            }
+            if(newName) { await db.ref(`users/${me.uid}`).update({ full_name: newName }); me.full_name = newName; localStorage.setItem('tacker_session', JSON.stringify(me)); }
         }
 
         function updateMyPfp(input) {
@@ -222,7 +237,6 @@
             r.readAsDataURL(input.files[0]);
         }
 
-        // --- 視窗控制 ---
         async function showUserCard(uid) {
             const s = await db.ref(`users/${uid}`).get(); const u = s.val();
             document.getElementById('modal-name').innerText = u.full_name;
@@ -232,29 +246,16 @@
         }
 
         function openPwdModal() { document.getElementById('pwd-modal').style.display = 'flex'; }
-        function closePwdModal() { 
-            document.getElementById('pwd-modal').style.display='none'; 
-            document.getElementById('pwd-step1').style.display='block'; 
-            document.getElementById('pwd-step2').style.display='none'; 
-        }
-
-        function checkOldPw() {
-            if(document.getElementById('old-pw').value === me.temp_pw) {
-                document.getElementById('pwd-step1').style.display='none';
-                document.getElementById('pwd-step2').style.display='block';
-            } else { alert("驗證失敗，舊密碼錯誤"); }
-        }
-
+        function checkOldPw() { if(document.getElementById('old-pw').value === me.temp_pw) { document.getElementById('pwd-step1').style.display='none'; document.getElementById('pwd-step2').style.display='block'; } else alert("密碼錯誤"); }
         async function updatePw() {
             const p1 = document.getElementById('new-pw1').value;
             if(p1 && p1 === document.getElementById('new-pw2').value) {
                 await db.ref(`users/${me.uid}`).update({ temp_pw: p1 });
                 me.temp_pw = p1; localStorage.setItem('tacker_session', JSON.stringify(me));
-                alert("密碼已成功更新"); closePwdModal();
-            } else { alert("新密碼不一致"); }
+                alert("完成"); document.getElementById('pwd-modal').style.display='none';
+            } else alert("不一致");
         }
 
-        function listenGlobal() { db.ref('chats/global').limitToLast(50).on('value', s => render(s)); }
         function tab(t) { document.getElementById('chat-tab').style.display = t==='chat'?'flex':'none'; document.getElementById('me-tab').style.display = t==='me'?'block':'none'; }
         function logout() { localStorage.removeItem('tacker_session'); location.reload(); }
     </script>
