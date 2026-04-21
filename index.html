@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker Pro</title>
+    <title>Tacker Pro | v667 Flagship</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -100,13 +100,11 @@
                     <span id="md-tags"></span>
                 </div>
                 <div id="md-uid" style="color:var(--sub); font-size:13px; margin-bottom:10px;"></div>
-                
                 <button id="dm-btn" class="btn btn-acc">發送訊息</button>
-
                 <div id="admin-panel" class="admin-box" style="display:none;">
                     <div style="font-size:11px; color:var(--official); margin-bottom:10px; font-weight:bold;">後台管理</div>
                     <div class="admin-row">
-                        <span>會員資格</span>
+                        <span>會員名單資格</span>
                         <input type="checkbox" id="md-vip-check" onchange="toggleVip()">
                     </div>
                     <button class="btn btn-danger" style="padding:8px;" onclick="adminAction('kick')">強制登出</button>
@@ -118,7 +116,6 @@
 
     <script>
         document.onkeydown = e => { if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73) || (e.ctrlKey && e.keyCode == 85)) return false; };
-
         const config = { apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw", databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com", projectId: "tacker-ebc5a" };
         firebase.initializeApp(config);
         const db = firebase.database();
@@ -130,7 +127,6 @@
             const saved = localStorage.getItem('tacker_session');
             if(!saved) return;
             me = JSON.parse(saved);
-
             db.ref(`users/${me.uid}`).on('value', s => {
                 if(s.exists()) {
                     me = { uid: me.uid, ...s.val() };
@@ -149,7 +145,6 @@
             if(!val) return;
             const limit = me.level === 'vip' ? 4000 : 1000;
             if(val.length > limit) return alert("超過字數限制");
-
             const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: val, ts: Date.now(), role: me.role||'user', level: me.level||'free' };
             if(currentChat === 'global') {
                 db.ref('chats/global').push(data);
@@ -171,13 +166,9 @@
             document.getElementById('md-tags').innerHTML = (u.role === 'official' ? '<span class="tag-official">官方 [v]</span>' : '') + (u.level === 'vip' ? '<span class="tag-vip">★</span>' : '');
             document.getElementById('admin-panel').style.display = (me.role === 'official' && uid !== me.uid) ? 'block' : 'none';
             document.getElementById('md-vip-check').checked = (u.level === 'vip');
-
             document.getElementById('dm-btn').onclick = () => {
-                if(me.role === 'official') {
-                    startPrivateChat(uid, u.full_name, u.pfp);
-                } else {
-                    requestDM(uid, u.full_name, u.pfp);
-                }
+                if(me.role === 'official') { startPrivateChat(uid, u.full_name, u.pfp); } 
+                else { requestDM(uid, u.full_name, u.pfp); }
                 document.getElementById('user-modal').style.display = 'none';
             };
             document.getElementById('user-modal').style.display = 'flex';
@@ -190,11 +181,10 @@
 
         async function adminAction(type) {
             if(type === 'kick') await db.ref(`users/${targetUID}`).update({ status: 'kicked' });
-            if(type === 'mute') alert("已執行禁言");
+            if(type === 'mute') alert("禁言成員完成");
         }
 
         function listenGlobal() { db.ref('chats/global').limitToLast(40).on('value', s => renderMessages(s)); }
-        
         function renderMessages(snap) {
             const box = document.getElementById('messages'); box.innerHTML = '';
             snap.forEach(d => {
