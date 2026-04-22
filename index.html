@@ -3,207 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker Pro | Connect & Secure</title>
+    <title>Tacker</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #000; --card: #111; --acc: #23a559; --official: #f1c40f; --text: #fff; --sub: #888; --danger: #f23f43; --dm-bg: #050505; }
+        :root { --bg: #000; --card: #111; --acc: #23a559; --official: #f1c40f; --text: #fff; --sub: #888; --danger: #f23f43; }
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body, html { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; }
+        body, html { margin:0; padding:0; height:100%; background:#fff; color:#000; overflow:hidden; }
 
-        .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
+        .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; align-items:center; justify-content:center; }
         .active { display: flex; }
 
-        /* --- 載入動畫樣式 --- */
-        @keyframes tackerPop {
-            0% { transform: scale(1.3); opacity: 0; filter: blur(10px); }
-            100% { transform: scale(1); opacity: 1; filter: blur(0); }
-        }
+        /* --- 進入動畫與進度條 --- */
+        @keyframes titleZoom { 0% { transform: scale(2.5); opacity: 0; filter: blur(20px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
+        .zoom-title { font-weight: 900; font-size: 80px; animation: titleZoom 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .slide-up-btn { margin-top: 40px; padding: 15px 60px; background: #000; color: #fff; border-radius: 50px; font-weight: bold; border:none; cursor: pointer; }
         .load-bar-wrap { width: 220px; height: 4px; background: #eee; margin: 25px auto; border-radius: 10px; overflow: hidden; }
         #load-bar-fill { width: 0%; height: 100%; background: #000; transition: 0.1s; }
 
-        /* --- 側邊欄 --- */
+        /* --- 主介面 --- */
+        #s-app { background: var(--bg); color: var(--text); align-items: stretch; justify-content: flex-start; }
         .rail { width: 75px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid #222; height: 100%; }
-        .nav-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #444; font-size: 20px; position: relative; flex-shrink: 0; margin-bottom: 20px; }
-        .nav-icon:active { transform: scale(0.9); }
-        .nav-icon img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid transparent; }
+        .nav-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #444; font-size: 20px; position: relative; flex-shrink: 0; margin-bottom: 20px; overflow: hidden; }
+        .nav-icon img { width: 100%; height: 100%; object-fit: cover; border: 2px solid transparent; border-radius: 50%; }
         .nav-icon.active { color: var(--acc); }
         .nav-icon.active img { border-color: var(--acc); }
         #nav-me { margin-top: auto; margin-bottom: 0; }
-        
+
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
         .msg-row { display: flex; gap: 12px; margin-bottom: 22px; padding: 0 15px; }
-        .pfp { width: 44px; height: 44px; border-radius: 50%; background: #222; overflow: hidden; cursor: pointer; border: 1px solid #333; flex-shrink: 0; }
+        .pfp { width: 44px; height: 44px; border-radius: 50%; background: #222; overflow: hidden; border: 1px solid #333; flex-shrink: 0; cursor: pointer; }
         .pfp img { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* 圖片訊息樣式 */
-        .msg-img { max-width: 250px; max-height: 350px; border-radius: 12px; margin-top: 8px; border: 1px solid #333; display: block; cursor: zoom-in; }
+        .msg-img { max-width: 250px; border-radius: 12px; margin-top: 8px; border: 1px solid #333; cursor: zoom-in; }
 
         .input-bar { padding: 12px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 12px; align-items: center; }
         .input-bar input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 12px; outline: none; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
-        .user-card { width: 300px; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; }
-        .pwd-step { padding: 30px; width: 320px; background: #fff; color: #000; border-radius: 15px; text-align: center; display: none; }
-        .pwd-btn { width: 100%; padding: 12px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+
+        /* --- 用戶資料卡片彈窗 --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .user-card { width: 320px; background: var(--card); border-radius: 24px; border: 1px solid #333; overflow: hidden; position: relative; }
+        .card-header { height: 100px; background: linear-gradient(45deg, #23a559, #1a7a42); }
+        .card-body { padding: 0 20px 20px; text-align: center; margin-top: -45px; }
+        .card-pfp { width: 90px; height: 90px; border-radius: 50%; border: 6px solid var(--card); margin: 0 auto; overflow: hidden; background: #222; }
+        .card-pfp img { width: 100%; height: 100%; object-fit: cover; }
+        .dm-send-btn { width: 100%; padding: 15px; background: var(--acc); color: #fff; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .dm-send-btn:active { background: #1a7a42; }
     </style>
 </head>
 <body>
 
-    <section id="s-home" class="screen active" style="background:#fff; color:#000; align-items:center; justify-content:center;">
-        <div style="text-align: center;">
-            <div style="font-weight:900; font-size:80px; animation: tackerPop 0.8s ease-out;">Tacker</div>
-            <div class="load-bar-wrap"><div id="load-bar-fill"></div></div>
-            <div id="load-text" style="font-family: monospace; font-weight: bold;">0%</div>
-            <button id="entry-btn" onmousedown="checkAuth()" style="display:none; margin-top:30px; padding:15px 50px; background:#000; color:#fff; border-radius:50px; font-weight:bold; cursor:pointer;">START SYSTEM</button>
-        </div>
+    <section id="s-intro" class="screen active">
+        <div class="zoom-title">Tacker</div>
+        <button class="slide-up-btn" onmousedown="handleEnter()">進入系統</button>
     </section>
 
-    <section id="s-login" class="screen" style="background:#f5f5f5; align-items:center; justify-content:center;">
-        <div style="background:#fff; width:320px; padding:35px; border-radius:15px; color:#333;">
+    <section id="s-login" class="screen" style="background:#f5f5f5;">
+        <div style="background:#fff; width:320px; padding:35px; border-radius:15px; color:#333; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h2 style="margin:0 0 25px; font-weight:800;">驗證身分</h2>
             <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:14px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px;">
             <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:14px; margin-bottom:25px; border:1px solid #ddd; border-radius:8px;">
-            <button onmousedown="auth()" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:8px; font-weight:bold;">登入 Tacker</button>
+            <button onmousedown="auth()" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">驗證並登入</button>
+        </div>
+    </section>
+
+    <section id="s-loader" class="screen">
+        <div style="text-align: center;">
+            <div style="font-weight:900; font-size:40px; margin-bottom:10px;">Tacker</div>
+            <div class="load-bar-wrap"><div id="load-bar-fill"></div></div>
+            <div id="load-text" style="font-family: monospace; font-weight: bold;">0%</div>
         </div>
     </section>
 
     <section id="s-app" class="screen">
-        <div style="display:flex; height:100%;">
-            <nav class="rail" id="dm-rail">
+        <div style="display:flex; height:100%; width:100%;">
+            <nav class="rail">
                 <div onmousedown="tab('chat')" id="nav-chat" class="nav-icon active"><i class="fa-solid fa-earth-asia"></i></div>
-                <div id="nav-requests" onmousedown="showRequests()" class="nav-icon" style="display:none; color:var(--official);"><i class="fa-solid fa-user-plus"></i><div class="red-dot"></div></div>
                 <div id="private-list" style="display:flex; flex-direction:column; align-items:center; width:100%;"></div>
                 <div onmousedown="tab('me')" id="nav-me" class="nav-icon"><i class="fa-solid fa-shield-halved"></i></div>
             </nav>
-
             <main id="chat-tab" class="main">
-                <header style="height:60px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 20px; justify-content:space-between;">
+                <header style="height:60px; border-bottom:1px solid #222; display:flex; align-items:center; padding:0 20px;">
                     <b id="chat-title">全球大廳</b>
                 </header>
-                <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding:15px;">
-                    <div id="messages"></div>
-                </div>
+                <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding:15px;"><div id="messages"></div></div>
                 <div class="input-bar">
                     <input id="m-input" placeholder="傳送訊息..." onkeypress="if(event.key==='Enter') send()">
                     <button onmousedown="send()" style="background:var(--acc); border:none; color:#fff; padding:10px 18px; border-radius:12px;"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </main>
-
-            <main id="me-tab" class="main" style="display:none; padding:25px; overflow-y:auto;">
-                <h2 style="font-weight:800;">帳戶設定</h2>
-                <div style="text-align:center; margin-bottom:30px;">
-                    <label for="pfp-input"><img id="current-pfp" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--acc); object-fit:cover;"></label>
-                    <input type="file" id="pfp-input" style="display:none;" onchange="handleFile(this, 'pfp')">
-                </div>
-                <input id="edit-name" style="width:100%; background:#1e1e1e; border:1px solid #333; color:#fff; padding:14px; border-radius:10px; margin-bottom:15px;">
-                <button onmousedown="openPwdModal()" style="width:100%; padding:14px; background:#333; color:#fff; border:none; border-radius:10px; margin-bottom:20px; cursor:pointer;">🔒 修改安全密碼</button>
-                <textarea id="edit-bio" style="width:100%; height:80px; background:#1e1e1e; border:1px solid #333; color:#fff; padding:14px; border-radius:10px; resize:none; margin-bottom:20px;"></textarea>
-                <button onmousedown="saveProfile()" style="width:100%; padding:16px; background:var(--acc); color:#fff; font-weight:bold; border-radius:12px;">儲存變更</button>
-            </main>
         </div>
     </section>
 
-    <div id="user-modal" class="modal" onclick="this.style.display='none'"><div class="user-card" onclick="event.stopPropagation()"><div style="height:140px; padding:20px; text-align:center;"><div id="modal-pfp" style="width:70px; height:70px; border-radius:50%; margin:0 auto; overflow:hidden; border:2px solid var(--acc);"></div><h2 id="modal-name" style="margin:10px 0 0;"></h2><p id="modal-bio" style="font-size:12px; color:var(--sub);"></p></div><button id="dm-btn" style="width:100%; padding:15px; background:var(--acc); border:none; color:#fff; font-weight:bold;">發起私訊</button></div></div>
-    <div id="pwd-modal" class="modal"><div id="pwd-step1" class="pwd-step" style="display:block;"><h3>身份驗證</h3><input type="password" id="old-pw-input" placeholder="舊密碼"><button class="pwd-btn" onmousedown="verifyOldPwd()">驗證</button><p onmousedown="closePwdModal()" style="font-size:12px; cursor:pointer;">取消</p></div><div id="pwd-step2" class="pwd-step"><h3>新密碼</h3><input type="password" id="new-pw1" placeholder="新密碼"><button class="pwd-btn" onmousedown="submitNewPwd()">完成</button></div></div>
+    <div id="user-modal" class="modal" onclick="this.style.display='none'">
+        <div class="user-card" onclick="event.stopPropagation()">
+            <div class="card-header"></div>
+            <div class="card-body">
+                <div class="card-pfp" id="modal-pfp"></div>
+                <h2 id="modal-name" style="margin:12px 0 4px; color:#fff;"></h2>
+                <p id="modal-bio" style="font-size:14px; color:var(--sub); margin-bottom:20px;"></p>
+            </div>
+            <button id="dm-btn" class="dm-send-btn">
+                <i class="fa-solid fa-paper-plane"></i> 傳送私訊
+            </button>
+        </div>
+    </div>
 
     <script>
-        // 1. 動畫載入邏輯
-        let prog = 0;
-        const timer = setInterval(() => {
-            prog += Math.floor(Math.random() * 6) + 1;
-            if(prog >= 100) {
-                prog = 100; clearInterval(timer);
-                document.getElementById('load-bar-fill').style.width = '100%';
-                document.getElementById('load-text').innerText = '100%';
-                document.getElementById('entry-btn').style.display = 'block';
-            } else {
-                document.getElementById('load-bar-fill').style.width = prog + '%';
-                document.getElementById('load-text').innerText = prog + '%';
-            }
-        }, 60);
-
         const config = { apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw", databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com", projectId: "tacker-ebc5a" };
         firebase.initializeApp(config);
         const db = firebase.database();
         let me = null;
         let currentChat = 'global';
 
-        function checkAuth() { const saved = localStorage.getItem('tacker_session'); if(saved) { me = JSON.parse(saved); initApp(); } else go('s-login'); }
+        function handleEnter() {
+            const saved = localStorage.getItem('tacker_session');
+            if(saved) { me = JSON.parse(saved); startLoading(); } 
+            else { go('s-login'); }
+        }
+
         async function auth() {
             const uid = document.getElementById('u-id').value.trim();
             const pw = document.getElementById('u-pw').value.trim();
             const s = await db.ref(`users/${uid}`).get();
-            if(s.exists() && s.val().temp_pw === pw) { me = { uid, ...s.val() }; localStorage.setItem('tacker_session', JSON.stringify(me)); initApp(); } else alert("錯誤");
+            if(s.exists() && s.val().temp_pw === pw) {
+                me = { uid, ...s.val() };
+                localStorage.setItem('tacker_session', JSON.stringify(me));
+                startLoading();
+            } else alert("驗證失敗");
         }
-        function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+        function startLoading() {
+            go('s-loader');
+            let prog = 0;
+            const timer = setInterval(() => {
+                prog += Math.floor(Math.random() * 8) + 2;
+                if(prog >= 100) {
+                    prog = 100; clearInterval(timer);
+                    document.getElementById('load-bar-fill').style.width = '100%';
+                    setTimeout(initApp, 400);
+                } else {
+                    document.getElementById('load-bar-fill').style.width = prog + '%';
+                    document.getElementById('load-text').innerText = prog + '%';
+                }
+            }, 40);
+        }
 
         function initApp() {
             go('s-app');
-            db.ref(`presence/${me.uid}`).set(true); db.ref(`presence/${me.uid}`).onDisconnect().remove();
-            listenGlobalChat(); listenPrivateContacts();
-            document.getElementById('current-pfp').src = me.pfp || "";
-            document.getElementById('edit-name').value = me.full_name;
-            document.getElementById('edit-bio').value = me.bio || "";
+            listenGlobalChat();
+            listenPrivateContacts();
         }
 
-        // 2. 核心訊息顯示邏輯 (圖片連結轉圖片)
+        function go(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // 核心功能：顯示用戶資料卡片
+        async function showUser(uid) {
+            if(uid === me.uid) return;
+            const s = await db.ref(`users/${uid}`).get();
+            const u = s.val();
+            document.getElementById('modal-name').innerText = u.full_name;
+            document.getElementById('modal-bio').innerText = u.bio || "這個人很懶，什麼都沒留下...";
+            document.getElementById('modal-pfp').innerHTML = `<img src="${u.pfp || ''}">`;
+            
+            // 按鈕邏輯
+            document.getElementById('dm-btn').onclick = () => {
+                // 發送私訊請求
+                db.ref(`dm_requests/${uid}/${me.uid}`).set({ fromName: me.full_name, fromPfp: me.pfp || '', ts: Date.now() });
+                document.getElementById('user-modal').style.display = 'none';
+                alert("已發送私訊邀請，請等待對方接受。");
+            };
+            
+            document.getElementById('user-modal').style.display = 'flex';
+        }
+
         function renderMessages(snap) {
             const box = document.getElementById('messages'); box.innerHTML = '';
             snap.forEach(d => {
                 const m = d.val();
                 let content = m.t;
-                // 判斷是否為圖片連結
                 const isImg = m.t.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || m.t.startsWith('data:image');
-                if(isImg) {
-                    content = `<img src="${m.t}" class="msg-img" onclick="window.open('${m.t}')">`;
-                }
+                if(isImg) content = `<img src="${m.t}" class="msg-img" onclick="window.open('${m.t}')">`;
+                
                 box.innerHTML += `<div class="msg-row">
                     <div class="pfp" onmousedown="showUser('${m.uid}')"><img src="${m.pfp || ''}"></div>
-                    <div><b style="color:var(--acc); font-size:12px;">${m.u}</b>
+                    <div><b style="color:var(--acc); font-size:12px; cursor:pointer;" onmousedown="showUser('${m.uid}')">${m.u}</b>
                     <div style="color:#eee; font-size:15px;">${content}</div></div></div>`;
             });
             document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
         }
 
-        // 其餘 Firebase 邏輯與私訊完全保持不變 ...
-        function listenGlobalChat() { db.ref('chats/global').limitToLast(40).on('value', s => renderMessages(s)); }
+        // Firebase 通訊
+        function listenGlobalChat() { db.ref('chats/global').limitToLast(30).on('value', s => renderMessages(s)); }
         function send() {
             const inp = document.getElementById('m-input'); const val = inp.value.trim(); if(!val) return;
             const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: val, ts: Date.now() };
-            if(currentChat === 'global') { db.ref('chats/global').push(data); } 
-            else { db.ref(`chats/private/${getRoomId(currentChat)}/msgs`).push(data); db.ref(`chats/private/${getRoomId(currentChat)}/unread/${currentChat}`).set(true); }
+            if(currentChat === 'global') db.ref('chats/global').push(data);
             inp.value = '';
         }
-
+        function tab(t) {
+            document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-chat').classList.add('active');
+        }
         function listenPrivateContacts() {
             db.ref(`users/${me.uid}/contacts`).on('value', snap => {
                 const list = document.getElementById('private-list'); list.innerHTML = '';
                 snap.forEach(d => {
-                    const c = d.val(); const uid = d.key;
-                    const div = document.createElement('div'); div.className = `nav-icon ${currentChat === uid ? 'active' : ''}`;
-                    div.innerHTML = `<img src="${c.pfp}"><div class="red-dot" id="dot-${uid}"></div>`;
-                    div.onmousedown = () => switchChat(uid, c.name);
+                    const c = d.val();
+                    const div = document.createElement('div'); div.className = 'nav-icon';
+                    div.innerHTML = `<img src="${c.pfp}">`;
+                    div.onmousedown = () => { currentChat = d.key; document.getElementById('chat-title').innerText = `與 ${c.name} 對話`; };
                     list.appendChild(div);
                 });
             });
         }
-        function getRoomId(uid) { return [me.uid, uid].sort().join('_'); }
-        function switchChat(uid, name) {
-            currentChat = uid; document.getElementById('chat-title').innerText = uid === 'global' ? '全球大廳' : `與 ${name} 聊天`;
-            document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active'));
-            if(uid === 'global') { document.getElementById('nav-chat').classList.add('active'); listenGlobalChat(); }
-            else { listenPrivateMessages(uid); }
-        }
-        function listenPrivateMessages(targetUid) { db.ref(`chats/private/${getRoomId(targetUid)}/msgs`).limitToLast(40).on('value', s => renderMessages(s)); }
-        async function saveProfile() {
-            const updates = { full_name: document.getElementById('edit-name').value, bio: document.getElementById('edit-bio').value, pfp: document.getElementById('current-pfp').src };
-            await db.ref(`users/${me.uid}`).update(updates); me = {...me, ...updates}; localStorage.setItem('tacker_session', JSON.stringify(me)); alert("儲存成功");
-        }
-        function handleFile(i, t) { const f = i.files[0]; const r = new FileReader(); r.onload = (e) => { if(t === 'pfp') document.getElementById('current-pfp').src = e.target.result; }; r.readAsDataURL(f); }
-        function tab(t) { if(t === 'chat') switchChat('global'); document.getElementById('chat-tab').style.display = t === 'chat' ? 'flex' : 'none'; document.getElementById('me-tab').style.display = t === 'me' ? 'block' : 'none'; document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active')); document.getElementById(t === 'chat' ? 'nav-chat' : 'nav-me').classList.add('active'); }
     </script>
 </body>
 </html>
