@@ -3,73 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker Pro | V667-ULTIMATE</title>
+    <title>Tacker Pro | V667-PRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #000; --card: #111; --acc: #23a559; --official: #f1c40f; --text: #fff; --sub: #888; --danger: #f23f43; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body, html { margin:0; padding:0; height:100%; background:#fff; color:#000; overflow:hidden; }
+        :root { --bg: #000; --card: #111; --acc: #23a559; --text: #fff; --sub: #888; --danger: #f23f43; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body, html { margin:0; padding:0; height:100%; background:#fff; overflow:hidden; }
 
+        /* --- Take OS 提示元件 (Toast) --- */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .toast { background: #1a1a1a; color: #fff; padding: 15px 25px; border-radius: 12px; border-left: 4px solid var(--acc); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 10px; animation: slideIn 0.3s ease forwards; font-weight: bold; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- 頁面結構 --- */
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; align-items:center; justify-content:center; }
         .active { display: flex; }
 
         /* --- 進入動畫 --- */
         @keyframes titleZoom { 0% { transform: scale(3); opacity: 0; filter: blur(20px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
-        @keyframes btnUp { 0% { transform: translateY(60px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-        .zoom-title { font-weight: 900; font-size: 85px; animation: titleZoom 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .slide-up-btn { margin-top: 40px; padding: 16px 65px; background: #000; color: #fff; border-radius: 50px; font-weight: bold; border:none; cursor: pointer; animation: btnUp 0.8s 0.6s both; }
+        .zoom-title { font-weight: 900; font-size: 85px; animation: titleZoom 1.1s forwards; }
+        .slide-up-btn { margin-top: 40px; padding: 16px 65px; background: #000; color: #fff; border-radius: 50px; font-weight: bold; border:none; cursor: pointer; }
 
-        /* --- 進度條 --- */
-        .load-bar-wrap { width: 220px; height: 4px; background: #eee; margin: 25px auto; border-radius: 10px; overflow: hidden; }
-        #load-bar-fill { width: 0%; height: 100%; background: #000; transition: 0.1s; }
-
-        /* --- v667 登錄介面 --- */
-        .v667-login-card { background:#fff; width:320px; padding:35px; border-radius:15px; color:#333; }
-        .v667-input { width:100%; padding:14px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px; outline: none; }
-        .v667-btn { width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
-
-        /* --- 主介面 --- */
-        #s-app { background: var(--bg); color: var(--text); align-items: stretch; justify-content: flex-start; }
-        .rail { width: 75px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid #222; height: 100%; }
-        .nav-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #444; font-size: 20px; margin-bottom: 20px; }
-        .nav-icon img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid transparent; }
+        /* --- v667 樣式 --- */
+        #s-app { background: var(--bg); color: var(--text); align-items: stretch; }
+        .rail { width: 75px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid #222; }
+        .nav-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #444; font-size: 20px; margin-bottom: 20px; overflow: hidden; }
         .nav-icon.active { color: var(--acc); }
-        .nav-icon.active img { border-color: var(--acc); }
+        .nav-icon img { width: 100%; height: 100%; object-fit: cover; }
         #nav-me { margin-top: auto; }
 
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
-        
-        /* --- 右上角無上限標籤 --- */
-        .status-tag { background: rgba(35, 165, 89, 0.15); color: var(--acc); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid rgba(35, 165, 89, 0.3); }
+        .header-stats { display: flex; gap: 10px; }
+        .stat-box { background: #1a1a1a; padding: 5px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #333; color: var(--sub); }
 
-        .msg-row { display: flex; gap: 12px; margin-bottom: 22px; padding: 0 15px; }
-        .pfp { width: 44px; height: 44px; border-radius: 50%; background: #222; overflow: hidden; flex-shrink: 0; cursor: pointer; }
-        .pfp img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* --- 輸入列與左側按鈕 --- */
         .input-bar { padding: 12px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 12px; align-items: center; }
-        .add-btn { color: #888; font-size: 20px; cursor: pointer; transition: 0.2s; }
-        .add-btn:hover { color: #fff; }
-        .input-bar input { flex-grow: 1; padding: 12px; background: #1e1e1e; border: none; color: #fff; border-radius: 12px; outline: none; }
+        .add-btn { color: #888; font-size: 22px; cursor: pointer; }
+        .msg-row { display: flex; gap: 12px; margin-bottom: 22px; padding: 0 15px; }
+        .pfp { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; }
+        .msg-img { max-width: 250px; border-radius: 12px; margin-top: 8px; border: 1px solid #333; }
 
-        /* --- 個資卡片 (防跌倒比例修正) --- */
+        /* --- 個人中心面板 --- */
+        .me-container { padding: 30px; overflow-y: auto; height: 100%; }
+        .me-edit-input { width: 100%; background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; outline: none; margin-bottom: 15px; }
+        
+        /* 個資卡片修正 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .user-card { width: 330px; background: #111; border-radius: 25px; border: 1px solid #333; overflow: hidden; }
-        .card-banner { height: 110px; background: linear-gradient(45deg, #23a559, #1a7a42); width: 100%; }
+        .card-banner { height: 110px; background: linear-gradient(45deg, #23a559, #1a7a42); }
         .card-profile-area { padding: 0 20px 25px; text-align: center; margin-top: -50px; }
-        .card-pfp-frame { width: 95px; height: 95px; border-radius: 50%; border: 6px solid #111; margin: 0 auto; overflow: hidden; background: #222; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .card-pfp-frame img { width: 100%; height: 100%; object-fit: cover; }
-        .card-name { font-size: 22px; font-weight: 800; color: #fff; margin: 12px 0 6px; }
-        .card-bio { font-size: 14px; color: #888; line-height: 1.4; margin-bottom: 20px; min-height: 40px; }
-        .card-action-btn { width: 100%; padding: 16px; background: var(--acc); color: #fff; border: none; font-weight: bold; border-radius: 15px; cursor: pointer; }
-
-        .msg-img { max-width: 250px; border-radius: 12px; margin-top: 8px; border: 1px solid #333; }
+        .card-pfp-frame { width: 95px; height: 95px; border-radius: 50%; border: 6px solid #111; margin: 0 auto; overflow: hidden; background: #222; }
     </style>
 </head>
 <body>
+
+    <div id="toast-container"></div>
 
     <section id="s-intro" class="screen active">
         <div class="zoom-title">Tacker</div>
@@ -77,19 +67,21 @@
     </section>
 
     <section id="s-login" class="screen" style="background:#f5f5f5;">
-        <div class="v667-login-card">
-            <h2 style="margin:0 0 25px; font-weight:800; color:#000;">驗證身分</h2>
-            <input id="u-id" placeholder="帳號 ID" class="v667-input">
-            <input id="u-pw" type="password" placeholder="密碼" class="v667-input">
-            <button onmousedown="auth()" class="v667-btn">登入 Tacker</button>
+        <div style="background:#fff; width:320px; padding:35px; border-radius:15px;">
+            <h2 style="color:#000; margin-bottom:25px;">驗證身分</h2>
+            <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:14px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px;">
+            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:14px; margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
+            <button onmousedown="auth()" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">登入 Tacker</button>
         </div>
     </section>
 
     <section id="s-loader" class="screen">
-        <div style="text-align: center;">
+        <div style="text-align:center;">
             <div style="font-weight:900; font-size:40px; margin-bottom:10px;">Tacker</div>
-            <div class="load-bar-wrap"><div id="load-bar-fill"></div></div>
-            <div id="load-text" style="font-family: monospace; font-weight: bold;">0%</div>
+            <div style="width:220px; height:4px; background:#eee; border-radius:10px; overflow:hidden; margin:auto;">
+                <div id="load-bar-fill" style="width:0%; height:100%; background:#000;"></div>
+            </div>
+            <div id="load-text" style="margin-top:10px; font-weight:bold;">0%</div>
         </div>
     </section>
 
@@ -97,29 +89,36 @@
         <div style="display:flex; height:100%; width:100%;">
             <nav class="rail">
                 <div onmousedown="tab('chat')" id="nav-chat" class="nav-icon active"><i class="fa-solid fa-earth-asia"></i></div>
-                <div id="private-list" style="display:flex; flex-direction:column; align-items:center; width:100%;"></div>
+                <div id="private-list"></div>
                 <div onmousedown="tab('me')" id="nav-me" class="nav-icon"><i class="fa-solid fa-shield-halved"></i></div>
             </nav>
             
             <main id="chat-tab" class="main">
                 <header style="height:60px; border-bottom:1px solid #222; display:flex; align-items:center; justify-content:space-between; padding:0 20px;">
-                    <b id="chat-title" style="font-size:18px;">全球大廳</b>
-                    <div class="status-tag">無數量上限次數</div>
+                    <b id="chat-title">全球大廳</b>
+                    <div class="header-stats">
+                        <div class="stat-box">用戶數量: <b id="total-users">0</b></div>
+                        <div class="stat-box">在線人數: <b id="online-users">0</b></div>
+                    </div>
                 </header>
-                
                 <div id="chat-flow" style="flex-grow:1; overflow-y:auto; padding:15px;"><div id="messages"></div></div>
-                
                 <div class="input-bar">
-                    <label for="file-input" class="add-btn"><i class="fa-solid fa-circle-plus"></i></label>
-                    <input type="file" id="file-input" style="display:none;" onchange="handleFile(this)">
+                    <label for="f-in" class="add-btn"><i class="fa-solid fa-circle-plus"></i></label>
+                    <input type="file" id="f-in" style="display:none;" onchange="handleFile(this)">
                     <input id="m-input" placeholder="傳送訊息..." onkeypress="if(event.key==='Enter') send()">
-                    <button onmousedown="send()" style="background:var(--acc); border:none; color:#fff; padding:10px 18px; border-radius:12px; cursor:pointer;"><i class="fa-solid fa-paper-plane"></i></button>
+                    <button onmousedown="send()" style="background:var(--acc); border:none; color:#fff; padding:10px 18px; border-radius:12px;"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </main>
 
-            <main id="me-tab" class="main" style="display:none; padding:25px;">
-                <h2 style="font-weight:800;">帳戶設定</h2>
-                <button onmousedown="localStorage.clear(); location.reload();" style="color:var(--danger); background:none; border:none; cursor:pointer;">登出系統</button>
+            <main id="me-tab" class="main" style="display:none;">
+                <div class="me-container">
+                    <h2 style="font-weight:800;">帳戶設定</h2>
+                    <input id="me-name-input" class="me-edit-input" placeholder="更改顯示名稱">
+                    <textarea id="me-bio-input" class="me-edit-input" style="height:80px; resize:none;" placeholder="更改自我介紹"></textarea>
+                    <button onmousedown="updateProfile()" style="background:var(--acc); border:none; color:#fff; padding:12px 25px; border-radius:10px; font-weight:bold; cursor:pointer;">儲存修改</button>
+                    <hr style="border:0; border-top:1px solid #222; margin:30px 0;">
+                    <button onmousedown="logout()" style="width:100%; padding:15px; background:var(--danger); color:#fff; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">登出系統</button>
+                </div>
             </main>
         </div>
     </section>
@@ -129,9 +128,9 @@
             <div class="card-banner"></div>
             <div class="card-profile-area">
                 <div class="card-pfp-frame" id="modal-pfp"></div>
-                <div class="card-name" id="modal-name"></div>
-                <div class="card-bio" id="modal-bio"></div>
-                <button id="dm-btn" class="card-action-btn">傳送訊息</button>
+                <div id="modal-name" style="font-size:22px; font-weight:800; color:#fff; margin-top:15px;"></div>
+                <div id="modal-bio" style="color:#888; font-size:14px; margin:10px 0 20px;"></div>
+                <button id="dm-btn" style="width:100%; padding:15px; background:var(--acc); color:#fff; border:none; border-radius:12px; font-weight:bold;">傳送私訊</button>
             </div>
         </div>
     </div>
@@ -141,12 +140,21 @@
         firebase.initializeApp(config);
         const db = firebase.database();
         let me = null;
-        let currentChat = 'global';
+
+        // Take OS Toast 提示
+        function osToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
 
         function handleEnter() {
             const saved = localStorage.getItem('tacker_session');
             if(saved) { me = JSON.parse(saved); startLoading(); } 
-            else { go('s-login'); }
+            else go('s-login');
         }
 
         async function auth() {
@@ -157,26 +165,20 @@
                 me = { uid, ...s.val() };
                 localStorage.setItem('tacker_session', JSON.stringify(me));
                 startLoading();
-            } else alert("驗證失敗");
+            } else osToast("驗證失敗，請檢查帳密");
         }
 
         function startLoading() {
             go('s-loader');
-            let prog = 0;
-            const timer = setInterval(() => {
-                prog += Math.floor(Math.random() * 8) + 2;
-                if(prog >= 100) {
-                    prog = 100; clearInterval(timer);
-                    document.getElementById('load-bar-fill').style.width = '100%';
-                    setTimeout(initApp, 400);
-                } else {
-                    document.getElementById('load-bar-fill').style.width = prog + '%';
-                    document.getElementById('load-text').innerText = prog + '%';
-                }
+            let p = 0;
+            const t = setInterval(() => {
+                p += Math.floor(Math.random() * 8) + 2;
+                if(p >= 100) { clearInterval(t); document.getElementById('load-bar-fill').style.width = '100%'; setTimeout(initApp, 400); }
+                else { document.getElementById('load-bar-fill').style.width = p + '%'; document.getElementById('load-text').innerText = p + '%'; }
             }, 40);
         }
 
-        function initApp() { go('s-app'); listenGlobalChat(); listenPrivateContacts(); }
+        function initApp() { go('s-app'); listenGlobal(); listenStats(); }
         function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
         async function showUser(uid) {
@@ -188,81 +190,69 @@
             document.getElementById('modal-pfp').innerHTML = `<img src="${u.pfp || ''}">`;
             
             const btn = document.getElementById('dm-btn');
-            const contactCheck = await db.ref(`users/${me.uid}/contacts/${uid}`).get();
-            
-            if(contactCheck.exists()) {
-                btn.innerText = "直接聊天";
-                btn.onclick = () => { document.getElementById('user-modal').style.display='none'; switchChat(uid, u.full_name); };
-            } else {
-                btn.innerText = "發送私訊邀請";
-                btn.onclick = () => { db.ref(`dm_requests/${uid}/${me.uid}`).set({ fromName: me.full_name, fromPfp: me.pfp || '', ts: Date.now() }); alert("已發送請求"); document.getElementById('user-modal').style.display='none'; };
-            }
+            btn.onclick = async () => {
+                // 發送 v667 標準私訊邀請格式
+                await db.ref(`dm_requests/${uid}/${me.uid}`).set({
+                    fromName: me.full_name,
+                    fromPfp: me.pfp || '',
+                    ts: Date.now(),
+                    type: "friend_request",
+                    status: "pending"
+                });
+                osToast("已成功向 " + u.full_name + " 發送私訊邀請");
+                document.getElementById('user-modal').style.display = 'none';
+            };
             document.getElementById('user-modal').style.display = 'flex';
-        }
-
-        function renderMessages(snap) {
-            const box = document.getElementById('messages'); box.innerHTML = '';
-            snap.forEach(d => {
-                const m = d.val();
-                let content = m.t;
-                if(m.t.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || m.t.startsWith('data:image')) {
-                    content = `<img src="${m.t}" class="msg-img" onclick="window.open('${m.t}')">`;
-                }
-                box.innerHTML += `<div class="msg-row">
-                    <div class="pfp" onmousedown="showUser('${m.uid}')"><img src="${m.pfp || ''}"></div>
-                    <div><b style="color:var(--acc); font-size:12px; cursor:pointer;" onmousedown="showUser('${m.uid}')">${m.u}</b>
-                    <div style="color:#eee; font-size:15px;">${content}</div></div></div>`;
-            });
-            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
-        }
-
-        function tab(t) {
-            document.getElementById('chat-tab').style.display = t === 'chat' ? 'flex' : 'none';
-            document.getElementById('me-tab').style.display = t === 'me' ? 'block' : 'none';
-            document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active'));
-            document.getElementById(t === 'chat' ? 'nav-chat' : 'nav-me').classList.add('active');
-        }
-
-        function switchChat(uid, name = '全球大廳') {
-            currentChat = uid;
-            document.getElementById('chat-title').innerText = name;
-            if(uid === 'global') listenGlobalChat();
-            else db.ref(`chats/private/${[me.uid, uid].sort().join('_')}/msgs`).on('value', s => renderMessages(s));
-        }
-
-        function listenGlobalChat() { db.ref('chats/global').limitToLast(30).on('value', s => renderMessages(s)); }
-        
-        function send() {
-            const inp = document.getElementById('m-input'); const val = inp.value.trim(); if(!val) return;
-            const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: val, ts: Date.now() };
-            if(currentChat === 'global') db.ref('chats/global').push(data);
-            else db.ref(`chats/private/${[me.uid, currentChat].sort().join('_')}/msgs`).push(data);
-            inp.value = '';
         }
 
         function handleFile(i) {
             const f = i.files[0]; if(!f) return;
+            // 禁止傳送影片
+            if(f.type.startsWith('video/')) {
+                osToast("⚠️ 系統禁止傳送影片格式檔案");
+                i.value = '';
+                return;
+            }
             const r = new FileReader();
-            r.onload = (e) => {
-                const data = { u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: e.target.result, ts: Date.now() };
-                if(currentChat === 'global') db.ref('chats/global').push(data);
-                else db.ref(`chats/private/${[me.uid, currentChat].sort().join('_')}/msgs`).push(data);
-            };
+            r.onload = (e) => db.ref('chats/global').push({ u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: e.target.result, ts: Date.now() });
             r.readAsDataURL(f);
         }
 
-        function listenPrivateContacts() {
-            db.ref(`users/${me.uid}/contacts`).on('value', snap => {
-                const list = document.getElementById('private-list'); list.innerHTML = '';
+        function listenGlobal() {
+            db.ref('chats/global').limitToLast(30).on('value', snap => {
+                const box = document.getElementById('messages'); box.innerHTML = '';
                 snap.forEach(d => {
-                    const c = d.val();
-                    const div = document.createElement('div'); div.className = 'nav-icon';
-                    div.innerHTML = `<img src="${c.pfp}">`;
-                    div.onmousedown = () => switchChat(d.key, c.name);
-                    list.appendChild(div);
+                    const m = d.val();
+                    let content = m.t;
+                    if(m.t.includes('data:image')) content = `<img src="${m.t}" class="msg-img" onclick="window.open('${m.t}')">`;
+                    box.innerHTML += `<div class="msg-row">
+                        <div class="pfp" onmousedown="showUser('${m.uid}')"><img src="${m.pfp || ''}"></div>
+                        <div><b style="color:var(--acc); font-size:12px; cursor:pointer;" onmousedown="showUser('${m.uid}')">${m.u}</b>
+                        <div style="color:#eee; font-size:15px;">${content}</div></div></div>`;
                 });
+                document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
             });
         }
+
+        function listenStats() {
+            db.ref('users').on('value', s => { document.getElementById('total-users').innerText = s.numChildren(); });
+            db.ref('online_count').on('value', s => { document.getElementById('online-users').innerText = s.val() || 1; });
+        }
+
+        function tab(t) {
+            document.getElementById('chat-tab').style.display = t==='chat' ? 'flex':'none';
+            document.getElementById('me-tab').style.display = t==='me' ? 'block':'none';
+            document.querySelectorAll('.nav-icon').forEach(i => i.classList.remove('active'));
+            document.getElementById(t==='chat'?'nav-chat':'nav-me').classList.add('active');
+        }
+
+        function send() {
+            const inp = document.getElementById('m-input'); if(!inp.value.trim()) return;
+            db.ref('chats/global').push({ u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: inp.value, ts: Date.now() });
+            inp.value = '';
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
     </script>
 </body>
 </html>
