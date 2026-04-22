@@ -3,69 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tacker</title>
+    <title>Tacker v667 Official</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --bg: #000; --card: #111; --acc: #23a559; --text: #fff; --sub: #888; --danger: #f23f43; }
+        :root { --bg: #000; --acc: #23a559; --text: #fff; --sub: #888; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         body, html { margin:0; padding:0; height:100%; background:#fff; overflow:hidden; }
 
-        /* --- 1%~100% 載入動畫 --- */
-        #s-intro { background: #fff; z-index: 100; }
-        .tacker-logo { font-weight: 900; font-size: 80px; letter-spacing: -4px; color: #000; animation: tacker-in 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        .loading-wrap { margin-top: 20px; width: 200px; text-align: center; animation: btn-up 1s 0.3s both; }
-        .load-text { font-weight: 900; font-size: 20px; color: #000; margin-bottom: 5px; }
-        .load-bar { width: 100%; height: 4px; background: #eee; border-radius: 10px; overflow: hidden; }
-        .load-fill { width: 0%; height: 100%; background: #000; transition: width 0.1s; }
-        
-        @keyframes tacker-in { 0% { transform: scale(2.5); opacity: 0; filter: blur(10px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
-        @keyframes btn-up { 0% { transform: translateY(30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        /* --- 啟動動畫 --- */
+        @keyframes tacker-zoom { 0% { transform: scale(3.5); opacity: 0; filter: blur(20px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
+        @keyframes btn-float-up { 0% { transform: translateY(50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
-        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
-        .os-toast { background: #1a1a1a; color: #fff; padding: 12px 20px; border-radius: 10px; border-left: 4px solid var(--acc); box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideIn 0.3s forwards; font-size: 14px; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        #s-intro { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .tacker-logo { font-weight: 900; font-size: 85px; letter-spacing: -5px; color: #000; animation: tacker-zoom 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .entry-btn { margin-top: 50px; padding: 15px 60px; background: #000; color: #fff; border: none; border-radius: 50px; font-weight: bold; font-size: 16px; cursor: pointer; opacity: 0; animation: btn-float-up 0.8s 0.8s forwards; }
 
-        .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; align-items:center; justify-content:center; }
-        .active { display: flex; }
+        #loading-wrap { display: none; margin-top: 30px; width: 220px; text-align: center; }
+        .load-text { font-weight: 900; font-size: 24px; color: #000; margin-bottom: 8px; }
+        .load-rail { width: 100%; height: 6px; background: #eee; border-radius: 10px; overflow: hidden; }
+        .load-bar { width: 0%; height: 100%; background: #000; }
 
-        /* App 佈局 */
-        #s-app { background: var(--bg); color: var(--text); align-items: stretch; }
-        .rail { width: 72px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 15px 0; border-right: 1px solid #222; position: relative; }
-        .nav-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #444; font-size: 20px; margin-bottom: 12px; overflow: hidden; transition: 0.2s; }
-        .nav-icon img { width: 100%; height: 100%; object-fit: cover; }
-        .nav-icon.active { color: var(--acc); background: rgba(35, 165, 89, 0.1); border-radius: 15px; }
-        #nav-me { position: absolute; bottom: 20px; }
+        /* --- 旁白位置移到左下角 --- */
+        #toast-container { position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .os-toast { background: #1a1a1a; color: #fff; padding: 12px 20px; border-radius: 10px; border-left: 4px solid var(--acc); animation: slideInLeft 0.3s forwards; font-size: 14px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .screen { position: absolute; width: 100%; height: 100%; display: none; z-index: 10; }
+        .active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* --- 靈敏的左邊按鈕 (Rail) --- */
+        #s-app { background: #000; align-items: stretch; }
+        .rail { width: 72px; background: #050505; border-right: 1px solid #222; display: flex; flex-direction: column; align-items: center; padding: 15px 0; position: relative; }
+        .nav-icon { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #444; margin-bottom: 15px; overflow: hidden; transition: 0.1s; }
+        .nav-icon:active { transform: scale(0.9); } /* 增加點擊反饋 */
+        .nav-icon img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .nav-icon.active { color: var(--acc); background: rgba(35, 165, 89, 0.15); border-radius: 15px; }
+        #nav-me { position: absolute; bottom: 20px; font-size: 22px; }
 
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
-        header { height: 55px; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: #0a0a0a; }
-        .stat-group { display: flex; gap: 8px; }
-        .stat-tag { background: #151515; padding: 4px 10px; border-radius: 5px; font-size: 11px; color: var(--sub); border: 1px solid #222; font-weight: 900; }
-        .stat-tag b { color: var(--acc); }
+        header { height: 55px; background: #0a0a0a; border-bottom: 1px solid #222; display: flex; align-items: center; padding: 0 15px; }
 
-        #chat-flow { flex-grow: 1; overflow-y: auto; background: #0f0f0f; padding-bottom: 10px; }
-        .msg-row { display: flex; gap: 12px; padding: 8px 15px; }
-        .pfp-mini { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0; cursor: pointer; }
+        #chat-flow { flex-grow: 1; overflow-y: auto; background: #0f0f0f; }
+        .msg-row { display: flex; gap: 12px; padding: 12px 15px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .pfp-mini { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; cursor: pointer; flex-shrink: 0; border: 1px solid #333; }
         .pfp-mini img { width: 100%; height: 100%; object-fit: cover; }
-        .msg-author { color: var(--acc); font-size: 13px; font-weight: 900; }
-        .msg-img-body { max-width: 250px; border-radius: 10px; margin-top: 8px; border: 1px solid #333; display: block; }
+        
+        /* --- 圖片顯示修正：正正正看得出來的圖片 --- */
+        .msg-img-body { max-width: 280px; width: 100%; border-radius: 12px; margin-top: 10px; border: 2px solid #333; display: block; background: #222; cursor: pointer; }
 
-        /* Discord 預覽 */
-        #pre-area { display: none; padding: 10px 15px; background: #0a0a0a; border-top: 1px solid #222; }
-        .pre-box { position: relative; width: 65px; height: 65px; border-radius: 8px; border: 1.5px solid var(--acc); overflow: hidden; }
-        .pre-box img { width: 100%; height: 100%; object-fit: cover; }
-        .pre-del { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.8); color: #fff; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
-
-        .input-area { padding: 12px 15px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 10px; align-items: center; }
-        .input-wrap { flex-grow: 1; background: #1a1a1a; border: 1px solid #333; border-radius: 20px; display: flex; align-items: center; padding: 0 15px; }
-        .input-wrap input { flex-grow: 1; background: transparent; border: none; color: #fff; padding: 10px 0; outline: none; }
-
-        /* 個資卡片 */
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(10px); }
-        .user-card { width: 310px; background: #111; border-radius: 25px; border: 1px solid #333; overflow: hidden; }
-        .card-pfp { width: 90px; height: 90px; border-radius: 50%; border: 6px solid #111; margin: -45px auto 0; overflow: hidden; }
+        .input-area { padding: 15px; background: #0a0a0a; border-top: 1px solid #222; display: flex; gap: 12px; align-items: center; }
+        .input-wrap { flex-grow: 1; background: #1a1a1a; border-radius: 25px; padding: 0 18px; display: flex; align-items: center; border: 1px solid #333; }
+        .input-wrap input { flex-grow: 1; background: transparent; border: none; color: #fff; padding: 12px 0; outline: none; font-size: 15px; }
     </style>
 </head>
 <body>
@@ -74,18 +65,19 @@
 
     <section id="s-intro" class="screen active">
         <div class="tacker-logo">Tacker</div>
-        <div class="loading-wrap">
+        <button id="start-btn" class="entry-btn" onmousedown="runLoading()">進入系統</button>
+        <div id="loading-wrap">
             <div class="load-text" id="load-num">1%</div>
-            <div class="load-bar"><div class="load-fill" id="load-fill"></div></div>
+            <div class="load-rail"><div class="load-bar" id="load-bar"></div></div>
         </div>
     </section>
 
     <section id="s-login" class="screen" style="background:#f4f4f4;">
         <div style="background:#fff; width:320px; padding:35px; border-radius:25px;">
-            <h2 style="color:#000; margin:0 0 25px; font-weight:900;">驗證</h2>
-            <input id="u-id" placeholder="帳號 ID" class="v667-field" style="color:#000; border:1px solid #eee; width:100%; padding:12px; border-radius:10px; margin-bottom:10px;">
-            <input id="u-pw" type="password" placeholder="密碼" class="v667-field" style="color:#000; border:1px solid #eee; width:100%; padding:12px; border-radius:10px; margin-bottom:20px;">
-            <button onmousedown="auth()" style="width:100%; background:#000; color:#fff; border:none; padding:15px; border-radius:10px; font-weight:bold;">登入</button>
+            <h2 style="margin:0 0 20px; font-weight:900; color:#000;">驗證系統</h2>
+            <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
+            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; margin-bottom:20px;">
+            <button onmousedown="auth()" style="width:100%; background:#000; color:#fff; padding:15px; border:none; border-radius:10px; font-weight:bold;">登入</button>
         </div>
     </section>
 
@@ -93,81 +85,51 @@
         <div style="display:flex; height:100%; width:100%;">
             <nav class="rail">
                 <div onmousedown="tab('global')" id="nav-global" class="nav-icon active"><i class="fa-solid fa-earth-asia"></i></div>
-                <div id="private-list" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:8px;"></div>
+                <div id="private-list" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:10px;"></div>
                 <div onmousedown="tab('me')" id="nav-me" class="nav-icon"><i class="fa-solid fa-shield-halved"></i></div>
             </nav>
-            
-            <main id="main-tab" class="main">
-                <header>
-                    <b id="chat-title">全球大廳</b>
-                    <div class="stat-group">
-                        <div class="stat-tag">用戶數量: <b id="total-u">0</b></div>
-                        <div class="stat-tag">在線人數: <b id="online-u">0</b></div>
-                    </div>
-                </header>
+            <main class="main">
+                <header><b id="chat-title" style="color:#fff; font-size:18px;">全球大廳</b></header>
                 <div id="chat-flow"><div id="messages"></div></div>
-                
-                <div id="pre-area">
-                    <div class="pre-box">
-                        <img id="pre-img" src="">
-                        <div class="pre-del" onmousedown="cancelPre()"><i class="fa-solid fa-xmark"></i></div>
-                    </div>
-                </div>
-
                 <div class="input-area">
-                    <label for="f-in" style="font-size:24px; color:#555; cursor:pointer;"><i class="fa-solid fa-circle-plus"></i></label>
-                    <input type="file" id="f-in" style="display:none;" onchange="handlePre(this)" accept="image/*">
+                    <label for="f-in" style="font-size:26px; color:var(--acc); cursor:pointer;"><i class="fa-solid fa-circle-plus"></i></label>
+                    <input type="file" id="f-in" style="display:none;" onchange="handleFile(this)" accept="image/*">
                     <div class="input-wrap">
                         <input id="m-input" placeholder="撰寫訊息..." onkeypress="if(event.key==='Enter') send()">
-                        <i class="fa-solid fa-paper-plane" onmousedown="send()" style="color:var(--acc); cursor:pointer;"></i>
+                        <i class="fa-solid fa-paper-plane" onmousedown="send()" style="color:var(--acc); cursor:pointer; font-size:18px;"></i>
                     </div>
                 </div>
             </main>
-
-            </div>
-    </section>
-
-    <div id="user-modal" class="modal" onmousedown="this.style.display='none'">
-        <div class="user-card" onmousedown="event.stopPropagation()">
-            <div style="height:80px; background:linear-gradient(45deg, #23a559, #1a7a42);"></div>
-            <div style="padding: 0 20px 25px; text-align: center;">
-                <div class="card-pfp" id="modal-pfp"></div>
-                <div id="modal-name" style="font-size:22px; font-weight:900; color:#fff; margin-top:15px;"></div>
-                <div id="modal-uid" style="font-size:10px; color:var(--sub); margin-bottom:10px;"></div>
-                <button id="invite-btn" style="width:100%; padding:14px; background:var(--acc); color:#fff; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">發送私訊邀請</button>
-            </div>
         </div>
-    </div>
+    </section>
 
     <script>
         const config = { apiKey: "AIzaSyB56chNeodbgAYa8k3xspOOAMYt6C5M4cw", databaseURL: "https://tacker-ebc5a-default-rtdb.firebaseio.com", projectId: "tacker-ebc5a" };
         firebase.initializeApp(config);
         const db = firebase.database();
         let me = null;
-        let preData = null;
-        let currentChat = 'global'; // 追蹤當前聊天室
-
-        // 啟動進度條
-        window.onload = () => {
-            let p = 1;
-            let timer = setInterval(() => {
-                p += Math.floor(Math.random() * 5) + 1;
-                if(p >= 100) {
-                    p = 100; clearInterval(timer);
-                    setTimeout(handleEnter, 500);
-                }
-                document.getElementById('load-num').innerText = p + '%';
-                document.getElementById('load-fill').style.width = p + '%';
-            }, 50);
-        };
+        let currentChat = 'global';
+        let preImg = null;
 
         function osToast(m) {
             const c = document.getElementById('toast-container');
             const t = document.createElement('div'); t.className = 'os-toast'; t.innerText = m;
-            c.appendChild(t); setTimeout(() => t.remove(), 3000);
+            c.appendChild(t); setTimeout(() => t.remove(), 3500);
         }
 
-        function handleEnter() {
+        function runLoading() {
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('loading-wrap').style.display = 'block';
+            let p = 1;
+            let t = setInterval(() => {
+                p += Math.floor(Math.random() * 5) + 2;
+                if(p >= 100) { p = 100; clearInterval(t); setTimeout(checkSess, 600); }
+                document.getElementById('load-num').innerText = p + '%';
+                document.getElementById('load-bar').style.width = p + '%';
+            }, 35);
+        }
+
+        function checkSess() {
             const s = localStorage.getItem('tacker_session');
             if(s) { me = JSON.parse(s); initApp(); } else go('s-login');
         }
@@ -180,74 +142,67 @@
                 me = { uid: id, ...s.val() };
                 localStorage.setItem('tacker_session', JSON.stringify(me));
                 initApp();
-            } else osToast("驗證失敗");
+            } else osToast("帳號或密碼錯誤");
         }
 
         function initApp() {
             go('s-app');
-            listenChat('global'); listenStats(); listenInvites();
+            listenChat('global');
+            listenInvites();
+            osToast("歡迎回來，" + me.full_name);
         }
 
         function go(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-        
-        function tab(type, targetId = null, targetName = '全球大廳') {
+
+        function tab(type, tid = null, tname = '全球大廳') {
             document.querySelectorAll('.nav-icon').forEach(i => i.classList.remove('active'));
             if(type === 'global') {
                 currentChat = 'global';
                 document.getElementById('nav-global').classList.add('active');
                 document.getElementById('chat-title').innerText = '全球大廳';
                 listenChat('global');
-            } else if(type === 'dm') {
-                currentChat = `dm_${[me.uid, targetId].sort().join('_')}`;
-                document.getElementById('chat-title').innerText = targetName;
+            } else {
+                currentChat = `dm_${[me.uid, tid].sort().join('_')}`;
+                document.getElementById('chat-title').innerText = tname;
                 listenChat(currentChat);
             }
         }
 
-        function handlePre(input) {
+        function handleFile(input) {
             const f = input.files[0]; if(!f) return;
             const r = new FileReader();
-            r.onload = (e) => { preData = e.target.result; document.getElementById('pre-img').src = preData; document.getElementById('pre-area').style.display = 'block'; };
+            r.onload = (e) => { preImg = e.target.result; osToast("圖片已就緒，請點擊發送"); };
             r.readAsDataURL(f);
         }
-        function cancelPre() { preData = null; document.getElementById('pre-area').style.display = 'none'; document.getElementById('f-in').value = ''; }
 
         function send() {
             const i = document.getElementById('m-input');
-            if(!i.value.trim() && !preData) return;
+            if(!i.value.trim() && !preImg) return;
             const path = currentChat === 'global' ? 'chats/global' : `chats/privates/${currentChat}`;
-            db.ref(path).push({ u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: i.value, img: preData || null, ts: Date.now() });
-            i.value = ''; cancelPre();
+            db.ref(path).push({ u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: i.value, img: preImg || null, ts: Date.now() });
+            i.value = ''; preImg = null;
         }
 
         function listenChat(room) {
             const path = room === 'global' ? 'chats/global' : `chats/privates/${room}`;
-            db.ref(path).off(); // 清除舊監聽
+            db.ref(path).off();
             db.ref(path).limitToLast(40).on('value', snap => {
                 const box = document.getElementById('messages'); box.innerHTML = '';
                 snap.forEach(d => {
                     const m = d.val();
+                    // 偵測數據是否有圖片內容，有的話渲染 img 標籤
                     let imgTag = m.img ? `<img src="${m.img}" class="msg-img-body" onmousedown="window.open('${m.img}')">` : '';
                     box.innerHTML += `<div class="msg-row">
-                        <div class="pfp-mini" onmousedown="openInvite('${m.uid}')"><img src="${m.pfp || ''}"></div>
-                        <div><div class="msg-author">${m.u}</div><div style="color:#eee; font-size:14px; word-break:break-all;">${m.t}</div>${imgTag}</div>
+                        <div class="pfp-mini"><img src="${m.pfp || ''}"></div>
+                        <div style="flex:1;">
+                            <div style="color:var(--acc);font-weight:900;font-size:13px;margin-bottom:4px;">${m.u}</div>
+                            <div style="font-size:15px;line-height:1.4;word-break:break-all;">${m.t}</div>
+                            ${imgTag}
+                        </div>
                     </div>`;
                 });
                 document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
             });
-        }
-
-        async function openInvite(uid) {
-            if(uid === me.uid) return;
-            const s = await db.ref(`users/${uid}`).get(); const u = s.val();
-            document.getElementById('modal-name').innerText = u.full_name;
-            document.getElementById('modal-uid').innerText = "UID: " + uid;
-            document.getElementById('modal-pfp').innerHTML = `<img src="${u.pfp || ''}" style="width:100%;height:100%;object-fit:cover;">`;
-            document.getElementById('invite-btn').onmousedown = async () => {
-                await db.ref(`dm_invites/${uid}/${me.uid}`).set({ name: me.full_name, pfp: me.pfp || '', ts: Date.now() });
-                osToast("已發送私訊邀請"); document.getElementById('user-modal').style.display = 'none';
-            };
-            document.getElementById('user-modal').style.display = 'flex';
         }
 
         function listenInvites() {
@@ -255,21 +210,18 @@
                 const list = document.getElementById('private-list'); list.innerHTML = '';
                 snap.forEach(d => {
                     const v = d.val(); const uid = d.key;
-                    const icon = document.createElement('div'); icon.className = 'nav-icon';
-                    icon.innerHTML = `<img src="${v.pfp}">`;
+                    const icon = document.createElement('div'); 
+                    icon.className = 'nav-icon';
+                    icon.innerHTML = `<img src="${v.pfp || ''}">`;
+                    // 靈敏點擊：使用 onmousedown
                     icon.onmousedown = () => {
                         document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active'));
-                        icon.classList.add('active');
+                        icon.classList.add('active'); 
                         tab('dm', uid, v.name);
                     };
                     list.appendChild(icon);
                 });
             });
-        }
-
-        function listenStats() {
-            db.ref('users').on('value', s => { document.getElementById('total-u').innerText = s.numChildren(); });
-            db.ref('online_count').on('value', s => { document.getElementById('online-u').innerText = s.val() || 1; });
         }
     </script>
 </body>
