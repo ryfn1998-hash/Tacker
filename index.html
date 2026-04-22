@@ -13,62 +13,52 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         body, html { margin:0; padding:0; height:100%; background:#fff; overflow:hidden; }
 
-        /* Take OS Toast */
         #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
         .os-toast { background: #1a1a1a; color: #fff; padding: 12px 20px; border-radius: 10px; border-left: 4px solid var(--acc); box-shadow: 0 5px 20px rgba(0,0,0,0.5); margin-top: 10px; animation: slideIn 0.3s forwards; font-size: 14px; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-        /* 螢幕基礎設定 */
         .screen { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; align-items:center; justify-content:center; }
         .active { display: flex; }
 
-        /* Tacker 動畫 */
-        @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .zoom-title { font-weight: 900; font-size: 80px; letter-spacing: -4px; animation: scaleIn 1s forwards; color: #000; }
-
-        /* 側邊欄：盾牌固定在下方 */
+        /* 側邊欄 */
         #s-app { background: var(--bg); color: var(--text); align-items: stretch; }
         .rail { width: 72px; background: #050505; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 15px 0; border-right: 1px solid #222; position: relative; }
         .nav-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #444; font-size: 20px; margin-bottom: 12px; overflow: hidden; aspect-ratio: 1/1; }
         .nav-icon img { width: 100%; height: 100%; object-fit: cover; }
         .nav-icon.active { color: var(--acc); background: rgba(35, 165, 89, 0.1); }
-        #private-list { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 10px 0; border-top: 1px solid #111; padding-top: 10px; }
-        #nav-me { position: absolute; bottom: 20px; } /* 盾牌位置 */
+        #private-list { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; border-top: 1px solid #111; padding-top: 10px; overflow-y: auto; }
+        #nav-me { position: absolute; bottom: 20px; }
 
         .main { flex-grow: 1; background: #111; display: flex; flex-direction: column; }
         
-        /* 頂部狀態：標籤粗體化 */
+        /* 修正：右上角 Tag 左右橫排 */
         header { height: 55px; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: #0a0a0a; }
-        .stat-tag { background: #151515; padding: 4px 10px; border-radius: 5px; font-size: 11px; color: #fff; border: 1px solid #333; font-weight: 900; }
+        .stat-group { display: flex; flex-direction: row; gap: 8px; } /* 強制橫排 */
+        .stat-tag { background: #151515; padding: 4px 10px; border-radius: 5px; font-size: 11px; color: #fff; border: 1px solid #333; font-weight: 900; white-space: nowrap; }
         .stat-tag b { color: var(--acc); }
 
-        /* 訊息流：比例修正 */
         #chat-flow { flex-grow: 1; overflow-y: auto; background: #0f0f0f; }
         .msg-row { display: flex; gap: 12px; padding: 10px 15px; }
         .pfp-mini { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0; cursor: pointer; aspect-ratio: 1/1; }
         .pfp-mini img { width: 100%; height: 100%; object-fit: cover; }
-        .msg-author { color: var(--acc); font-size: 13px; font-weight: 900; margin-bottom: 2px; cursor: pointer; }
-        .msg-text { color: #eee; font-size: 14px; line-height: 1.4; }
+        .msg-author { color: var(--acc); font-size: 13px; font-weight: 900; margin-bottom: 2px; }
 
-        /* 盾牌個人設定：頭像更改回歸 */
+        /* 盾牌：密碼修改回歸 */
         .me-view { padding: 25px; overflow-y: auto; width: 100%; height: 100%; }
         .me-card { background: #161616; border-radius: 20px; padding: 20px; border: 1px solid #222; margin-bottom: 20px; }
-        .pfp-l { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--acc); overflow: hidden; aspect-ratio: 1/1; margin-bottom: 10px; }
+        .pfp-l { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--acc); overflow: hidden; aspect-ratio: 1/1; }
         .pfp-l img { width: 100%; height: 100%; object-fit: cover; }
-        .v667-field { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; outline: none; }
+        .v667-field { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; outline: none; margin-bottom: 10px; }
         .v667-btn { background: var(--acc); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        #pw-section { display: none; margin-top: 15px; border-top: 1px solid #333; padding-top: 15px; }
 
-        /* 輸入框修正 */
-        .input-area { padding: 12px 15px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 10px; align-items: center; }
+        .input-area { padding: 12px 15px; border-top: 1px solid #222; background: #0a0a0a; display: flex; gap: 10px; }
         .input-wrap { flex-grow: 1; background: #1a1a1a; border: 1px solid #333; border-radius: 25px; display: flex; align-items: center; padding: 0 15px; }
-        .input-wrap input { flex-grow: 1; background: transparent; border: none; color: #fff; padding: 10px 0; outline: none; font-size: 14px; }
+        .input-wrap input { flex-grow: 1; background: transparent; border: none; color: #fff; padding: 10px 0; outline: none; }
 
-        /* 個資卡片：比例與文字回歸 */
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(10px); }
         .user-card { width: 310px; background: #111; border-radius: 25px; border: 1px solid #333; overflow: hidden; }
-        .card-banner { height: 80px; background: linear-gradient(45deg, #23a559, #1a7a42); }
-        .card-body { padding: 0 20px 25px; text-align: center; margin-top: -45px; }
-        .card-pfp { width: 90px; height: 90px; border-radius: 50%; border: 6px solid #111; margin: 0 auto; overflow: hidden; background: #222; aspect-ratio: 1/1; }
+        .card-pfp { width: 90px; height: 90px; border-radius: 50%; border: 6px solid #111; margin: -45px auto 0; overflow: hidden; aspect-ratio: 1/1; }
         .card-pfp img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
@@ -77,25 +67,17 @@
     <div id="toast-container"></div>
 
     <section id="s-intro" class="screen active" style="background:#fff;">
-        <div class="zoom-title">Tacker</div>
+        <div style="font-weight:900; font-size:80px; letter-spacing:-4px; color:#000;">Tacker</div>
         <button onmousedown="handleEnter()" style="margin-top:40px; padding:15px 70px; background:#000; color:#fff; border-radius:50px; border:none; font-weight:bold; cursor:pointer;">進入系統</button>
     </section>
 
     <section id="s-login" class="screen" style="background:#f4f4f4;">
         <div style="background:#fff; width:320px; padding:35px; border-radius:25px;">
             <h2 style="color:#000; margin:0 0 25px; font-weight:900;">驗證</h2>
-            <input id="u-id" placeholder="帳號 ID" style="width:100%; padding:14px; margin-bottom:10px; border:1px solid #eee; border-radius:10px;">
-            <input id="u-pw" type="password" placeholder="密碼" style="width:100%; padding:14px; margin-bottom:20px; border:1px solid #eee; border-radius:10px;">
-            <button onmousedown="auth()" style="width:100%; padding:15px; background:#000; color:#fff; border:none; border-radius:10px; font-weight:bold;">登入</button>
+            <input id="u-id" placeholder="帳號 ID" class="v667-field" style="color:#000; border-color:#eee;">
+            <input id="u-pw" type="password" placeholder="密碼" class="v667-field" style="color:#000; border-color:#eee;">
+            <button onmousedown="auth()" style="width:100%;" class="v667-btn">登入</button>
         </div>
-    </section>
-
-    <section id="s-loader" class="screen">
-        <div style="font-weight:900; font-size:40px; margin-bottom:15px;">Tacker</div>
-        <div style="width:200px; height:3px; background:#222; border-radius:10px; overflow:hidden;">
-            <div id="load-bar" style="width:0%; height:100%; background:var(--acc);"></div>
-        </div>
-        <div id="load-text" style="margin-top:10px; font-family:monospace; color:#555;">0%</div>
     </section>
 
     <section id="s-app" class="screen">
@@ -134,17 +116,22 @@
                                 <input type="file" id="pfp-up" style="display:none;" onchange="uploadPfp(this)">
                                 <button onmousedown="document.getElementById('pfp-up').click()" class="v667-btn" style="padding:6px 12px; font-size:11px;">更換頭像</button>
                                 <h3 id="me-name-display" style="margin:5px 0 0;">使用者</h3>
-                                <div style="font-size:11px; color:var(--sub);">UID: <span id="me-uid-show"></span></div>
                             </div>
                         </div>
-                        <div class="me-input-box">
-                            <label style="font-size:11px; color:#555; font-weight:bold; display:block; margin-bottom:5px;">顯示名稱</label>
-                            <input id="me-name-in" class="v667-field">
-                        </div>
-                        <div class="me-input-box" style="margin-top:15px;">
-                            <label style="font-size:11px; color:#555; font-weight:bold; display:block; margin-bottom:5px;">自我介紹</label>
-                            <textarea id="me-bio-in" class="v667-field" style="height:80px; resize:none;"></textarea>
-                            <button onmousedown="updateProfile()" class="v667-btn" style="width:100%; margin-top:10px;">儲存資訊</button>
+                        <label style="font-size:11px; color:#555; font-weight:bold;">顯示名稱</label>
+                        <input id="me-name-in" class="v667-field">
+                        <label style="font-size:11px; color:#555; font-weight:bold;">自我介紹</label>
+                        <textarea id="me-bio-in" class="v667-field" style="height:80px; resize:none;"></textarea>
+                        <button onmousedown="updateProfile()" class="v667-btn" style="width:100%;">儲存資訊</button>
+                    </div>
+
+                    <div class="me-card">
+                        <button onmousedown="togglePw()" class="v667-btn" style="background:#333; width:100%; text-align:left;">更改安全密碼</button>
+                        <div id="pw-section">
+                            <input id="pw-old" type="password" placeholder="舊密碼" class="v667-field">
+                            <input id="pw-new" type="password" placeholder="新密碼" class="v667-field">
+                            <input id="pw-cfm" type="password" placeholder="確認新密碼" class="v667-field">
+                            <button onmousedown="updatePw()" class="v667-btn">更新密碼</button>
                         </div>
                     </div>
                     <button onmousedown="logout()" style="width:100%; background:var(--danger);" class="v667-btn">登出系統</button>
@@ -155,12 +142,12 @@
 
     <div id="user-modal" class="modal" onclick="this.style.display='none'">
         <div class="user-card" onclick="event.stopPropagation()">
-            <div class="card-banner"></div>
-            <div class="card-body">
+            <div style="height:80px; background:linear-gradient(45deg, #23a559, #1a7a42);"></div>
+            <div style="padding: 0 20px 25px; text-align: center;">
                 <div class="card-pfp" id="modal-pfp"></div>
-                <div id="modal-name" style="font-size:22px; font-weight:900; color:#fff; margin-top:10px;"></div>
+                <div id="modal-name" style="font-size:22px; font-weight:900; color:#fff; margin-top:15px;"></div>
                 <div id="modal-uid" style="font-size:10px; color:var(--sub); margin-bottom:10px;"></div>
-                <div id="modal-bio" style="color:#aaa; font-size:14px; margin-bottom:20px; line-height:1.5;"></div>
+                <div id="modal-bio" style="color:#aaa; font-size:14px; margin-bottom:20px;"></div>
                 <button id="dm-btn" style="width:100%; padding:14px; background:var(--acc); color:#fff; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">發送私訊邀請</button>
             </div>
         </div>
@@ -180,7 +167,7 @@
 
         function handleEnter() {
             const s = localStorage.getItem('tacker_session');
-            if(s) { me = JSON.parse(s); startLoading(); } else go('s-login');
+            if(s) { me = JSON.parse(s); initApp(); } else go('s-login');
         }
 
         async function auth() {
@@ -190,26 +177,14 @@
             if(s.exists() && s.val().temp_pw === pw) {
                 me = { uid: id, ...s.val() };
                 localStorage.setItem('tacker_session', JSON.stringify(me));
-                startLoading();
+                initApp();
             } else osToast("驗證失敗");
-        }
-
-        function startLoading() {
-            go('s-loader');
-            let p = 0;
-            const t = setInterval(() => {
-                p += Math.floor(Math.random() * 8) + 2;
-                if(p >= 100) { clearInterval(t); document.getElementById('load-bar').style.width = '100%'; setTimeout(initApp, 400); }
-                else { document.getElementById('load-bar').style.width = p + '%'; document.getElementById('load-text').innerText = p + '%'; }
-            }, 40);
         }
 
         function initApp() {
             go('s-app');
-            listenGlobal();
-            listenStats();
+            listenGlobal(); listenStats(); listenDMRequests();
             document.getElementById('me-img').src = me.pfp || '';
-            document.getElementById('me-uid-show').innerText = me.uid;
             document.getElementById('me-name-display').innerText = me.full_name;
             document.getElementById('me-name-in').value = me.full_name;
             document.getElementById('me-bio-in').value = me.bio || '';
@@ -223,6 +198,8 @@
             document.getElementById(t==='chat'?'nav-chat':'nav-me').classList.add('active');
         }
 
+        function togglePw() { const s = document.getElementById('pw-section'); s.style.display = s.style.display==='block'?'none':'block'; }
+
         async function uploadPfp(input) {
             const f = input.files[0]; if(!f) return;
             const r = new FileReader();
@@ -234,6 +211,15 @@
                 osToast("頭像已更新");
             };
             r.readAsDataURL(f);
+        }
+
+        async function updatePw() {
+            const o = document.getElementById('pw-old').value;
+            const n = document.getElementById('pw-new').value;
+            if(o === me.temp_pw && n.length >= 4) {
+                await db.ref(`users/${me.uid}`).update({ temp_pw: n });
+                osToast("密碼已更新，請重新登入"); logout();
+            } else osToast("輸入錯誤");
         }
 
         async function updateProfile() {
@@ -251,14 +237,9 @@
                 const box = document.getElementById('messages'); box.innerHTML = '';
                 snap.forEach(d => {
                     const m = d.val();
-                    let content = m.t;
-                    if(m.t.includes('data:image')) content = `<img src="${m.t}" style="max-width:200px; border-radius:10px; margin-top:5px; cursor:pointer;" onclick="window.open('${m.t}')">`;
                     box.innerHTML += `<div class="msg-row">
                         <div class="pfp-mini" onmousedown="showUser('${m.uid}')"><img src="${m.pfp || ''}"></div>
-                        <div class="msg-content-wrap">
-                            <div class="msg-author" onmousedown="showUser('${m.uid}')">${m.u}</div>
-                            <div class="msg-text">${content}</div>
-                        </div>
+                        <div><div class="msg-author">${m.u}</div><div style="color:#eee; font-size:14px;">${m.t}</div></div>
                     </div>`;
                 });
                 document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
@@ -274,29 +255,43 @@
             document.getElementById('modal-bio').innerText = u.bio || "Tacker 會員";
             document.getElementById('modal-pfp').innerHTML = `<img src="${u.pfp || ''}">`;
             document.getElementById('dm-btn').onclick = async () => {
-                await db.ref(`dm_requests/${uid}/${me.uid}`).set({ fromName: me.full_name, fromPfp: me.pfp || '', ts: Date.now(), type: "friend_request" });
-                osToast("已發送邀請");
+                // 發送私訊邀請至對方的專屬路徑
+                await db.ref(`dm_requests/${uid}/${me.uid}`).set({ 
+                    fromName: me.full_name, 
+                    fromPfp: me.pfp || '', 
+                    ts: Date.now() 
+                });
+                osToast("邀請已發送");
                 document.getElementById('user-modal').style.display = 'none';
             };
             document.getElementById('user-modal').style.display = 'flex';
         }
 
-        function handleFile(i) {
-            const f = i.files[0]; if(!f || f.type.startsWith('video/')) return;
-            const r = new FileReader();
-            r.onload = (e) => db.ref('chats/global').push({ u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: e.target.result, ts: Date.now() });
-            r.readAsDataURL(f);
+        // 監聽邀請，顯示在側邊欄
+        function listenDMRequests() {
+            db.ref(`dm_requests/${me.uid}`).on('value', snap => {
+                const list = document.getElementById('private-list');
+                list.innerHTML = '';
+                snap.forEach(d => {
+                    const r = d.val();
+                    const icon = document.createElement('div');
+                    icon.className = 'nav-icon';
+                    icon.innerHTML = `<img src="${r.fromPfp}" title="${r.fromName}">`;
+                    icon.onmousedown = () => osToast("與 " + r.fromName + " 的私訊模組尚未開啟");
+                    list.appendChild(icon);
+                });
+            });
+        }
+
+        function listenStats() {
+            db.ref('users').on('value', s => { document.getElementById('total-u').innerText = s.numChildren(); });
+            db.ref('online_count').on('value', s => { document.getElementById('online-u').innerText = s.val() || 1; });
         }
 
         function send() {
             const i = document.getElementById('m-input'); if(!i.value.trim()) return;
             db.ref('chats/global').push({ u: me.full_name, uid: me.uid, pfp: me.pfp || '', t: i.value, ts: Date.now() });
             i.value = '';
-        }
-
-        function listenStats() {
-            db.ref('users').on('value', s => { document.getElementById('total-u').innerText = s.numChildren(); });
-            db.ref('online_count').on('value', s => { document.getElementById('online-u').innerText = s.val() || 1; });
         }
 
         function logout() { localStorage.clear(); location.reload(); }
